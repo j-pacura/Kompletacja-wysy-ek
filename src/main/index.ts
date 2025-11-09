@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import { initDatabase, closeDatabase, query, queryOne, execute } from './database';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
+import { selectExcelFile, parseExcelFile, openFolder } from './fileSystem';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -266,6 +267,37 @@ function setupIPCHandlers() {
       const appPath = app.getPath(name as any);
       return { success: true, data: appPath };
     } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // File operations
+  ipcMain.handle(IPC_CHANNELS.FILE_SELECT_EXCEL, async () => {
+    try {
+      const result = await selectExcelFile();
+      return { success: true, data: result };
+    } catch (error: any) {
+      console.error('Select Excel error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FILE_PARSE_EXCEL, async (event, filePath: string) => {
+    try {
+      const result = await parseExcelFile(filePath);
+      return { success: true, data: result };
+    } catch (error: any) {
+      console.error('Parse Excel error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FILE_OPEN_FOLDER, async (event, folderPath: string) => {
+    try {
+      await openFolder(folderPath);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Open folder error:', error);
       return { success: false, error: error.message };
     }
   });

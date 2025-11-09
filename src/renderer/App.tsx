@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
+import ShipmentCreator from './components/ShipmentCreator';
+import PackingScreen from './components/PackingScreen';
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +46,8 @@ const App: React.FC = () => {
       <div className="w-screen h-screen bg-bg-primary overflow-hidden">
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/create" element={<ShipmentCreator />} />
+          <Route path="/packing/:shipmentId" element={<PackingScreen />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

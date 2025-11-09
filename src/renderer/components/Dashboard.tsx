@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 import { Shipment } from '../types/shipment';
 import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,7 +103,7 @@ const Dashboard: React.FC = () => {
             </button>
             <button
               className="flex items-center gap-2 px-6 py-2 gradient-primary text-white rounded-lg hover:opacity-90 transition-all btn-active font-semibold"
-              onClick={() => {/* TODO: Create new shipment */}}
+              onClick={() => navigate('/create')}
             >
               <Plus className="w-5 h-5" />
               Nowa Wysyłka
@@ -188,7 +189,7 @@ const Dashboard: React.FC = () => {
               <div
                 key={shipment.id}
                 className="bg-bg-tertiary rounded-xl p-6 card-hover cursor-pointer animate-slide-in"
-                onClick={() => {/* TODO: Open shipment */}}
+                onClick={() => navigate(`/packing/${shipment.id}`)}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-2">
