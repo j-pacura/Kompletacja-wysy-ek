@@ -82,6 +82,11 @@ export async function initDatabase(): Promise<SqlJsDatabase> {
       }
     }
 
+    // db is guaranteed to be non-null here
+    if (!db) {
+      throw new Error('Failed to create database');
+    }
+
     db.run(schemaSQL);
     console.log('Database schema initialized');
 
@@ -90,6 +95,12 @@ export async function initDatabase(): Promise<SqlJsDatabase> {
   }
 
   console.log('Database initialized successfully');
+
+  // db is guaranteed to be non-null at this point
+  if (!db) {
+    throw new Error('Database initialization failed');
+  }
+
   return db;
 }
 
