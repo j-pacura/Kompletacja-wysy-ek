@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import Confetti from 'react-confetti';
 import {
   ArrowLeft,
   Search,
@@ -22,6 +23,9 @@ const PackingScreen: React.FC = () => {
   const [parts, setParts] = useState<Part[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now());
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     if (shipmentId) {
@@ -29,6 +33,23 @@ const PackingScreen: React.FC = () => {
       loadParts(parseInt(shipmentId));
     }
   }, [shipmentId]);
+
+  // Timer effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - sessionStartTime) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sessionStartTime]);
+
+  // Format time as HH:MM:SS
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const loadShipment = async (id: number) => {
     try {
@@ -62,6 +83,41 @@ const PackingScreen: React.FC = () => {
     }
   };
 
+  const handlePackPart = async (part: Part) => {
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      // Update part status to 'packed'
+      const result = await ipcRenderer.invoke('db:update-part', part.id, {
+        status: 'packed',
+        packed_at: Date.now()
+      });
+
+      if (result.success) {
+        // Update local state
+        setParts(prevParts =>
+          prevParts.map(p =>
+            p.id === part.id
+              ? { ...p, status: 'packed', packed_at: Date.now() }
+              : p
+          )
+        );
+
+        // Check if this was the last part
+        const remainingParts = parts.filter(p => p.id !== part.id && p.status === 'pending');
+        if (remainingParts.length === 0) {
+          // Show confetti!
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 5000); // Hide after 5 seconds
+        }
+      } else {
+        console.error('Failed to update part:', result.error);
+      }
+    } catch (error) {
+      console.error('Error packing part:', error);
+    }
+  };
+
   const pendingParts = parts.filter(p => p.status === 'pending');
   const packedParts = parts.filter(p => p.status === 'packed');
   const progress = parts.length > 0 ? (packedParts.length / parts.length) * 100 : 0;
@@ -84,6 +140,17 @@ const PackingScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full h-full bg-bg-primary">
+      {/* Confetti */}
+      {showConfetti && (
+        <Confetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+          numberOfPieces={500}
+          gravity={0.3}
+        />
+      )}
+
       {/* Header */}
       <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
         <div className="flex items-center justify-between">
@@ -103,6 +170,17 @@ const PackingScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-6">
+            {/* Timer */}
+            <div className="text-right">
+              <p className="text-text-secondary text-xs mb-1">Czas sesji</p>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-accent-primary" />
+                <span className="text-text-primary font-bold text-lg font-mono">
+                  {formatTime(elapsedTime)}
+                </span>
+              </div>
+            </div>
+
             {/* Progress */}
             <div className="text-right">
               <p className="text-text-secondary text-xs mb-1">Postęp</p>
@@ -207,7 +285,8 @@ const PackingScreen: React.FC = () => {
                 {filteredPendingParts.map((part) => (
                   <div
                     key={part.id}
-                    className="bg-bg-tertiary rounded-lg p-4 hover:bg-opacity-80 transition-all cursor-pointer animate-slide-in"
+                    onClick={() => handlePackPart(part)}
+                    className="bg-bg-tertiary rounded-lg p-4 hover:bg-opacity-80 hover:scale-[1.02] transition-all cursor-pointer animate-slide-in active:scale-[0.98]"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -224,7 +303,7 @@ const PackingScreen: React.FC = () => {
                           <span>📦 {part.quantity} {part.unit}</span>
                         </div>
                       </div>
-                      <div className="w-12 h-12 rounded-full border-2 border-text-tertiary flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full border-2 border-text-tertiary flex items-center justify-center hover:border-accent-success hover:bg-accent-success hover:bg-opacity-10 transition-all">
                         <span className="text-text-tertiary text-xl">☐</span>
                       </div>
                     </div>
