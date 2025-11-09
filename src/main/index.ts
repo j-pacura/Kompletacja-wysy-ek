@@ -16,7 +16,6 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true,
     },
     autoHideMenuBar: true,
     icon: path.join(__dirname, '../../resources/icon.ico'),
@@ -78,7 +77,7 @@ app.on('before-quit', () => {
  */
 function setupIPCHandlers() {
   // Generic query handler
-  ipcMain.handle(IPC_CHANNELS.DB_QUERY, async (event, sql: string, params: any[] = []) => {
+  ipcMain.handle(IPC_CHANNELS.DB_QUERY, async (_event, sql: string, params: any[] = []) => {
     try {
       return { success: true, data: query(sql, params) };
     } catch (error: any) {
@@ -88,7 +87,7 @@ function setupIPCHandlers() {
   });
 
   // Generic execute handler
-  ipcMain.handle(IPC_CHANNELS.DB_EXECUTE, async (event, sql: string, params: any[] = []) => {
+  ipcMain.handle(IPC_CHANNELS.DB_EXECUTE, async (_event, sql: string, params: any[] = []) => {
     try {
       const result = execute(sql, params);
       return { success: true, data: result };
@@ -112,7 +111,7 @@ function setupIPCHandlers() {
   });
 
   // Get single shipment
-  ipcMain.handle(IPC_CHANNELS.DB_GET_SHIPMENT, async (event, id: number) => {
+  ipcMain.handle(IPC_CHANNELS.DB_GET_SHIPMENT, async (_event, id: number) => {
     try {
       const shipment = queryOne(
         `SELECT * FROM shipments WHERE id = ?`,
@@ -126,7 +125,7 @@ function setupIPCHandlers() {
   });
 
   // Create shipment
-  ipcMain.handle(IPC_CHANNELS.DB_CREATE_SHIPMENT, async (event, shipmentData: any) => {
+  ipcMain.handle(IPC_CHANNELS.DB_CREATE_SHIPMENT, async (_event, shipmentData: any) => {
     try {
       const result = execute(
         `INSERT INTO shipments (
@@ -155,7 +154,7 @@ function setupIPCHandlers() {
   });
 
   // Update shipment
-  ipcMain.handle(IPC_CHANNELS.DB_UPDATE_SHIPMENT, async (event, id: number, updates: any) => {
+  ipcMain.handle(IPC_CHANNELS.DB_UPDATE_SHIPMENT, async (_event, id: number, updates: any) => {
     try {
       const fields: string[] = [];
       const values: any[] = [];
@@ -179,7 +178,7 @@ function setupIPCHandlers() {
   });
 
   // Get parts for shipment
-  ipcMain.handle(IPC_CHANNELS.DB_GET_PARTS, async (event, shipmentId: number) => {
+  ipcMain.handle(IPC_CHANNELS.DB_GET_PARTS, async (_event, shipmentId: number) => {
     try {
       const parts = query(
         `SELECT * FROM parts WHERE shipment_id = ? ORDER BY status ASC, id ASC`,
@@ -193,7 +192,7 @@ function setupIPCHandlers() {
   });
 
   // Update part
-  ipcMain.handle(IPC_CHANNELS.DB_UPDATE_PART, async (event, id: number, updates: any) => {
+  ipcMain.handle(IPC_CHANNELS.DB_UPDATE_PART, async (_event, id: number, updates: any) => {
     try {
       const fields: string[] = [];
       const values: any[] = [];
@@ -232,7 +231,7 @@ function setupIPCHandlers() {
   });
 
   // Update setting
-  ipcMain.handle(IPC_CHANNELS.DB_UPDATE_SETTING, async (event, key: string, value: string) => {
+  ipcMain.handle(IPC_CHANNELS.DB_UPDATE_SETTING, async (_event, key: string, value: string) => {
     try {
       const result = execute(
         `INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`,
@@ -262,7 +261,7 @@ function setupIPCHandlers() {
   });
 
   // App paths
-  ipcMain.handle(IPC_CHANNELS.APP_GET_PATH, async (event, name: string) => {
+  ipcMain.handle(IPC_CHANNELS.APP_GET_PATH, async (_event, name: string) => {
     try {
       const appPath = app.getPath(name as any);
       return { success: true, data: appPath };
@@ -282,7 +281,7 @@ function setupIPCHandlers() {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.FILE_PARSE_EXCEL, async (event, filePath: string) => {
+  ipcMain.handle(IPC_CHANNELS.FILE_PARSE_EXCEL, async (_event, filePath: string) => {
     try {
       const result = await parseExcelFile(filePath);
       return { success: true, data: result };
@@ -292,7 +291,7 @@ function setupIPCHandlers() {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.FILE_OPEN_FOLDER, async (event, folderPath: string) => {
+  ipcMain.handle(IPC_CHANNELS.FILE_OPEN_FOLDER, async (_event, folderPath: string) => {
     try {
       await openFolder(folderPath);
       return { success: true };

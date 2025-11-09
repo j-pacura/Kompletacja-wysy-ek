@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Shipment } from '../types/shipment';
 import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
