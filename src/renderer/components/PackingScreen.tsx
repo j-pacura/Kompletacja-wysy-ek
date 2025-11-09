@@ -23,7 +23,7 @@ const PackingScreen: React.FC = () => {
   const [parts, setParts] = useState<Part[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now());
+  const [sessionStartTime] = useState<number>(Date.now()); // We don't need setter - timer starts once
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
 
