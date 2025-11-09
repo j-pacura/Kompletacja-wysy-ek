@@ -21,21 +21,25 @@ Profesjonalna aplikacja desktopowa do pakowania wysyłek magazynowych.
 - **Tailwind CSS** - Styling
 - **Zustand** - State management
 
-## 📦 Instalacja
+## 🚀 Szybki Start
 
 ```bash
-# Zainstaluj dependencies
+# 1. Zainstaluj dependencies
 npm install
 
-# Uruchom w trybie development
+# 2. Terminal 1 - Uruchom Webpack Dev Server
 npm run dev
 
-# W drugim terminalu uruchom Electron
+# 3. Terminal 2 - Uruchom Electron
 npm run electron:dev
 
 # Build produkcyjny (portable .exe)
 npm run electron:build
 ```
+
+**📖 Szczegółowa instrukcja:** Zobacz [GETTING_STARTED.md](./GETTING_STARTED.md)
+
+**📂 Przykładowy plik Excel:** [examples/sample-parts.csv](./examples/sample-parts.csv)
 
 ## 📁 Struktura Projektu
 
@@ -68,13 +72,13 @@ warehouse-packing-app/
 - [x] TypeScript types i interfaces
 
 ### 🚧 W trakcie
-- [ ] Tworzenie nowych wysyłek
-- [ ] Import z plików Excel
-- [ ] Ekran pakowania
-- [ ] Integracja ze skanerami QR
-- [ ] Integracja z wagą Radwag
-- [ ] Robienie zdjęć
-- [ ] Generowanie raportów
+- [x] **Tworzenie nowych wysyłek** - 3-krokowy kreator
+- [x] **Import z plików Excel** - automatyczna detekcja kolumn
+- [x] **Ekran pakowania** - lista części, wyszukiwanie, progress
+- [ ] Skanowanie QR kodów i pakowanie
+- [ ] Integracja z wagą Radwag (RS-232)
+- [ ] Robienie zdjęć (WebRTC)
+- [ ] Generowanie raportów (PDF, Excel, HTML)
 
 ### 📅 Planowane
 - [ ] Statystyki i osiągnięcia
