@@ -35,12 +35,12 @@ function createWindow() {
 }
 
 // Initialize app
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   console.log('App is ready');
 
   // Initialize database
   try {
-    initDatabase();
+    await initDatabase();
     console.log('Database initialized');
   } catch (error) {
     console.error('Failed to initialize database:', error);

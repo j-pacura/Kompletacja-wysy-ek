@@ -1,9 +1,10 @@
-import Database from 'better-sqlite3';
+import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import * as path from 'path';
 import * as fs from 'fs';
 import { app } from 'electron';
 
-let db: Database.Database | null = null;
+let db: SqlJsDatabase | null = null;
+let SQL: any = null;
 
 /**
  * Get the path to the user data directory
@@ -21,49 +22,81 @@ export function getUserDataPath(): string {
 }
 
 /**
+ * Save database to disk
+ */
+function saveDatabase(): void {
+  if (!db) return;
+
+  const dbPath = path.join(getUserDataPath(), 'warehouse.db');
+  const data = db.export();
+  const buffer = Buffer.from(data);
+  fs.writeFileSync(dbPath, buffer);
+}
+
+/**
  * Initialize the database
  */
-export function initDatabase(): Database.Database {
+export async function initDatabase(): Promise<SqlJsDatabase> {
   if (db) {
     return db;
+  }
+
+  // Initialize sql.js
+  if (!SQL) {
+    SQL = await initSqlJs({
+      // This will load the wasm binary from node_modules
+      locateFile: (file: string) => {
+        return path.join(__dirname, '../../node_modules/sql.js/dist', file);
+      }
+    });
   }
 
   const dbPath = path.join(getUserDataPath(), 'warehouse.db');
   console.log('Database path:', dbPath);
 
-  db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-
-  // Run schema
-  const schemaPath = path.join(__dirname, '../../database/schema.sql');
-
-  // In development, schema is in the project root
-  // In production, it's in resources
-  let schemaSQL: string;
-
-  if (fs.existsSync(schemaPath)) {
-    schemaSQL = fs.readFileSync(schemaPath, 'utf-8');
+  // Load existing database or create new one
+  if (fs.existsSync(dbPath)) {
+    const buffer = fs.readFileSync(dbPath);
+    db = new SQL.Database(buffer);
+    console.log('Loaded existing database');
   } else {
-    // Try production path
-    const prodSchemaPath = path.join(process.resourcesPath, 'schema.sql');
-    if (fs.existsSync(prodSchemaPath)) {
-      schemaSQL = fs.readFileSync(prodSchemaPath, 'utf-8');
+    db = new SQL.Database();
+    console.log('Created new database');
+
+    // Run schema for new database
+    const schemaPath = path.join(__dirname, '../../database/schema.sql');
+
+    // In development, schema is in the project root
+    // In production, it's in resources
+    let schemaSQL: string;
+
+    if (fs.existsSync(schemaPath)) {
+      schemaSQL = fs.readFileSync(schemaPath, 'utf-8');
     } else {
-      throw new Error('Database schema file not found');
+      // Try production path
+      const prodSchemaPath = path.join(process.resourcesPath!, 'schema.sql');
+      if (fs.existsSync(prodSchemaPath)) {
+        schemaSQL = fs.readFileSync(prodSchemaPath, 'utf-8');
+      } else {
+        throw new Error('Database schema file not found');
+      }
     }
+
+    db.run(schemaSQL);
+    console.log('Database schema initialized');
+
+    // Save the new database
+    saveDatabase();
   }
 
-  db.exec(schemaSQL);
   console.log('Database initialized successfully');
-
   return db;
 }
 
 /**
  * Get the database instance
  */
-export function getDatabase(): Database.Database {
+export function getDatabase(): SqlJsDatabase {
   if (!db) {
     throw new Error('Database not initialized. Call initDatabase() first.');
   }
@@ -75,6 +108,7 @@ export function getDatabase(): Database.Database {
  */
 export function closeDatabase(): void {
   if (db) {
+    saveDatabase();
     db.close();
     db = null;
     console.log('Database closed');
@@ -86,8 +120,22 @@ export function closeDatabase(): void {
  */
 export function query<T = any>(sql: string, params: any[] = []): T[] {
   const database = getDatabase();
+  const results: T[] = [];
+
   const stmt = database.prepare(sql);
-  return stmt.all(...params) as T[];
+  stmt.bind(params);
+
+  while (stmt.step()) {
+    const row = stmt.getAsObject();
+    results.push(row as T);
+  }
+
+  stmt.free();
+
+  // Save database after read operations (in case there were any writes)
+  saveDatabase();
+
+  return results;
 }
 
 /**
@@ -95,17 +143,48 @@ export function query<T = any>(sql: string, params: any[] = []): T[] {
  */
 export function queryOne<T = any>(sql: string, params: any[] = []): T | undefined {
   const database = getDatabase();
+
   const stmt = database.prepare(sql);
-  return stmt.get(...params) as T | undefined;
+  stmt.bind(params);
+
+  let result: T | undefined = undefined;
+
+  if (stmt.step()) {
+    result = stmt.getAsObject() as T;
+  }
+
+  stmt.free();
+
+  // Save database after read operations (in case there were any writes)
+  saveDatabase();
+
+  return result;
+}
+
+export interface RunResult {
+  changes: number;
+  lastInsertRowid: number;
 }
 
 /**
  * Execute a statement (INSERT, UPDATE, DELETE)
  */
-export function execute(sql: string, params: any[] = []): Database.RunResult {
+export function execute(sql: string, params: any[] = []): RunResult {
   const database = getDatabase();
-  const stmt = database.prepare(sql);
-  return stmt.run(...params);
+
+  database.run(sql, params);
+
+  // Get the last insert rowid and changes
+  const lastInsertRowid = database.exec("SELECT last_insert_rowid() as id")[0]?.values[0]?.[0] as number || 0;
+  const changes = database.getRowsModified();
+
+  // Save database after write operations
+  saveDatabase();
+
+  return {
+    changes,
+    lastInsertRowid
+  };
 }
 
 /**
@@ -113,6 +192,18 @@ export function execute(sql: string, params: any[] = []): Database.RunResult {
  */
 export function transaction<T>(callback: () => T): T {
   const database = getDatabase();
-  const txn = database.transaction(callback);
-  return txn();
+
+  try {
+    database.run('BEGIN TRANSACTION');
+    const result = callback();
+    database.run('COMMIT');
+
+    // Save database after transaction
+    saveDatabase();
+
+    return result;
+  } catch (error) {
+    database.run('ROLLBACK');
+    throw error;
+  }
 }
