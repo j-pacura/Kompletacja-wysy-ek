@@ -8,9 +8,10 @@
   "scripts": {
     "dev": "webpack serve --mode development",
     "build": "webpack --mode production",
-    "electron:dev": "electron .",
-    "electron:build": "electron-builder --win portable",
-    "start": "npm run build && electron ."
+    "build:main": "tsc src/main/*.ts --outDir dist/main --module commonjs --target es2020 --esModuleInterop --skipLibCheck --resolveJsonModule",
+    "electron:dev": "npm run build:main && electron .",
+    "electron:build": "npm run build:main && electron-builder --win portable",
+    "start": "npm run build && npm run build:main && electron ."
   },
   "dependencies": {
     "react": "^18.2.0",
