@@ -136,7 +136,7 @@ const PackingScreen: React.FC = () => {
       // Update part status back to 'pending'
       const result = await ipcRenderer.invoke('db:update-part', part.id, {
         status: 'pending',
-        packed_at: null
+        packed_at: undefined
       });
 
       if (result.success) {
@@ -144,7 +144,7 @@ const PackingScreen: React.FC = () => {
         setParts(prevParts =>
           prevParts.map(p =>
             p.id === part.id
-              ? { ...p, status: 'pending', packed_at: null }
+              ? { ...p, status: 'pending', packed_at: undefined }
               : p
           )
         );
