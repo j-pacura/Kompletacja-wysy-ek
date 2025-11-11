@@ -118,11 +118,43 @@ const PackingScreen: React.FC = () => {
     }
   };
 
+  const handleUnpackPart = async (part: Part) => {
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      // Update part status back to 'pending'
+      const result = await ipcRenderer.invoke('db:update-part', part.id, {
+        status: 'pending',
+        packed_at: null
+      });
+
+      if (result.success) {
+        // Update local state
+        setParts(prevParts =>
+          prevParts.map(p =>
+            p.id === part.id
+              ? { ...p, status: 'pending', packed_at: null }
+              : p
+          )
+        );
+      } else {
+        console.error('Failed to unpack part:', result.error);
+      }
+    } catch (error) {
+      console.error('Error unpacking part:', error);
+    }
+  };
+
   const pendingParts = parts.filter(p => p.status === 'pending');
   const packedParts = parts.filter(p => p.status === 'packed');
   const progress = parts.length > 0 ? (packedParts.length / parts.length) * 100 : 0;
 
   const filteredPendingParts = pendingParts.filter(part =>
+    part.sap_index.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    part.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredPackedParts = packedParts.filter(part =>
     part.sap_index.toLowerCase().includes(searchQuery.toLowerCase()) ||
     part.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -314,28 +346,35 @@ const PackingScreen: React.FC = () => {
           )}
 
           {/* Packed parts */}
-          {packedParts.length > 0 && (
+          {filteredPackedParts.length > 0 && (
             <div>
               <h2 className="text-lg font-semibold text-text-secondary mb-3 flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5" />
-                SPAKOWANE ({packedParts.length})
+                SPAKOWANE ({filteredPackedParts.length})
               </h2>
-              <div className="space-y-2 opacity-30">
-                {packedParts.map((part) => (
+              <div className="space-y-2">
+                {filteredPackedParts.map((part) => (
                   <div
                     key={part.id}
-                    className="bg-bg-tertiary rounded-lg p-4"
+                    onClick={() => handleUnpackPart(part)}
+                    className="bg-bg-tertiary bg-opacity-60 rounded-lg p-4 hover:bg-opacity-80 hover:scale-[1.01] transition-all cursor-pointer active:scale-[0.99]"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-accent-success font-bold">
+                          <span className="text-accent-success font-bold text-lg">
                             {part.sap_index}
+                          </span>
+                          <span className="text-text-tertiary text-sm">
+                            #{part.excel_row_number}
                           </span>
                         </div>
                         <p className="text-text-secondary text-sm">{part.description}</p>
+                        <div className="flex items-center gap-4 text-sm text-text-secondary mt-2">
+                          <span>📦 {part.quantity} {part.unit}</span>
+                        </div>
                       </div>
-                      <CheckCircle2 className="w-6 h-6 text-accent-success" />
+                      <CheckCircle2 className="w-8 h-8 text-accent-success hover:text-accent-warning transition-colors" />
                     </div>
                   </div>
                 ))}
