@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Confetti from 'react-confetti';
+import toast, { Toaster } from 'react-hot-toast';
 import {
   ArrowLeft,
   Search,
@@ -103,12 +104,22 @@ const PackingScreen: React.FC = () => {
           )
         );
 
+        // Show success toast
+        toast.success(`✅ Spakowano ${part.sap_index}`, {
+          duration: 3000,
+          position: 'top-right',
+        });
+
         // Check if this was the last part
         const remainingParts = parts.filter(p => p.id !== part.id && p.status === 'pending');
         if (remainingParts.length === 0) {
           // Show confetti!
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 5000); // Hide after 5 seconds
+          toast.success('🎉 Wszystkie części spakowane!', {
+            duration: 5000,
+            position: 'top-center',
+          });
         }
       } else {
         console.error('Failed to update part:', result.error);
@@ -137,6 +148,13 @@ const PackingScreen: React.FC = () => {
               : p
           )
         );
+
+        // Show info toast
+        toast(`↩️ Cofnięto ${part.sap_index}`, {
+          duration: 3000,
+          position: 'top-right',
+          icon: '⚠️',
+        });
       } else {
         console.error('Failed to unpack part:', result.error);
       }
@@ -159,6 +177,49 @@ const PackingScreen: React.FC = () => {
     part.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Circular progress ring component
+  const CircularProgress = ({ percent, size = 80 }: { percent: number; size?: number }) => {
+    const strokeWidth = 6;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (percent / 100) * circumference;
+
+    return (
+      <svg width={size} height={size} className="transform -rotate-90">
+        {/* Background circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          fill="none"
+          className="text-bg-tertiary"
+        />
+        {/* Progress circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="url(#gradient)"
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-500 ease-out"
+        />
+        {/* Gradient definition */}
+        <defs>
+          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#1db954" />
+            <stop offset="100%" stopColor="#1ed760" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  };
+
   if (loading || !shipment) {
     return (
       <div className="flex items-center justify-center w-screen h-screen bg-bg-primary">
@@ -172,6 +233,23 @@ const PackingScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full h-full bg-bg-primary">
+      {/* Toast notifications */}
+      <Toaster
+        toastOptions={{
+          style: {
+            background: '#1e1e1e',
+            color: '#fff',
+            border: '1px solid #333',
+          },
+          success: {
+            iconTheme: {
+              primary: '#1db954',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+
       {/* Confetti */}
       {showConfetti && (
         <Confetti
@@ -224,6 +302,19 @@ const PackingScreen: React.FC = () => {
                   />
                 </div>
                 <span className="text-text-primary font-bold text-sm">
+                  {packedParts.length}/{parts.length}
+                </span>
+              </div>
+            </div>
+
+            {/* Circular progress */}
+            <div className="relative">
+              <CircularProgress percent={progress} size={70} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-text-primary font-bold text-lg leading-none">
+                  {Math.round(progress)}%
+                </span>
+                <span className="text-text-tertiary text-xs mt-0.5">
                   {packedParts.length}/{parts.length}
                 </span>
               </div>
