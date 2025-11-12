@@ -219,12 +219,25 @@ const PackingScreen: React.FC = () => {
   };
 
   // Handle scanner Enter key
-  const onScannerKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onScannerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
+      console.log('Scanner input:', scanBuffer);
       handleScannerInput(scanBuffer);
       setScanBuffer('');
     }
   };
+
+  // Keep focus on scanner input at all times
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (scannerInputRef.current && document.activeElement !== scannerInputRef.current) {
+        scannerInputRef.current.focus();
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Re-focus scanner input when modal closes
   useEffect(() => {
@@ -341,8 +354,11 @@ const PackingScreen: React.FC = () => {
         ref={scannerInputRef}
         type="text"
         value={scanBuffer}
-        onChange={(e) => setScanBuffer(e.target.value)}
-        onKeyPress={onScannerKeyPress}
+        onChange={(e) => {
+          console.log('Scanner buffer:', e.target.value);
+          setScanBuffer(e.target.value);
+        }}
+        onKeyDown={onScannerKeyDown}
         autoFocus
         style={{
           position: 'absolute',
