@@ -344,11 +344,16 @@ const PackingScreen: React.FC = () => {
     if (!selectedPart) return;
 
     // Calculate weight per unit
-    const weightPerUnit = weightReading / weightQuantity;
-    const weightTotal = weightReading;
+    // TODO: Save these values to database when we add weight columns
+    // const weightPerUnit = weightReading / weightQuantity;
+    // const weightTotal = weightReading;
 
-    // Save weight data and pack the part
-    // TODO: Save weight to database
+    console.log('Weight data:', {
+      part: selectedPart.sap_index,
+      totalWeight: weightReading,
+      quantity: weightQuantity,
+      weightPerUnit: weightReading / weightQuantity
+    });
 
     // Check if photos are required
     const needsPhotos = shipment?.require_photos;
