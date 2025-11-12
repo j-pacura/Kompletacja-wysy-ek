@@ -35,6 +35,11 @@ const PackingScreen: React.FC = () => {
   const [modalStep, setModalStep] = useState<1 | 2 | 3>(1); // 1: confirm, 2: weight, 3: photo
   const scannerInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Weight state
+  const [weightReading, setWeightReading] = useState<number>(0); // kg from scale
+  const [weightQuantity, setWeightQuantity] = useState<number>(1); // pieces being weighed
+  const [customQuantity, setCustomQuantity] = useState<string>(''); // for custom input
+
   useEffect(() => {
     if (shipmentId) {
       loadShipment(parseInt(shipmentId));
@@ -92,6 +97,65 @@ const PackingScreen: React.FC = () => {
   };
 
   const handlePackPart = async (part: Part) => {
+    // Check if weight or photos are required
+    const needsWeight = shipment?.require_weight;
+    const needsPhotos = shipment?.require_photos;
+
+    // If manual click and needs weight/photo, open modal
+    if (needsWeight || needsPhotos) {
+      setSelectedPart(part);
+      setModalStep(1);
+      setIsModalOpen(true);
+      return;
+    }
+
+    // Otherwise pack immediately
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      // Update part status to 'packed'
+      const result = await ipcRenderer.invoke('db:update-part', part.id, {
+        status: 'packed',
+        packed_at: Date.now()
+      });
+
+      if (result.success) {
+        // Update local state
+        setParts(prevParts =>
+          prevParts.map(p =>
+            p.id === part.id
+              ? { ...p, status: 'packed', packed_at: Date.now() }
+              : p
+          )
+        );
+
+        // Show success toast
+        toast.success(`✅ Spakowano ${part.sap_index}`, {
+          duration: 3000,
+          position: 'top-right',
+        });
+
+        // Check if this was the last part
+        const remainingParts = parts.filter(p => p.id !== part.id && p.status === 'pending');
+        if (remainingParts.length === 0) {
+          // Show confetti!
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 5000); // Hide after 5 seconds
+          toast.success('🎉 Wszystkie części spakowane!', {
+            duration: 5000,
+            position: 'top-center',
+          });
+        }
+      } else {
+        console.error('Failed to update part:', result.error);
+      }
+    } catch (error) {
+      console.error('Error packing part:', error);
+    }
+  };
+
+  // Pack part without modal (called from modal confirmation)
+  const packPartDirectly = async (part: Part) => {
     try {
       const { ipcRenderer } = window.require('electron');
 
@@ -257,17 +321,46 @@ const PackingScreen: React.FC = () => {
     // For now, just pack the part (we'll add weight/photo steps later)
     if (!needsWeight && !needsPhotos) {
       // Pack immediately
-      await handlePackPart(selectedPart);
+      await packPartDirectly(selectedPart);
       setIsModalOpen(false);
       setSelectedPart(null);
       setModalStep(1);
     } else {
       // Move to next step (weight or photo)
       if (needsWeight) {
+        // Initialize weight with default quantity from part
+        setWeightQuantity(selectedPart.quantity);
+        setWeightReading(0); // TODO: Read from Radwag scale
+        setCustomQuantity('');
         setModalStep(2); // Weight step
       } else if (needsPhotos) {
         setModalStep(3); // Photo step
       }
+    }
+  };
+
+  // Handle weight confirmation
+  const handleWeightConfirm = async () => {
+    if (!selectedPart) return;
+
+    // Calculate weight per unit
+    const weightPerUnit = weightReading / weightQuantity;
+    const weightTotal = weightReading;
+
+    // Save weight data and pack the part
+    // TODO: Save weight to database
+
+    // Check if photos are required
+    const needsPhotos = shipment?.require_photos;
+
+    if (needsPhotos) {
+      setModalStep(3); // Photo step
+    } else {
+      // Pack and close
+      await packPartDirectly(selectedPart);
+      setIsModalOpen(false);
+      setSelectedPart(null);
+      setModalStep(1);
     }
   };
 
@@ -486,17 +579,122 @@ const PackingScreen: React.FC = () => {
               </div>
             )}
 
-            {/* Step 2: Weight (placeholder for now) */}
-            {modalStep === 2 && (
+            {/* Step 2: Weight */}
+            {modalStep === 2 && selectedPart && (
               <div className="text-center">
-                <h2 className="text-text-primary text-2xl mb-4">Ważenie (wkrótce)</h2>
-                <p className="text-text-secondary mb-6">Funkcja wagi będzie dostępna w następnej wersji</p>
-                <button
-                  onClick={handleCloseModal}
-                  className="px-6 py-3 gradient-primary text-white rounded-lg"
-                >
-                  Zamknij
-                </button>
+                <h2 className="text-text-secondary text-lg mb-6">Ważenie:</h2>
+
+                {/* Part info */}
+                <div className="text-accent-primary font-bold text-4xl mb-8">
+                  {selectedPart.sap_index}
+                </div>
+
+                {/* Weight reading - DUŻY */}
+                <div className="bg-bg-tertiary rounded-2xl p-8 mb-6">
+                  <p className="text-text-tertiary text-sm mb-2">Odczyt wagi:</p>
+                  <div className="text-accent-success font-bold text-7xl mb-2">
+                    {weightReading.toFixed(3)}
+                  </div>
+                  <p className="text-text-secondary text-2xl">kg</p>
+
+                  {/* Temporary: Simulate scale buttons for testing */}
+                  <div className="mt-4 flex gap-2 justify-center">
+                    <button
+                      onClick={() => setWeightReading(prev => prev + 0.1)}
+                      className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
+                    >
+                      +0.1kg
+                    </button>
+                    <button
+                      onClick={() => setWeightReading(prev => prev + 1)}
+                      className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
+                    >
+                      +1kg
+                    </button>
+                    <button
+                      onClick={() => setWeightReading(0)}
+                      className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  <p className="text-text-tertiary text-xs mt-2">(Tymczasowe przyciski - później waga Radwag)</p>
+                </div>
+
+                {/* Quantity selector */}
+                <div className="mb-6">
+                  <p className="text-text-secondary text-sm mb-3">Ważone sztuk:</p>
+                  <div className="flex gap-3 justify-center mb-4">
+                    <button
+                      onClick={() => {
+                        setWeightQuantity(selectedPart.quantity);
+                        setCustomQuantity('');
+                      }}
+                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                        weightQuantity === selectedPart.quantity && !customQuantity
+                          ? 'gradient-primary text-white'
+                          : 'bg-bg-tertiary text-text-primary hover:bg-opacity-80'
+                      }`}
+                    >
+                      {selectedPart.quantity} {selectedPart.unit} (z listy)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setWeightQuantity(1);
+                        setCustomQuantity('');
+                      }}
+                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                        weightQuantity === 1 && !customQuantity
+                          ? 'gradient-primary text-white'
+                          : 'bg-bg-tertiary text-text-primary hover:bg-opacity-80'
+                      }`}
+                    >
+                      1 szt
+                    </button>
+                  </div>
+
+                  {/* Custom quantity input */}
+                  <div className="flex items-center justify-center gap-3">
+                    <input
+                      type="number"
+                      value={customQuantity}
+                      onChange={(e) => {
+                        setCustomQuantity(e.target.value);
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val) && val > 0) {
+                          setWeightQuantity(val);
+                        }
+                      }}
+                      placeholder="Inna ilość..."
+                      className="px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none w-40 text-center"
+                    />
+                    <span className="text-text-secondary">{selectedPart.unit}</span>
+                  </div>
+                </div>
+
+                {/* Weight per unit */}
+                <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4 mb-6">
+                  <p className="text-text-tertiary text-sm mb-1">Waga za sztukę:</p>
+                  <p className="text-text-primary text-2xl font-bold">
+                    {weightQuantity > 0 ? (weightReading / weightQuantity).toFixed(4) : '0.0000'} kg
+                  </p>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleCloseModal}
+                    className="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
+                  >
+                    Anuluj
+                  </button>
+                  <button
+                    onClick={handleWeightConfirm}
+                    className="flex-1 px-6 py-4 gradient-primary text-white rounded-lg hover:opacity-90 transition-all text-lg font-semibold"
+                  >
+                    ✓ Potwierdź wagę
+                  </button>
+                </div>
               </div>
             )}
 
