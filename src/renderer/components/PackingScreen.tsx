@@ -28,6 +28,13 @@ const PackingScreen: React.FC = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  // Scanner state
+  const [scanBuffer, setScanBuffer] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPart, setSelectedPart] = useState<Part | null>(null);
+  const [modalStep, setModalStep] = useState<1 | 2 | 3>(1); // 1: confirm, 2: weight, 3: photo
+  const scannerInputRef = React.useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (shipmentId) {
       loadShipment(parseInt(shipmentId));
@@ -163,6 +170,102 @@ const PackingScreen: React.FC = () => {
     }
   };
 
+  // Handle scanner input
+  const handleScannerInput = (scannedCode: string) => {
+    const trimmedCode = scannedCode.trim().toUpperCase();
+
+    if (!trimmedCode) return;
+
+    // If modal is open and we scan the same part, confirm it
+    if (isModalOpen && selectedPart && selectedPart.sap_index.toUpperCase() === trimmedCode) {
+      handleConfirmPart();
+      return;
+    }
+
+    // Search for part by SAP index
+    const foundPart = parts.find(p => p.sap_index.toUpperCase() === trimmedCode);
+
+    if (!foundPart) {
+      // Not found - red toast
+      toast.error(`❌ Produkt nie odnaleziony: ${trimmedCode}`, {
+        duration: 3000,
+        position: 'top-center',
+        style: {
+          background: '#dc2626',
+          color: '#fff',
+        },
+      });
+      return;
+    }
+
+    if (foundPart.status === 'packed') {
+      // Already packed - yellow toast
+      toast(`⚠️ Uwaga: produkt ${foundPart.sap_index} został już spakowany. Sprawdź poprawność`, {
+        duration: 5000,
+        position: 'top-center',
+        icon: '⚠️',
+        style: {
+          background: '#eab308',
+          color: '#000',
+        },
+      });
+      return;
+    }
+
+    // Found pending part - open modal
+    setSelectedPart(foundPart);
+    setModalStep(1);
+    setIsModalOpen(true);
+  };
+
+  // Handle scanner Enter key
+  const onScannerKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleScannerInput(scanBuffer);
+      setScanBuffer('');
+    }
+  };
+
+  // Re-focus scanner input when modal closes
+  useEffect(() => {
+    if (!isModalOpen && scannerInputRef.current) {
+      scannerInputRef.current.focus();
+    }
+  }, [isModalOpen]);
+
+  // Handle confirmation (rescan, Enter, or click)
+  const handleConfirmPart = async () => {
+    if (!selectedPart) return;
+
+    // Check if weight or photos are required
+    const needsWeight = shipment?.require_weight;
+    const needsPhotos = shipment?.require_photos;
+
+    // For now, just pack the part (we'll add weight/photo steps later)
+    if (!needsWeight && !needsPhotos) {
+      // Pack immediately
+      await handlePackPart(selectedPart);
+      setIsModalOpen(false);
+      setSelectedPart(null);
+      setModalStep(1);
+    } else {
+      // Move to next step (weight or photo)
+      if (needsWeight) {
+        setModalStep(2); // Weight step
+      } else if (needsPhotos) {
+        setModalStep(3); // Photo step
+      }
+    }
+  };
+
+  // Handle modal close
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedPart(null);
+    setModalStep(1);
+    setScanBuffer('');
+  };
+
   const pendingParts = parts.filter(p => p.status === 'pending');
   const packedParts = parts.filter(p => p.status === 'packed');
   const progress = parts.length > 0 ? (packedParts.length / parts.length) * 100 : 0;
@@ -233,6 +336,22 @@ const PackingScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full h-full bg-bg-primary">
+      {/* Hidden scanner input */}
+      <input
+        ref={scannerInputRef}
+        type="text"
+        value={scanBuffer}
+        onChange={(e) => setScanBuffer(e.target.value)}
+        onKeyPress={onScannerKeyPress}
+        autoFocus
+        style={{
+          position: 'absolute',
+          left: '-9999px',
+          width: '1px',
+          height: '1px',
+        }}
+      />
+
       {/* Toast notifications */}
       <Toaster
         toastOptions={{
@@ -249,6 +368,138 @@ const PackingScreen: React.FC = () => {
           },
         }}
       />
+
+      {/* Scan Confirmation Modal */}
+      {isModalOpen && selectedPart && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 animate-fade-in"
+          onClick={handleCloseModal}
+        >
+          <div
+            className="bg-bg-secondary rounded-2xl p-8 max-w-2xl w-full mx-4 animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Breadcrumb */}
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <div className={`flex items-center gap-2 ${modalStep >= 1 ? 'text-accent-success' : 'text-text-tertiary'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${modalStep >= 1 ? 'bg-accent-success' : 'bg-bg-tertiary'}`}>
+                  <span className="text-white font-bold">1</span>
+                </div>
+                <span className="text-sm font-semibold">Potwierdzenie</span>
+              </div>
+
+              {shipment?.require_weight && (
+                <>
+                  <div className="w-8 h-0.5 bg-bg-tertiary"></div>
+                  <div className={`flex items-center gap-2 ${modalStep >= 2 ? 'text-accent-success' : 'text-text-tertiary'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${modalStep >= 2 ? 'bg-accent-success' : 'bg-bg-tertiary'}`}>
+                      <span className="text-white font-bold">2</span>
+                    </div>
+                    <span className="text-sm font-semibold">Waga</span>
+                  </div>
+                </>
+              )}
+
+              {shipment?.require_photos && (
+                <>
+                  <div className="w-8 h-0.5 bg-bg-tertiary"></div>
+                  <div className={`flex items-center gap-2 ${modalStep >= 3 ? 'text-accent-success' : 'text-text-tertiary'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${modalStep >= 3 ? 'bg-accent-success' : 'bg-bg-tertiary'}`}>
+                      <span className="text-white font-bold">3</span>
+                    </div>
+                    <span className="text-sm font-semibold">Zdjęcie</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Step 1: Confirmation */}
+            {modalStep === 1 && (
+              <div className="text-center">
+                <h2 className="text-text-secondary text-lg mb-4">Odnaleziono produkt:</h2>
+
+                {/* SAP Index - DUŻY */}
+                <div className="text-accent-primary font-bold text-6xl mb-4 tracking-wide">
+                  {selectedPart.sap_index}
+                </div>
+
+                {/* Description - mały */}
+                <p className="text-text-secondary text-xl mb-8">
+                  {selectedPart.description}
+                </p>
+
+                {/* Quantity - DUŻY */}
+                <div className="flex items-center justify-center gap-3 mb-8">
+                  <span className="text-text-primary font-bold text-5xl">
+                    {selectedPart.quantity}
+                  </span>
+                  <span className="text-text-secondary text-3xl">
+                    {selectedPart.unit}
+                  </span>
+                </div>
+
+                {/* Confirmation instructions */}
+                <div className="bg-bg-tertiary rounded-lg p-6 mb-6">
+                  <p className="text-text-secondary text-lg mb-4">Potwierdź ilość:</p>
+                  <div className="flex items-center justify-center gap-6 text-sm text-text-tertiary">
+                    <span>📱 Zeskanuj ponownie</span>
+                    <span>•</span>
+                    <span>⌨️ Naciśnij Enter</span>
+                    <span>•</span>
+                    <span>🖱️ Kliknij przycisk</span>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleCloseModal}
+                    className="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
+                  >
+                    Anuluj
+                  </button>
+                  <button
+                    onClick={handleConfirmPart}
+                    onKeyPress={(e) => e.key === 'Enter' && handleConfirmPart()}
+                    className="flex-1 px-6 py-4 gradient-primary text-white rounded-lg hover:opacity-90 transition-all text-lg font-semibold"
+                    autoFocus
+                  >
+                    ✓ Potwierdź
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Weight (placeholder for now) */}
+            {modalStep === 2 && (
+              <div className="text-center">
+                <h2 className="text-text-primary text-2xl mb-4">Ważenie (wkrótce)</h2>
+                <p className="text-text-secondary mb-6">Funkcja wagi będzie dostępna w następnej wersji</p>
+                <button
+                  onClick={handleCloseModal}
+                  className="px-6 py-3 gradient-primary text-white rounded-lg"
+                >
+                  Zamknij
+                </button>
+              </div>
+            )}
+
+            {/* Step 3: Photo (placeholder for now) */}
+            {modalStep === 3 && (
+              <div className="text-center">
+                <h2 className="text-text-primary text-2xl mb-4">Zdjęcie (wkrótce)</h2>
+                <p className="text-text-secondary mb-6">Funkcja zdjęć będzie dostępna w następnej wersji</p>
+                <button
+                  onClick={handleCloseModal}
+                  className="px-6 py-3 gradient-primary text-white rounded-lg"
+                >
+                  Zamknij
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Confetti */}
       {showConfetti && (
