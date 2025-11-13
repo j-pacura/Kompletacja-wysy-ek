@@ -375,15 +375,31 @@ function setupIPCHandlers() {
   // Photo operations
   ipcMain.handle(IPC_CHANNELS.DB_SAVE_PHOTO, async (_event, partId: number, imageData: string) => {
     try {
+      // Get part data to retrieve SAP index
+      const part = queryOne<any>(
+        `SELECT sap_index FROM parts WHERE id = ?`,
+        [partId]
+      );
+
+      if (!part) {
+        return { success: false, error: 'Part not found' };
+      }
+
       // Create photos directory if it doesn't exist
       const photosDir = path.join(app.getPath('userData'), 'photos');
       if (!fs.existsSync(photosDir)) {
         fs.mkdirSync(photosDir, { recursive: true });
       }
 
-      // Generate filename: part_[partId]_[timestamp].jpg
+      // Sanitize SAP index for filename (remove/replace unsafe characters)
+      const safeSapIndex = part.sap_index
+        .replace(/[<>:"/\\|?*]/g, '_')  // Replace unsafe chars with underscore
+        .replace(/\s+/g, '_')             // Replace spaces with underscore
+        .trim();
+
+      // Generate filename: SAP_[sapIndex]_[timestamp].jpg
       const timestamp = Date.now();
-      const filename = `part_${partId}_${timestamp}.jpg`;
+      const filename = `SAP_${safeSapIndex}_${timestamp}.jpg`;
       const photoPath = path.join(photosDir, filename);
 
       // Remove data URL prefix (data:image/jpeg;base64,)

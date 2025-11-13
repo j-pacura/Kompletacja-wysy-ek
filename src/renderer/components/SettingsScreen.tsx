@@ -441,7 +441,7 @@ const SettingsScreen: React.FC = () => {
                 <ul className="text-text-secondary text-sm space-y-1">
                   <li>• Format: JPEG (jakość 90%)</li>
                   <li>• Rozdzielczość: 1280x720</li>
-                  <li>• Nazwa pliku: part_[ID]_[timestamp].jpg</li>
+                  <li>• Nazwa pliku: SAP_[indeks]_[timestamp].jpg</li>
                   <li>• Można przeglądać zdjęcia klikając ikonę 📷 przy spakowanych produktach</li>
                 </ul>
               </div>
