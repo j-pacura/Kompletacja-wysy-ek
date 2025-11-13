@@ -139,6 +139,22 @@ function runMigrations(): void {
     console.error('Migration error:', error);
   }
 
+  // Migration 5: Add report_language setting
+  try {
+    const settingExists = db.exec("SELECT value FROM settings WHERE key = 'report_language'");
+
+    if (!settingExists || settingExists.length === 0 || settingExists[0]?.values.length === 0) {
+      console.log('Adding report_language setting');
+      db.run("INSERT OR IGNORE INTO settings (key, value) VALUES ('report_language', 'pl')");
+      saveDatabase();
+      console.log('Migration completed: added report_language setting');
+    } else {
+      console.log('report_language setting already exists');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
   console.log('Migrations complete');
 }
 

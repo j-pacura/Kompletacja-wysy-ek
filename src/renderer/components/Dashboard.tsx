@@ -30,6 +30,12 @@ const Dashboard: React.FC = () => {
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; shipment: Shipment | null }>({ open: false, shipment: null });
   const [deletePassword, setDeletePassword] = useState('');
 
+  // Welcome modal state
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [welcomeName, setWelcomeName] = useState('');
+  const [welcomeSurname, setWelcomeSurname] = useState('');
+  const [reportLanguage, setReportLanguage] = useState('pl');
+
   useEffect(() => {
     loadShipments();
     loadUserData();
@@ -41,8 +47,18 @@ const Dashboard: React.FC = () => {
       const result = await ipcRenderer.invoke('db:get-settings');
 
       if (result.success) {
-        setUserName(result.data.user_name || '');
-        setUserSurname(result.data.user_surname || '');
+        const name = result.data.user_name || '';
+        const surname = result.data.user_surname || '';
+        const language = result.data.report_language || 'pl';
+
+        setUserName(name);
+        setUserSurname(surname);
+        setReportLanguage(language);
+
+        // Show welcome modal if user hasn't set their name yet
+        if (!name && !surname) {
+          setShowWelcomeModal(true);
+        }
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -131,6 +147,32 @@ const Dashboard: React.FC = () => {
     } catch (error) {
       console.error('Error deleting shipment:', error);
       alert('❌ Błąd usuwania wysyłki');
+    }
+  };
+
+  const handleWelcomeSubmit = async () => {
+    if (!welcomeName.trim() && !welcomeSurname.trim()) {
+      alert('⚠️ Proszę podać przynajmniej imię lub nazwisko');
+      return;
+    }
+
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      // Save all three settings
+      await ipcRenderer.invoke('db:update-setting', 'user_name', welcomeName.trim());
+      await ipcRenderer.invoke('db:update-setting', 'user_surname', welcomeSurname.trim());
+      await ipcRenderer.invoke('db:update-setting', 'report_language', reportLanguage);
+
+      // Update local state
+      setUserName(welcomeName.trim());
+      setUserSurname(welcomeSurname.trim());
+
+      // Close modal
+      setShowWelcomeModal(false);
+    } catch (error) {
+      console.error('Error saving welcome data:', error);
+      alert('❌ Błąd zapisywania danych');
     }
   };
 
@@ -383,6 +425,89 @@ const Dashboard: React.FC = () => {
                 Usuń
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Welcome modal */}
+      {showWelcomeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-bg-secondary rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl animate-scale-in">
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-bold text-text-primary mb-2">
+                👋 Witaj!
+              </h2>
+              <p className="text-text-secondary">
+                Zanim zaczniesz, przedstaw się i wybierz język raportów
+              </p>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-text-primary font-medium mb-2">
+                  Imię
+                </label>
+                <input
+                  type="text"
+                  value={welcomeName}
+                  onChange={(e) => setWelcomeName(e.target.value)}
+                  placeholder="Wpisz swoje imię..."
+                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-text-primary font-medium mb-2">
+                  Nazwisko
+                </label>
+                <input
+                  type="text"
+                  value={welcomeSurname}
+                  onChange={(e) => setWelcomeSurname(e.target.value)}
+                  placeholder="Wpisz swoje nazwisko..."
+                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-text-primary font-medium mb-2">
+                  Język raportów
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setReportLanguage('pl')}
+                    className={`flex-1 px-4 py-3 rounded-lg transition-all font-medium ${
+                      reportLanguage === 'pl'
+                        ? 'bg-accent-primary text-white'
+                        : 'bg-bg-tertiary text-text-secondary hover:bg-opacity-80'
+                    }`}
+                  >
+                    🇵🇱 Polski
+                  </button>
+                  <button
+                    onClick={() => setReportLanguage('en')}
+                    className={`flex-1 px-4 py-3 rounded-lg transition-all font-medium ${
+                      reportLanguage === 'en'
+                        ? 'bg-accent-primary text-white'
+                        : 'bg-bg-tertiary text-text-secondary hover:bg-opacity-80'
+                    }`}
+                  >
+                    🇬🇧 English
+                  </button>
+                </div>
+                <p className="text-text-tertiary text-sm mt-2">
+                  ℹ️ Dotyczy tylko nagłówków raportów, nie danych z Excela
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleWelcomeSubmit}
+              className="w-full px-4 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold"
+            >
+              Rozpocznij pracę
+            </button>
           </div>
         </div>
       )}

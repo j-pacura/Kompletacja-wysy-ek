@@ -131,6 +131,7 @@ INSERT OR IGNORE INTO settings (key, value) VALUES ('voice_language', 'pl-PL');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('sound_volume', '70');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('user_name', '');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('user_surname', '');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('report_language', 'pl');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('theme', 'dark');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('color_scheme', 'default');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('animations_enabled', 'true');
