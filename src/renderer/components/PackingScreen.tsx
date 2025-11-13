@@ -17,10 +17,12 @@ import {
 } from 'lucide-react';
 import { Shipment } from '../types/shipment';
 import { Part } from '../types/part';
+import { useAudio } from '../hooks/useAudio';
 
 const PackingScreen: React.FC = () => {
   const { shipmentId } = useParams<{ shipmentId: string }>();
   const navigate = useNavigate();
+  const { playScanned, playPacked, playError, playCompleted, playProgress } = useAudio();
 
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [parts, setParts] = useState<Part[]>([]);
@@ -148,6 +150,9 @@ const PackingScreen: React.FC = () => {
           )
         );
 
+        // Play packed sound and voice
+        playPacked(part.sap_index);
+
         // Show success toast
         toast.success(`✅ Spakowano ${part.sap_index}`, {
           duration: 3000,
@@ -160,10 +165,18 @@ const PackingScreen: React.FC = () => {
           // Show confetti!
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 5000); // Hide after 5 seconds
+          playCompleted();
           toast.success('🎉 Wszystkie części spakowane!', {
             duration: 5000,
             position: 'top-center',
           });
+        } else {
+          // Check if we should announce progress (every 5 parts)
+          const packedCount = parts.filter(p => p.status === 'packed').length + 1; // +1 for current part
+
+          if (packedCount % 5 === 0 && remainingParts.length > 0) {
+            playProgress(remainingParts.length);
+          }
         }
       } else {
         console.error('Failed to update part:', result.error);
@@ -194,6 +207,9 @@ const PackingScreen: React.FC = () => {
           )
         );
 
+        // Play packed sound and voice
+        playPacked(part.sap_index);
+
         // Show success toast
         toast.success(`✅ Spakowano ${part.sap_index}`, {
           duration: 3000,
@@ -206,10 +222,18 @@ const PackingScreen: React.FC = () => {
           // Show confetti!
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 5000); // Hide after 5 seconds
+          playCompleted();
           toast.success('🎉 Wszystkie części spakowane!', {
             duration: 5000,
             position: 'top-center',
           });
+        } else {
+          // Check if we should announce progress (every 5 parts)
+          const packedCount = parts.filter(p => p.status === 'packed').length + 1; // +1 for current part
+
+          if (packedCount % 5 === 0 && remainingParts.length > 0) {
+            playProgress(remainingParts.length);
+          }
         }
       } else {
         console.error('Failed to update part:', result.error);
@@ -270,6 +294,9 @@ const PackingScreen: React.FC = () => {
 
     if (!trimmedCode) return;
 
+    // Play scan beep
+    playScanned();
+
     // If modal is open and we scan the same part, confirm it
     if (isModalOpen && selectedPart && selectedPart.sap_index.toUpperCase() === trimmedCode) {
       handleConfirmPart();
@@ -280,7 +307,8 @@ const PackingScreen: React.FC = () => {
     const foundPart = parts.find(p => p.sap_index.toUpperCase() === trimmedCode);
 
     if (!foundPart) {
-      // Not found - red toast
+      // Not found - red toast + error sound/voice
+      playError(`Produkt nie odnaleziony: ${trimmedCode}`);
       toast.error(`❌ Produkt nie odnaleziony: ${trimmedCode}`, {
         duration: 3000,
         position: 'top-center',

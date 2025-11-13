@@ -75,6 +75,22 @@ function runMigrations(): void {
     console.error('Migration error:', error);
   }
 
+  // Migration 3: Add sound_volume setting
+  try {
+    const settingExists = db.exec("SELECT value FROM settings WHERE key = 'sound_volume'");
+
+    if (!settingExists || settingExists.length === 0 || settingExists[0]?.values.length === 0) {
+      console.log('Adding sound_volume setting');
+      db.run("INSERT OR IGNORE INTO settings (key, value) VALUES ('sound_volume', '70')");
+      saveDatabase();
+      console.log('Migration completed: added sound_volume setting');
+    } else {
+      console.log('sound_volume setting already exists');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
   console.log('Migrations complete');
 }
 

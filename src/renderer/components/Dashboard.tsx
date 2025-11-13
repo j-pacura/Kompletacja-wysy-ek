@@ -20,10 +20,27 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'in_progress' | 'completed'>('all');
+  const [userName, setUserName] = useState('');
+  const [userSurname, setUserSurname] = useState('');
 
   useEffect(() => {
     loadShipments();
+    loadUserData();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('db:get-settings');
+
+      if (result.success) {
+        setUserName(result.data.user_name || '');
+        setUserSurname(result.data.user_surname || '');
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
 
   const loadShipments = async () => {
     try {
@@ -86,6 +103,11 @@ const Dashboard: React.FC = () => {
             <p className="text-text-secondary">
               Zarządzaj wysyłkami i śledź postęp pakowania
             </p>
+            {(userName || userSurname) && (
+              <p className="text-accent-primary text-sm mt-1 font-semibold">
+                👤 {userName} {userSurname}
+              </p>
+            )}
           </div>
           <div className="flex gap-3">
             <button

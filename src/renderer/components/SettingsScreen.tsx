@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
-import { ArrowLeft, Save, RefreshCw, FolderOpen, Sun, Moon, Palette } from 'lucide-react';
+import { ArrowLeft, Save, RefreshCw, FolderOpen, Sun, Moon, Palette, Volume2, VolumeX, User } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 const SettingsScreen: React.FC = () => {
@@ -14,6 +14,16 @@ const SettingsScreen: React.FC = () => {
   const [baudRate, setBaudRate] = useState<string>('9600');
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
+
+  // Audio settings
+  const [soundEffectsEnabled, setSoundEffectsEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [soundVolume, setSoundVolume] = useState(70);
+  const [voiceVolume, setVoiceVolume] = useState(80);
+
+  // Personalization settings
+  const [userName, setUserName] = useState('');
+  const [userSurname, setUserSurname] = useState('');
 
   useEffect(() => {
     loadSettings();
@@ -29,6 +39,12 @@ const SettingsScreen: React.FC = () => {
         const settings = result.data;
         setSelectedPort(settings.scale_com_port || '');
         setBaudRate(settings.scale_baud_rate || '9600');
+        setSoundEffectsEnabled(settings.sound_effects_enabled === 'true');
+        setVoiceEnabled(settings.enable_voice === 'true');
+        setSoundVolume(parseInt(settings.sound_volume || '70'));
+        setVoiceVolume(parseInt(settings.voice_volume || '80'));
+        setUserName(settings.user_name || '');
+        setUserSurname(settings.user_surname || '');
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -112,6 +128,17 @@ const SettingsScreen: React.FC = () => {
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('❌ Błąd zapisu ustawień');
+    }
+  };
+
+  const handleAudioSettingChange = async (key: string, value: string) => {
+    try {
+      const { ipcRenderer } = window.require('electron');
+      await ipcRenderer.invoke('db:update-setting', key, value);
+      toast.success('Ustawienie zapisane', { duration: 1500 });
+    } catch (error) {
+      console.error('Error saving audio setting:', error);
+      toast.error('Błąd zapisu ustawienia');
     }
   };
 
@@ -317,6 +344,176 @@ const SettingsScreen: React.FC = () => {
               <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4">
                 <p className="text-text-secondary text-sm">
                   💡 Zmiany motywu są zapisywane automatycznie i obowiązują natychmiast
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Personalization Settings */}
+          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
+            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+              <User className="w-6 h-6" />
+              Personalizacja
+            </h2>
+
+            <div className="space-y-4">
+              {/* Name Input */}
+              <div>
+                <label className="block text-text-secondary text-sm mb-2">
+                  Imię
+                </label>
+                <input
+                  type="text"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  onBlur={() => handleAudioSettingChange('user_name', userName)}
+                  placeholder="Np. Jan"
+                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* Surname Input */}
+              <div>
+                <label className="block text-text-secondary text-sm mb-2">
+                  Nazwisko
+                </label>
+                <input
+                  type="text"
+                  value={userSurname}
+                  onChange={(e) => setUserSurname(e.target.value)}
+                  onBlur={() => handleAudioSettingChange('user_surname', userSurname)}
+                  placeholder="Np. Kowalski"
+                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* Preview */}
+              {(userName || userSurname) && (
+                <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4">
+                  <p className="text-text-secondary text-sm">
+                    👤 <strong>Podgląd:</strong> {userName} {userSurname}
+                  </p>
+                  <p className="text-text-tertiary text-xs mt-1">
+                    Dane będą wyświetlane w raportach i nagłówku aplikacji
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Audio Settings */}
+          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
+            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+              <Volume2 className="w-6 h-6" />
+              Dźwięk i głos
+            </h2>
+
+            <div className="space-y-6">
+              {/* Sound Effects Toggle */}
+              <div>
+                <label className="flex items-center justify-between mb-2">
+                  <span className="text-text-secondary text-sm">Efekty dźwiękowe (beep, sukces, błąd)</span>
+                  <button
+                    onClick={() => {
+                      const newValue = !soundEffectsEnabled;
+                      setSoundEffectsEnabled(newValue);
+                      handleAudioSettingChange('sound_effects_enabled', newValue.toString());
+                    }}
+                    className={`relative w-14 h-7 rounded-full transition-colors ${
+                      soundEffectsEnabled ? 'bg-accent-primary' : 'bg-bg-tertiary'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${
+                        soundEffectsEnabled ? 'transform translate-x-7' : ''
+                      }`}
+                    />
+                  </button>
+                </label>
+
+                {/* Sound Volume Slider */}
+                {soundEffectsEnabled && (
+                  <div className="mt-3">
+                    <div className="flex items-center gap-4">
+                      <VolumeX className="w-5 h-5 text-text-tertiary" />
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={soundVolume}
+                        onChange={(e) => {
+                          const newVolume = parseInt(e.target.value);
+                          setSoundVolume(newVolume);
+                          handleAudioSettingChange('sound_volume', newVolume.toString());
+                        }}
+                        className="flex-1 h-2 bg-bg-tertiary rounded-lg appearance-none cursor-pointer
+                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                          [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-primary
+                          [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                          [&::-moz-range-thumb]:bg-accent-primary [&::-moz-range-thumb]:border-0"
+                      />
+                      <Volume2 className="w-5 h-5 text-text-secondary" />
+                      <span className="text-text-secondary font-semibold w-12 text-right">{soundVolume}%</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Voice Toggle */}
+              <div>
+                <label className="flex items-center justify-between mb-2">
+                  <span className="text-text-secondary text-sm">Potwierdzenia głosowe (synteza mowy)</span>
+                  <button
+                    onClick={() => {
+                      const newValue = !voiceEnabled;
+                      setVoiceEnabled(newValue);
+                      handleAudioSettingChange('enable_voice', newValue.toString());
+                    }}
+                    className={`relative w-14 h-7 rounded-full transition-colors ${
+                      voiceEnabled ? 'bg-accent-primary' : 'bg-bg-tertiary'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${
+                        voiceEnabled ? 'transform translate-x-7' : ''
+                      }`}
+                    />
+                  </button>
+                </label>
+
+                {/* Voice Volume Slider */}
+                {voiceEnabled && (
+                  <div className="mt-3">
+                    <div className="flex items-center gap-4">
+                      <VolumeX className="w-5 h-5 text-text-tertiary" />
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={voiceVolume}
+                        onChange={(e) => {
+                          const newVolume = parseInt(e.target.value);
+                          setVoiceVolume(newVolume);
+                          handleAudioSettingChange('voice_volume', newVolume.toString());
+                        }}
+                        className="flex-1 h-2 bg-bg-tertiary rounded-lg appearance-none cursor-pointer
+                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                          [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-primary
+                          [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                          [&::-moz-range-thumb]:bg-accent-primary [&::-moz-range-thumb]:border-0"
+                      />
+                      <Volume2 className="w-5 h-5 text-text-secondary" />
+                      <span className="text-text-secondary font-semibold w-12 text-right">{voiceVolume}%</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Info */}
+              <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4">
+                <p className="text-text-secondary text-sm">
+                  🔊 <strong>Efekty dźwiękowe:</strong> Beep przy skanowaniu, dźwięki sukcesu/błędu<br/>
+                  🗣️ <strong>Głos:</strong> "Spakowano część ABC123", "Pozostało X części" (co 5 pozycji)
                 </p>
               </div>
             </div>
