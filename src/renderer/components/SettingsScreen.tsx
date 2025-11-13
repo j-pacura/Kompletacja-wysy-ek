@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import { ArrowLeft, Save, RefreshCw } from 'lucide-react';
 
 const SettingsScreen: React.FC = () => {
@@ -126,6 +126,23 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col w-screen h-screen bg-bg-primary">
+      {/* Toast notifications */}
+      <Toaster
+        toastOptions={{
+          style: {
+            background: '#1e1e1e',
+            color: '#fff',
+            border: '1px solid #333',
+          },
+          success: {
+            iconTheme: {
+              primary: '#1db954',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+
       {/* Header */}
       <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
         <div className="flex items-center justify-between">
