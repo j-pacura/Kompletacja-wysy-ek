@@ -39,6 +39,8 @@ const PackingScreen: React.FC = () => {
   const [weightReading, setWeightReading] = useState<number>(0); // kg from scale
   const [weightQuantity, setWeightQuantity] = useState<number>(1); // pieces being weighed
   const [customQuantity, setCustomQuantity] = useState<string>(''); // for custom input
+  const [scaleConnected, setScaleConnected] = useState<boolean>(false);
+  const [scaleStable, setScaleStable] = useState<boolean>(false);
 
   useEffect(() => {
     if (shipmentId) {
@@ -201,14 +203,17 @@ const PackingScreen: React.FC = () => {
   };
 
   const handleUnpackPart = async (part: Part) => {
+    console.log('Unpacking part:', part.sap_index);
     try {
       const { ipcRenderer } = window.require('electron');
 
-      // Update part status back to 'pending'
+      // Update part status back to 'pending' (use null instead of undefined for IPC)
       const result = await ipcRenderer.invoke('db:update-part', part.id, {
         status: 'pending',
-        packed_at: undefined
+        packed_at: null
       });
+
+      console.log('Unpack result:', result);
 
       if (result.success) {
         // Update local state
@@ -228,9 +233,17 @@ const PackingScreen: React.FC = () => {
         });
       } else {
         console.error('Failed to unpack part:', result.error);
+        toast.error(`❌ Błąd cofania: ${result.error}`, {
+          duration: 3000,
+          position: 'top-right',
+        });
       }
     } catch (error) {
       console.error('Error unpacking part:', error);
+      toast.error(`❌ Błąd cofania pakowania`, {
+        duration: 3000,
+        position: 'top-right',
+      });
     }
   };
 
@@ -310,6 +323,68 @@ const PackingScreen: React.FC = () => {
     }
   }, [isModalOpen]);
 
+  // Poll scale readings when on weight step
+  useEffect(() => {
+    if (modalStep !== 2 || !isModalOpen) {
+      return;
+    }
+
+    // Try to read from scale every 500ms
+    const interval = setInterval(async () => {
+      try {
+        const { ipcRenderer } = window.require('electron');
+
+        // Get immediate reading from scale
+        const result = await ipcRenderer.invoke('scale:get-weight', true);
+
+        if (result.success && result.data) {
+          const reading = result.data;
+          setWeightReading(reading.value);
+          setScaleStable(reading.stable);
+          setScaleConnected(true);
+        } else {
+          // Scale not connected or error
+          setScaleConnected(false);
+        }
+      } catch (error) {
+        console.error('Error reading scale:', error);
+        setScaleConnected(false);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [modalStep, isModalOpen]);
+
+  // Check scale connection on load
+  useEffect(() => {
+    const checkScaleConnection = async () => {
+      try {
+        const { ipcRenderer } = window.require('electron');
+
+        // Load scale settings
+        const settingsResult = await ipcRenderer.invoke('db:get-settings');
+        if (settingsResult.success) {
+          const settings = settingsResult.data;
+          const comPort = settings.scale_com_port;
+          const baudRate = parseInt(settings.scale_baud_rate || '9600');
+
+          if (comPort) {
+            // Try to connect to scale
+            const connectResult = await ipcRenderer.invoke('scale:connect', comPort, baudRate);
+            if (connectResult.success) {
+              console.log('Scale connected:', comPort);
+              setScaleConnected(true);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking scale connection:', error);
+      }
+    };
+
+    checkScaleConnection();
+  }, []);
+
   // Handle confirmation (rescan, Enter, or click)
   const handleConfirmPart = async () => {
     if (!selectedPart) return;
@@ -344,16 +419,56 @@ const PackingScreen: React.FC = () => {
     if (!selectedPart) return;
 
     // Calculate weight per unit
-    // TODO: Save these values to database when we add weight columns
-    // const weightPerUnit = weightReading / weightQuantity;
-    // const weightTotal = weightReading;
+    const weightPerUnit = weightReading / weightQuantity;
+    const weightTotal = weightReading;
 
     console.log('Weight data:', {
       part: selectedPart.sap_index,
-      totalWeight: weightReading,
+      totalWeight: weightTotal,
       quantity: weightQuantity,
-      weightPerUnit: weightReading / weightQuantity
+      weightPerUnit: weightPerUnit
     });
+
+    // Save weight data to database
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      const result = await ipcRenderer.invoke('db:update-part', selectedPart.id, {
+        weight_total: weightTotal,
+        weight_per_unit: weightPerUnit,
+        weight_quantity: weightQuantity
+      });
+
+      if (!result.success) {
+        console.error('Failed to save weight data:', result.error);
+        toast.error(`❌ Błąd zapisu wagi: ${result.error}`, {
+          duration: 3000,
+          position: 'top-right',
+        });
+        return;
+      }
+
+      // Update local state with weight data
+      setParts(prevParts =>
+        prevParts.map(p =>
+          p.id === selectedPart.id
+            ? {
+                ...p,
+                weight_total: weightTotal,
+                weight_per_unit: weightPerUnit,
+                weight_quantity: weightQuantity
+              }
+            : p
+        )
+      );
+    } catch (error) {
+      console.error('Error saving weight data:', error);
+      toast.error(`❌ Błąd zapisu wagi`, {
+        duration: 3000,
+        position: 'top-right',
+      });
+      return;
+    }
 
     // Check if photos are required
     const needsPhotos = shipment?.require_photos;
@@ -375,6 +490,49 @@ const PackingScreen: React.FC = () => {
     setSelectedPart(null);
     setModalStep(1);
     setScanBuffer('');
+  };
+
+  // Scale control functions
+  const handleScaleZero = async () => {
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('scale:zero');
+
+      if (result.success) {
+        toast.success('⚖️ Waga wyzerowana', {
+          duration: 2000,
+          position: 'top-right',
+        });
+      } else {
+        toast.error('❌ Błąd zerowania wagi', {
+          duration: 2000,
+          position: 'top-right',
+        });
+      }
+    } catch (error) {
+      console.error('Error zeroing scale:', error);
+    }
+  };
+
+  const handleScaleTare = async () => {
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('scale:tare');
+
+      if (result.success) {
+        toast.success('⚖️ Tara ustawiona', {
+          duration: 2000,
+          position: 'top-right',
+        });
+      } else {
+        toast.error('❌ Błąd ustawiania tary', {
+          duration: 2000,
+          position: 'top-right',
+        });
+      }
+    } catch (error) {
+      console.error('Error taring scale:', error);
+    }
   };
 
   const pendingParts = parts.filter(p => p.status === 'pending');
@@ -596,34 +754,71 @@ const PackingScreen: React.FC = () => {
 
                 {/* Weight reading - DUŻY */}
                 <div className="bg-bg-tertiary rounded-2xl p-8 mb-6">
+                  {/* Scale connection status */}
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <div className={`w-2 h-2 rounded-full ${scaleConnected ? 'bg-accent-success' : 'bg-accent-warning'}`}></div>
+                    <p className="text-text-tertiary text-xs">
+                      {scaleConnected ? 'Waga podłączona' : 'Tryb symulacji'}
+                    </p>
+                    {scaleConnected && (
+                      <span className={`text-xs ${scaleStable ? 'text-accent-success' : 'text-accent-warning'}`}>
+                        {scaleStable ? '✓ Stabilna' : '⚠ Niestabilna'}
+                      </span>
+                    )}
+                  </div>
+
                   <p className="text-text-tertiary text-sm mb-2">Odczyt wagi:</p>
-                  <div className="text-accent-success font-bold text-7xl mb-2">
+                  <div className={`font-bold text-7xl mb-2 ${scaleStable ? 'text-accent-success' : 'text-accent-warning'}`}>
                     {weightReading.toFixed(3)}
                   </div>
-                  <p className="text-text-secondary text-2xl">kg</p>
+                  <p className="text-text-secondary text-2xl mb-4">kg</p>
 
-                  {/* Temporary: Simulate scale buttons for testing */}
-                  <div className="mt-4 flex gap-2 justify-center">
-                    <button
-                      onClick={() => setWeightReading(prev => prev + 0.1)}
-                      className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
-                    >
-                      +0.1kg
-                    </button>
-                    <button
-                      onClick={() => setWeightReading(prev => prev + 1)}
-                      className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
-                    >
-                      +1kg
-                    </button>
-                    <button
-                      onClick={() => setWeightReading(0)}
-                      className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
-                    >
-                      Reset
-                    </button>
+                  {/* Scale controls */}
+                  <div className="flex gap-2 justify-center mb-2">
+                    {scaleConnected ? (
+                      <>
+                        <button
+                          onClick={handleScaleZero}
+                          className="px-4 py-2 bg-bg-primary text-text-secondary rounded hover:bg-opacity-80 font-semibold"
+                        >
+                          ⚖️ Zero
+                        </button>
+                        <button
+                          onClick={handleScaleTare}
+                          className="px-4 py-2 bg-bg-primary text-text-secondary rounded hover:bg-opacity-80 font-semibold"
+                        >
+                          ⚖️ Tara
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {/* Simulator buttons when scale not connected */}
+                        <button
+                          onClick={() => setWeightReading(prev => prev + 0.1)}
+                          className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
+                        >
+                          +0.1kg
+                        </button>
+                        <button
+                          onClick={() => setWeightReading(prev => prev + 1)}
+                          className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
+                        >
+                          +1kg
+                        </button>
+                        <button
+                          onClick={() => setWeightReading(0)}
+                          className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
+                        >
+                          Reset
+                        </button>
+                      </>
+                    )}
                   </div>
-                  <p className="text-text-tertiary text-xs mt-2">(Tymczasowe przyciski - później waga Radwag)</p>
+                  {!scaleConnected && (
+                    <p className="text-text-tertiary text-xs mt-2">
+                      💡 Skonfiguruj wagę w ustawieniach aby włączyć automatyczne ważenie
+                    </p>
+                  )}
                 </div>
 
                 {/* Quantity selector */}
@@ -817,6 +1012,7 @@ const PackingScreen: React.FC = () => {
                 <BarChart3 className="w-5 h-5 text-text-secondary" />
               </button>
               <button
+                onClick={() => navigate('/settings')}
                 className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
                 title="Ustawienia"
               >
@@ -913,12 +1109,14 @@ const PackingScreen: React.FC = () => {
                 <CheckCircle2 className="w-5 h-5" />
                 SPAKOWANE ({filteredPackedParts.length})
               </h2>
+              <p className="text-text-tertiary text-sm mb-3 italic">💡 Kliknij produkt aby cofnąć pakowanie</p>
               <div className="space-y-2">
                 {filteredPackedParts.map((part) => (
                   <div
                     key={part.id}
                     onClick={() => handleUnpackPart(part)}
-                    className="bg-bg-tertiary bg-opacity-60 rounded-lg p-4 hover:bg-opacity-80 hover:scale-[1.01] transition-all cursor-pointer active:scale-[0.99]"
+                    className="bg-bg-tertiary bg-opacity-60 rounded-lg p-4 hover:bg-opacity-80 hover:scale-[1.02] hover:border-2 hover:border-accent-warning transition-all cursor-pointer active:scale-[0.98] border-2 border-transparent"
+                    title="Kliknij aby cofnąć pakowanie"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -935,7 +1133,7 @@ const PackingScreen: React.FC = () => {
                           <span>📦 {part.quantity} {part.unit}</span>
                         </div>
                       </div>
-                      <CheckCircle2 className="w-8 h-8 text-accent-success hover:text-accent-warning transition-colors" />
+                      <CheckCircle2 className="w-8 h-8 text-accent-success group-hover:text-accent-warning transition-colors" />
                     </div>
                   </div>
                 ))}

@@ -3,6 +3,7 @@ import * as path from 'path';
 import { initDatabase, closeDatabase, query, queryOne, execute } from './database';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import { selectExcelFile, parseExcelFile, openFolder } from './fileSystem';
+import * as Scale from './scale';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -297,6 +298,74 @@ function setupIPCHandlers() {
       return { success: true };
     } catch (error: any) {
       console.error('Open folder error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Scale operations
+  ipcMain.handle(IPC_CHANNELS.SCALE_LIST_PORTS, async () => {
+    try {
+      const ports = await Scale.listPorts();
+      return { success: true, data: ports };
+    } catch (error: any) {
+      console.error('List ports error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SCALE_CONNECT, async (_event, portPath: string, baudRate: number = 9600) => {
+    try {
+      const connected = await Scale.connect(portPath, baudRate);
+      return { success: connected, data: connected };
+    } catch (error: any) {
+      console.error('Scale connect error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SCALE_DISCONNECT, async () => {
+    try {
+      await Scale.disconnect();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Scale disconnect error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SCALE_GET_WEIGHT, async (_event, immediate: boolean = true) => {
+    try {
+      const reading = immediate ? await Scale.getImmediate() : await Scale.getStable();
+
+      if ('message' in reading) {
+        // Error
+        return { success: false, error: reading.message, code: reading.code };
+      }
+
+      // Valid reading
+      return { success: true, data: reading };
+    } catch (error: any) {
+      console.error('Scale get weight error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SCALE_ZERO, async () => {
+    try {
+      const result = await Scale.zero();
+      return { success: result };
+    } catch (error: any) {
+      console.error('Scale zero error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SCALE_TARE, async () => {
+    try {
+      const result = await Scale.tare();
+      return { success: result };
+    } catch (error: any) {
+      console.error('Scale tare error:', error);
       return { success: false, error: error.message };
     }
   });

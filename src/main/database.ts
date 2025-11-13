@@ -34,6 +34,35 @@ function saveDatabase(): void {
 }
 
 /**
+ * Run database migrations
+ */
+function runMigrations(): void {
+  if (!db) return;
+
+  console.log('Running database migrations...');
+
+  // Migration 1: Add weight_quantity column to parts table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(parts)");
+    const columns = tableInfo[0]?.values || [];
+    const hasWeightQuantity = columns.some((col: any) => col[1] === 'weight_quantity');
+
+    if (!hasWeightQuantity) {
+      console.log('Adding weight_quantity column to parts table');
+      db.run('ALTER TABLE parts ADD COLUMN weight_quantity REAL');
+      saveDatabase();
+      console.log('Migration completed: added weight_quantity column');
+    } else {
+      console.log('weight_quantity column already exists');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
+  console.log('Migrations complete');
+}
+
+/**
  * Initialize the database
  */
 export async function initDatabase(): Promise<SqlJsDatabase> {
@@ -93,6 +122,9 @@ export async function initDatabase(): Promise<SqlJsDatabase> {
     // Save the new database
     saveDatabase();
   }
+
+  // Run migrations for existing databases
+  runMigrations();
 
   console.log('Database initialized successfully');
 

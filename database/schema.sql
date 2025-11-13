@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS parts (
     -- Optional data
     weight_total REAL,
     weight_per_unit REAL,
+    weight_quantity REAL,
     country_of_origin TEXT,
 
     -- Excel metadata

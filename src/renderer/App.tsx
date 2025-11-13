@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import ShipmentCreator from './components/ShipmentCreator';
 import PackingScreen from './components/PackingScreen';
+import SettingsScreen from './components/SettingsScreen';
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +49,7 @@ const App: React.FC = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/create" element={<ShipmentCreator />} />
           <Route path="/packing/:shipmentId" element={<PackingScreen />} />
+          <Route path="/settings" element={<SettingsScreen />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
