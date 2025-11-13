@@ -22,6 +22,36 @@ export function getUserDataPath(): string {
 }
 
 /**
+ * Get the path to a shipment's folder
+ * Format: Wysyłka_nr_[shipmentNumber]_[destination]_[date]
+ */
+export function getShipmentFolderPath(shipmentNumber: string, destination: string, createdDate: string): string {
+  const userDataPath = app.getPath('userData');
+  const shipmentsDir = path.join(userDataPath, 'shipments');
+
+  // Sanitize folder name components
+  const safeShipmentNumber = shipmentNumber.replace(/[<>:"/\\|?*]/g, '_').trim();
+  const safeDestination = destination.replace(/[<>:"/\\|?*]/g, '_').trim();
+  const safeDate = createdDate.replace(/[<>:"/\\|?*]/g, '_').trim();
+
+  // Create folder name: Wysyłka_nr_xxxx_Lokalizacja_data
+  const folderName = `Wysyłka_nr_${safeShipmentNumber}_${safeDestination}_${safeDate}`;
+  const folderPath = path.join(shipmentsDir, folderName);
+
+  // Create shipments directory if it doesn't exist
+  if (!fs.existsSync(shipmentsDir)) {
+    fs.mkdirSync(shipmentsDir, { recursive: true });
+  }
+
+  // Create shipment folder if it doesn't exist
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath, { recursive: true });
+  }
+
+  return folderPath;
+}
+
+/**
  * Save database to disk
  */
 function saveDatabase(): void {

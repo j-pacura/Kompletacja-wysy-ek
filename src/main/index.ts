@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { initDatabase, closeDatabase, query, queryOne, execute } from './database';
+import { initDatabase, closeDatabase, query, queryOne, execute, getShipmentFolderPath } from './database';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import { selectExcelFile, parseExcelFile, openFolder } from './fileSystem';
 import * as Scale from './scale';
@@ -410,9 +410,13 @@ function setupIPCHandlers() {
   // Photo operations
   ipcMain.handle(IPC_CHANNELS.DB_SAVE_PHOTO, async (_event, partId: number, imageData: string) => {
     try {
-      // Get part data to retrieve SAP index and excel row number
+      // Get part data and shipment info
       const part = queryOne<any>(
-        `SELECT sap_index, excel_row_number FROM parts WHERE id = ?`,
+        `SELECT p.sap_index, p.excel_row_number, p.shipment_id,
+                s.shipment_number, s.destination, s.created_date
+         FROM parts p
+         INNER JOIN shipments s ON p.shipment_id = s.id
+         WHERE p.id = ?`,
         [partId]
       );
 
@@ -430,8 +434,15 @@ function setupIPCHandlers() {
       // Convert photo count to sequence letter (0 -> A, 1 -> B, 2 -> C, etc.)
       const sequenceLetter = String.fromCharCode(65 + photoCount); // 65 is ASCII for 'A'
 
-      // Create photos directory if it doesn't exist
-      const photosDir = path.join(app.getPath('userData'), 'photos');
+      // Get shipment folder path
+      const shipmentFolderPath = getShipmentFolderPath(
+        part.shipment_number,
+        part.destination,
+        part.created_date
+      );
+
+      // Create photos subdirectory inside shipment folder
+      const photosDir = path.join(shipmentFolderPath, 'photos');
       if (!fs.existsSync(photosDir)) {
         fs.mkdirSync(photosDir, { recursive: true });
       }

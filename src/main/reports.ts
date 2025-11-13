@@ -2,7 +2,7 @@ import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
 import { app } from 'electron';
-import { queryOne } from './database';
+import { queryOne, getShipmentFolderPath } from './database';
 
 /**
  * Get user full name from settings
@@ -149,16 +149,17 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
       row.font = { bold: true };
     }
 
+    // Get shipment folder path
+    const shipmentFolderPath = getShipmentFolderPath(
+      shipmentData.shipment_number,
+      shipmentData.destination,
+      shipmentData.created_date
+    );
+
     // Generate filename
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
     const fileName = `Raport_${shipmentData.shipment_number}_${timestamp}.xlsx`;
-    const outputPath = path.join(app.getPath('userData'), 'reports', fileName);
-
-    // Create reports directory if it doesn't exist
-    const reportsDir = path.dirname(outputPath);
-    if (!fs.existsSync(reportsDir)) {
-      fs.mkdirSync(reportsDir, { recursive: true });
-    }
+    const outputPath = path.join(shipmentFolderPath, fileName);
 
     // Save file
     await workbook.xlsx.writeFile(outputPath);
@@ -391,16 +392,17 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
 </html>
     `;
 
+    // Get shipment folder path
+    const shipmentFolderPath = getShipmentFolderPath(
+      shipmentData.shipment_number,
+      shipmentData.destination,
+      shipmentData.created_date
+    );
+
     // Generate filename
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
     const fileName = `Raport_${shipmentData.shipment_number}_${timestamp}.html`;
-    const outputPath = path.join(app.getPath('userData'), 'reports', fileName);
-
-    // Create reports directory if it doesn't exist
-    const reportsDir = path.dirname(outputPath);
-    if (!fs.existsSync(reportsDir)) {
-      fs.mkdirSync(reportsDir, { recursive: true });
-    }
+    const outputPath = path.join(shipmentFolderPath, fileName);
 
     // Save file
     fs.writeFileSync(outputPath, html, 'utf-8');
