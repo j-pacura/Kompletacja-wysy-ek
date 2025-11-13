@@ -282,7 +282,7 @@ const SettingsScreen: React.FC = () => {
                       <div className="w-4 h-4 rounded-full bg-blue-500"></div>
                       <div className="w-4 h-4 rounded-full bg-purple-500"></div>
                     </div>
-                    <span className={`font-semibold ${colorScheme === 'default' ? 'text-accent-primary' : 'text-text-secondary'}`}>
+                    <span className={`font-semibold ${colorScheme === 'default' ? 'text-text-primary' : 'text-text-secondary'}`}>
                       Domyślny
                     </span>
                   </button>
@@ -299,7 +299,7 @@ const SettingsScreen: React.FC = () => {
                       <div className="w-4 h-4 rounded-full bg-sky-500"></div>
                       <div className="w-4 h-4 rounded-full bg-cyan-500"></div>
                     </div>
-                    <span className={`font-semibold ${colorScheme === 'blue' ? 'text-accent-primary' : 'text-text-secondary'}`}>
+                    <span className={`font-semibold ${colorScheme === 'blue' ? 'text-text-primary' : 'text-text-secondary'}`}>
                       Niebieski
                     </span>
                   </button>
@@ -316,7 +316,7 @@ const SettingsScreen: React.FC = () => {
                       <div className="w-4 h-4 rounded-full bg-purple-500"></div>
                       <div className="w-4 h-4 rounded-full bg-pink-500"></div>
                     </div>
-                    <span className={`font-semibold ${colorScheme === 'purple' ? 'text-accent-primary' : 'text-text-secondary'}`}>
+                    <span className={`font-semibold ${colorScheme === 'purple' ? 'text-text-primary' : 'text-text-secondary'}`}>
                       Fioletowy
                     </span>
                   </button>
@@ -333,7 +333,7 @@ const SettingsScreen: React.FC = () => {
                       <div className="w-4 h-4 rounded-full bg-green-500"></div>
                       <div className="w-4 h-4 rounded-full bg-emerald-500"></div>
                     </div>
-                    <span className={`font-semibold ${colorScheme === 'green' ? 'text-accent-primary' : 'text-text-secondary'}`}>
+                    <span className={`font-semibold ${colorScheme === 'green' ? 'text-text-primary' : 'text-text-secondary'}`}>
                       Zielony (Spotify)
                     </span>
                   </button>

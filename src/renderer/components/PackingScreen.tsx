@@ -162,6 +162,19 @@ const PackingScreen: React.FC = () => {
         // Check if this was the last part
         const remainingParts = parts.filter(p => p.id !== part.id && p.status === 'pending');
         if (remainingParts.length === 0) {
+          // All parts packed - update shipment status to completed
+          if (shipment) {
+            const { ipcRenderer } = window.require('electron');
+            const updateResult = await ipcRenderer.invoke('db:update-shipment', shipment.id, {
+              status: 'completed',
+              completed_at: Date.now()
+            });
+
+            if (updateResult.success) {
+              setShipment({ ...shipment, status: 'completed', completed_at: Date.now() });
+            }
+          }
+
           // Show confetti!
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 5000); // Hide after 5 seconds
@@ -231,6 +244,19 @@ const PackingScreen: React.FC = () => {
         // Check if this was the last part
         const remainingParts = parts.filter(p => p.id !== part.id && p.status === 'pending');
         if (remainingParts.length === 0) {
+          // All parts packed - update shipment status to completed
+          if (shipment) {
+            const { ipcRenderer } = window.require('electron');
+            const updateResult = await ipcRenderer.invoke('db:update-shipment', shipment.id, {
+              status: 'completed',
+              completed_at: Date.now()
+            });
+
+            if (updateResult.success) {
+              setShipment({ ...shipment, status: 'completed', completed_at: Date.now() });
+            }
+          }
+
           // Show confetti!
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 5000); // Hide after 5 seconds

@@ -180,6 +180,18 @@ function setupIPCHandlers() {
     }
   });
 
+  // Delete shipment
+  ipcMain.handle(IPC_CHANNELS.DB_DELETE_SHIPMENT, async (_event, id: number) => {
+    try {
+      // Delete shipment (CASCADE will delete parts and photos automatically)
+      execute('DELETE FROM shipments WHERE id = ?', [id]);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Delete shipment error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   // Get parts for shipment
   ipcMain.handle(IPC_CHANNELS.DB_GET_PARTS, async (_event, shipmentId: number) => {
     try {

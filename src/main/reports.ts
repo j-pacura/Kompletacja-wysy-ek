@@ -2,11 +2,34 @@ import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
 import { app } from 'electron';
+import { queryOne } from './database';
+
+/**
+ * Get user full name from settings
+ */
+async function getUserFullName(): Promise<string> {
+  try {
+    const nameResult = queryOne<any>("SELECT value FROM settings WHERE key = 'user_name'", []);
+    const surnameResult = queryOne<any>("SELECT value FROM settings WHERE key = 'user_surname'", []);
+
+    const name = nameResult?.value || '';
+    const surname = surnameResult?.value || '';
+
+    if (name || surname) {
+      return `${name} ${surname}`.trim();
+    }
+    return 'N/A';
+  } catch (error) {
+    console.error('Error getting user name:', error);
+    return 'N/A';
+  }
+}
 
 /**
  * Export shipment report to Excel
  */
 export async function exportToExcel(_shipmentId: number, shipmentData: any, parts: any[]): Promise<string> {
+  const userFullName = await getUserFullName();
   try {
     // Create new workbook
     const workbook = new ExcelJS.Workbook();
@@ -31,7 +54,7 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
     worksheet.addRow(['Wysyłka:', shipmentData.shipment_number]);
     worksheet.addRow(['Kierunek:', shipmentData.destination]);
     worksheet.addRow(['Data utworzenia:', new Date(shipmentData.created_at).toLocaleString('pl-PL')]);
-    worksheet.addRow(['Pakował:', shipmentData.packed_by || 'N/A']);
+    worksheet.addRow(['Pakował:', userFullName]);
     worksheet.addRow(['Status:', shipmentData.status === 'completed' ? 'Ukończona' : 'W trakcie']);
     worksheet.addRow([]);
 
@@ -159,6 +182,7 @@ export async function exportToPDF(_shipmentId: number, _shipmentData: any, _part
  * Export shipment report to HTML
  */
 export async function exportToHTML(_shipmentId: number, shipmentData: any, parts: any[]): Promise<string> {
+  const userFullName = await getUserFullName();
   try {
     // Generate HTML content
     const html = `
@@ -301,7 +325,7 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
             </div>
             <div class="info-item">
                 <span class="info-label">Pakował:</span>
-                <span class="info-value">${shipmentData.packed_by || 'N/A'}</span>
+                <span class="info-value">${userFullName}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Status:</span>

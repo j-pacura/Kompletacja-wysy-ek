@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS shipments (
     -- Excel file reference
     excel_file_path TEXT,
 
+    -- Password protection (optional)
+    password TEXT,
+
     created_date TEXT NOT NULL
 );
 

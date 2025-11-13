@@ -8,6 +8,7 @@ export const IPC_CHANNELS = {
   DB_GET_SHIPMENT: 'db:get-shipment',
   DB_CREATE_SHIPMENT: 'db:create-shipment',
   DB_UPDATE_SHIPMENT: 'db:update-shipment',
+  DB_DELETE_SHIPMENT: 'db:delete-shipment',
   DB_GET_PARTS: 'db:get-parts',
   DB_UPDATE_PART: 'db:update-part',
   DB_SAVE_PHOTO: 'db:save-photo',
