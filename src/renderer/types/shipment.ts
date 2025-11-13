@@ -14,6 +14,7 @@ export interface Shipment {
   packed_by?: string;
   packing_time_seconds?: number;
   excel_file_path?: string;
+  password?: string;
   created_date: string;
 }
 
@@ -26,4 +27,5 @@ export interface CreateShipmentInput {
   require_photos: boolean;
   excel_file_path?: string;
   packed_by?: string;
+  password?: string;
 }

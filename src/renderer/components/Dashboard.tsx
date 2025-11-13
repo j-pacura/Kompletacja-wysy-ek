@@ -8,6 +8,9 @@ import {
   Clock,
   CheckCircle2,
   Pause,
+  Trash2,
+  Lock,
+  X,
 } from 'lucide-react';
 import { Shipment } from '../types/shipment';
 import { format } from 'date-fns';
@@ -22,6 +25,10 @@ const Dashboard: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'in_progress' | 'completed'>('all');
   const [userName, setUserName] = useState('');
   const [userSurname, setUserSurname] = useState('');
+
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; shipment: Shipment | null }>({ open: false, shipment: null });
+  const [deletePassword, setDeletePassword] = useState('');
 
   useEffect(() => {
     loadShipments();
@@ -90,6 +97,42 @@ const Dashboard: React.FC = () => {
 
     return matchesSearch && matchesStatus;
   });
+
+  const handleDeleteClick = (shipment: Shipment, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteModal({ open: true, shipment });
+    setDeletePassword('');
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteModal.shipment) return;
+
+    const shipment = deleteModal.shipment;
+
+    // Check password if shipment has one
+    if (shipment.password) {
+      if (deletePassword !== shipment.password) {
+        alert('❌ Nieprawidłowe hasło! Nie można usunąć wysyłki.');
+        return;
+      }
+    }
+
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('db:delete-shipment', shipment.id);
+
+      if (result.success) {
+        setShipments(shipments.filter(s => s.id !== shipment.id));
+        setDeleteModal({ open: false, shipment: null });
+        setDeletePassword('');
+      } else {
+        alert('❌ Błąd usuwania wysyłki');
+      }
+    } catch (error) {
+      console.error('Error deleting shipment:', error);
+      alert('❌ Błąd usuwania wysyłki');
+    }
+  };
 
   return (
     <div className="flex flex-col w-full h-full">
@@ -211,7 +254,7 @@ const Dashboard: React.FC = () => {
             {filteredShipments.map((shipment) => (
               <div
                 key={shipment.id}
-                className="bg-bg-tertiary rounded-xl p-6 card-hover cursor-pointer animate-slide-in"
+                className="relative group bg-bg-tertiary rounded-xl p-6 card-hover cursor-pointer animate-slide-in"
                 onClick={() => navigate(`/packing/${shipment.id}`)}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -244,6 +287,7 @@ const Dashboard: React.FC = () => {
                   {shipment.require_weight && <span>⚖️ Waga</span>}
                   {shipment.require_country && <span>🌍 Kraj</span>}
                   {shipment.require_photos && <span>📷 Zdjęcia</span>}
+                  {shipment.password && <span>🔒 Chroniona</span>}
                 </div>
 
                 {shipment.status === 'completed' && shipment.packing_time_seconds && (
@@ -254,11 +298,94 @@ const Dashboard: React.FC = () => {
                     </span>
                   </div>
                 )}
+
+                {/* Delete button */}
+                <button
+                  onClick={(e) => handleDeleteClick(shipment, e)}
+                  className="absolute top-4 right-4 p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                  title="Usuń wysyłkę"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteModal.open && deleteModal.shipment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-bg-secondary rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl animate-scale-in">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+                <Trash2 className="w-6 h-6 text-red-500" />
+                Usuń wysyłkę
+              </h2>
+              <button
+                onClick={() => {
+                  setDeleteModal({ open: false, shipment: null });
+                  setDeletePassword('');
+                }}
+                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-text-tertiary" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-text-secondary mb-4">
+                Czy na pewno chcesz usunąć wysyłkę{' '}
+                <span className="font-semibold text-text-primary">
+                  {deleteModal.shipment.shipment_number}
+                </span>
+                ?
+              </p>
+              <p className="text-text-tertiary text-sm">
+                ⚠️ Ta operacja jest nieodwracalna. Wszystkie dane, części i zdjęcia zostaną trwale usunięte.
+              </p>
+            </div>
+
+            {deleteModal.shipment.password && (
+              <div className="mb-6">
+                <label className="flex items-center gap-2 text-text-primary font-medium mb-2">
+                  <Lock className="w-5 h-5" />
+                  Hasło wysyłki
+                </label>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Wprowadź hasło aby usunąć..."
+                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                  autoFocus
+                />
+                <p className="text-text-tertiary text-sm mt-2">
+                  🔒 Ta wysyłka jest chroniona hasłem
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setDeleteModal({ open: false, shipment: null });
+                  setDeletePassword('');
+                }}
+                className="flex-1 px-4 py-3 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all font-medium"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all font-medium"
+              >
+                Usuń
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

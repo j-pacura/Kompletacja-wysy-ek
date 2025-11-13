@@ -91,6 +91,24 @@ function runMigrations(): void {
     console.error('Migration error:', error);
   }
 
+  // Migration 4: Add password column to shipments table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(shipments)");
+    const columns = tableInfo[0]?.values || [];
+    const hasPassword = columns.some((col: any) => col[1] === 'password');
+
+    if (!hasPassword) {
+      console.log('Adding password column to shipments table');
+      db.run('ALTER TABLE shipments ADD COLUMN password TEXT');
+      saveDatabase();
+      console.log('Migration completed: added password column');
+    } else {
+      console.log('password column already exists');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
   console.log('Migrations complete');
 }
 
