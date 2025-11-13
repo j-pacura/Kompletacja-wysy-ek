@@ -59,6 +59,22 @@ function runMigrations(): void {
     console.error('Migration error:', error);
   }
 
+  // Migration 2: Add color_scheme setting
+  try {
+    const settingExists = db.exec("SELECT value FROM settings WHERE key = 'color_scheme'");
+
+    if (!settingExists || settingExists.length === 0 || settingExists[0]?.values.length === 0) {
+      console.log('Adding color_scheme setting');
+      db.run("INSERT OR IGNORE INTO settings (key, value) VALUES ('color_scheme', 'default')");
+      saveDatabase();
+      console.log('Migration completed: added color_scheme setting');
+    } else {
+      console.log('color_scheme setting already exists');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
   console.log('Migrations complete');
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Dashboard from './components/Dashboard';
 import ShipmentCreator from './components/ShipmentCreator';
 import PackingScreen from './components/PackingScreen';
@@ -43,17 +44,19 @@ const App: React.FC = () => {
   }
 
   return (
-    <BrowserRouter>
-      <div className="w-screen h-screen bg-bg-primary overflow-hidden">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/create" element={<ShipmentCreator />} />
-          <Route path="/packing/:shipmentId" element={<PackingScreen />} />
-          <Route path="/settings" element={<SettingsScreen />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <div className="w-screen h-screen bg-bg-primary overflow-hidden">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/create" element={<ShipmentCreator />} />
+            <Route path="/packing/:shipmentId" element={<PackingScreen />} />
+            <Route path="/settings" element={<SettingsScreen />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 };
 

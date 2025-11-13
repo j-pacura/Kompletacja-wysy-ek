@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
-import { ArrowLeft, Save, RefreshCw, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Save, RefreshCw, FolderOpen, Sun, Moon, Palette } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const SettingsScreen: React.FC = () => {
   const navigate = useNavigate();
+  const { mode, colorScheme, setMode, setColorScheme } = useTheme();
 
   // Scale settings
   const [availablePorts, setAvailablePorts] = useState<string[]>([]);
@@ -196,6 +198,130 @@ const SettingsScreen: React.FC = () => {
       {/* Content */}
       <div className="flex-1 overflow-auto px-8 py-6">
         <div className="max-w-3xl mx-auto space-y-6">
+          {/* Theme Settings */}
+          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
+            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+              <Palette className="w-6 h-6" />
+              Motyw aplikacji
+            </h2>
+
+            <div className="space-y-4">
+              {/* Theme Mode Toggle */}
+              <div>
+                <label className="block text-text-secondary text-sm mb-2">
+                  Tryb wyświetlania
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setMode('dark')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-lg border-2 transition-all ${
+                      mode === 'dark'
+                        ? 'border-accent-primary bg-accent-primary bg-opacity-10 text-accent-primary'
+                        : 'border-bg-tertiary bg-bg-tertiary text-text-secondary hover:border-accent-primary hover:border-opacity-50'
+                    }`}
+                  >
+                    <Moon className="w-5 h-5" />
+                    <span className="font-semibold">Ciemny</span>
+                  </button>
+                  <button
+                    onClick={() => setMode('light')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-lg border-2 transition-all ${
+                      mode === 'light'
+                        ? 'border-accent-primary bg-accent-primary bg-opacity-10 text-accent-primary'
+                        : 'border-bg-tertiary bg-bg-tertiary text-text-secondary hover:border-accent-primary hover:border-opacity-50'
+                    }`}
+                  >
+                    <Sun className="w-5 h-5" />
+                    <span className="font-semibold">Jasny</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Color Scheme Selector */}
+              <div>
+                <label className="block text-text-secondary text-sm mb-2">
+                  Schemat kolorów
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setColorScheme('default')}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
+                      colorScheme === 'default'
+                        ? 'border-accent-primary bg-accent-primary bg-opacity-10'
+                        : 'border-bg-tertiary bg-bg-tertiary hover:border-accent-primary hover:border-opacity-50'
+                    }`}
+                  >
+                    <div className="flex gap-1">
+                      <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+                      <div className="w-4 h-4 rounded-full bg-purple-500"></div>
+                    </div>
+                    <span className={`font-semibold ${colorScheme === 'default' ? 'text-accent-primary' : 'text-text-secondary'}`}>
+                      Domyślny
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setColorScheme('blue')}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
+                      colorScheme === 'blue'
+                        ? 'border-accent-primary bg-accent-primary bg-opacity-10'
+                        : 'border-bg-tertiary bg-bg-tertiary hover:border-accent-primary hover:border-opacity-50'
+                    }`}
+                  >
+                    <div className="flex gap-1">
+                      <div className="w-4 h-4 rounded-full bg-sky-500"></div>
+                      <div className="w-4 h-4 rounded-full bg-cyan-500"></div>
+                    </div>
+                    <span className={`font-semibold ${colorScheme === 'blue' ? 'text-accent-primary' : 'text-text-secondary'}`}>
+                      Niebieski
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setColorScheme('purple')}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
+                      colorScheme === 'purple'
+                        ? 'border-accent-primary bg-accent-primary bg-opacity-10'
+                        : 'border-bg-tertiary bg-bg-tertiary hover:border-accent-primary hover:border-opacity-50'
+                    }`}
+                  >
+                    <div className="flex gap-1">
+                      <div className="w-4 h-4 rounded-full bg-purple-500"></div>
+                      <div className="w-4 h-4 rounded-full bg-pink-500"></div>
+                    </div>
+                    <span className={`font-semibold ${colorScheme === 'purple' ? 'text-accent-primary' : 'text-text-secondary'}`}>
+                      Fioletowy
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setColorScheme('green')}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
+                      colorScheme === 'green'
+                        ? 'border-accent-primary bg-accent-primary bg-opacity-10'
+                        : 'border-bg-tertiary bg-bg-tertiary hover:border-accent-primary hover:border-opacity-50'
+                    }`}
+                  >
+                    <div className="flex gap-1">
+                      <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                      <div className="w-4 h-4 rounded-full bg-emerald-500"></div>
+                    </div>
+                    <span className={`font-semibold ${colorScheme === 'green' ? 'text-accent-primary' : 'text-text-secondary'}`}>
+                      Zielony (Spotify)
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4">
+                <p className="text-text-secondary text-sm">
+                  💡 Zmiany motywu są zapisywane automatycznie i obowiązują natychmiast
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Scale Settings */}
           <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
             <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
@@ -320,16 +446,6 @@ const SettingsScreen: React.FC = () => {
                 </ul>
               </div>
             </div>
-          </div>
-
-          {/* Other Settings (placeholder for future) */}
-          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary opacity-50">
-            <h2 className="text-xl font-bold text-text-primary mb-4">
-              🔧 Inne ustawienia
-            </h2>
-            <p className="text-text-tertiary text-sm">
-              Dodatkowe ustawienia będą dostępne wkrótce...
-            </p>
           </div>
         </div>
       </div>

@@ -126,6 +126,7 @@ INSERT OR IGNORE INTO settings (key, value) VALUES ('enable_voice', 'true');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('voice_volume', '80');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('voice_language', 'pl-PL');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('theme', 'dark');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('color_scheme', 'default');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('animations_enabled', 'true');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('sound_effects_enabled', 'true');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('autosave_interval', '2');

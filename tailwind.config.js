@@ -7,20 +7,20 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Dark theme colors (Spotify-inspired)
-        'bg-primary': '#0a0e27',
-        'bg-secondary': '#1a1f3a',
-        'bg-tertiary': '#2a3150',
+        // Dynamic theme colors (CSS variables)
+        'bg-primary': 'var(--color-bg-primary, #0a0e27)',
+        'bg-secondary': 'var(--color-bg-secondary, #1a1f3a)',
+        'bg-tertiary': 'var(--color-bg-tertiary, #2a3150)',
 
-        'accent-primary': '#3b82f6',
-        'accent-secondary': '#8b5cf6',
-        'accent-success': '#10b981',
-        'accent-warning': '#f59e0b',
-        'accent-error': '#ef4444',
+        'accent-primary': 'var(--color-accent-primary, #3b82f6)',
+        'accent-secondary': 'var(--color-accent-secondary, #8b5cf6)',
+        'accent-success': 'var(--color-accent-success, #10b981)',
+        'accent-warning': 'var(--color-accent-warning, #f59e0b)',
+        'accent-error': 'var(--color-accent-error, #ef4444)',
 
-        'text-primary': '#ffffff',
-        'text-secondary': '#94a3b8',
-        'text-tertiary': '#64748b',
+        'text-primary': 'var(--color-text-primary, #ffffff)',
+        'text-secondary': 'var(--color-text-secondary, #94a3b8)',
+        'text-tertiary': 'var(--color-text-tertiary, #64748b)',
       },
       fontFamily: {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
