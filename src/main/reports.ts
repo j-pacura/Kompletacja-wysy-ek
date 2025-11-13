@@ -6,7 +6,7 @@ import { app } from 'electron';
 /**
  * Export shipment report to Excel
  */
-export async function exportToExcel(shipmentId: number, shipmentData: any, parts: any[]): Promise<string> {
+export async function exportToExcel(_shipmentId: number, shipmentData: any, parts: any[]): Promise<string> {
   try {
     // Create new workbook
     const workbook = new ExcelJS.Workbook();
@@ -150,7 +150,7 @@ export async function exportToExcel(shipmentId: number, shipmentData: any, parts
 /**
  * Export shipment report to PDF
  */
-export async function exportToPDF(shipmentId: number, shipmentData: any, parts: any[]): Promise<string> {
+export async function exportToPDF(_shipmentId: number, _shipmentData: any, _parts: any[]): Promise<string> {
   // TODO: Implement PDF export with jspdf
   throw new Error('PDF export not implemented yet');
 }
@@ -158,7 +158,7 @@ export async function exportToPDF(shipmentId: number, shipmentData: any, parts: 
 /**
  * Export shipment report to HTML
  */
-export async function exportToHTML(shipmentId: number, shipmentData: any, parts: any[]): Promise<string> {
+export async function exportToHTML(_shipmentId: number, shipmentData: any, parts: any[]): Promise<string> {
   try {
     // Generate HTML content
     const html = `
