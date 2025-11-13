@@ -2,7 +2,7 @@ import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
 import { app } from 'electron';
-import { queryOne, getShipmentFolderPath } from './database';
+import { queryOne, getShipmentFolderPath, query } from './database';
 
 /**
  * Get user full name from settings
@@ -185,6 +185,22 @@ export async function exportToPDF(_shipmentId: number, _shipmentData: any, _part
 export async function exportToHTML(_shipmentId: number, shipmentData: any, parts: any[]): Promise<string> {
   const userFullName = await getUserFullName();
   try {
+    // Query all photos for the parts in this shipment
+    const partIds = parts.map(p => p.id).join(',');
+    const photos = partIds ? query<any>(
+      `SELECT * FROM photos WHERE part_id IN (${partIds}) ORDER BY created_at ASC`,
+      []
+    ) : [];
+
+    // Group photos by part_id for easier access
+    const photosByPartId: { [key: number]: any[] } = {};
+    photos.forEach(photo => {
+      if (!photosByPartId[photo.part_id]) {
+        photosByPartId[photo.part_id] = [];
+      }
+      photosByPartId[photo.part_id].push(photo);
+    });
+
     // Generate HTML content
     const html = `
 <!DOCTYPE html>
@@ -301,9 +317,84 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
             font-size: 32px;
             font-weight: bold;
         }
+        .photo-thumbnails {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .photo-thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid #3c3c3c;
+        }
+        .photo-thumbnail:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.5);
+            border-color: #1db954;
+        }
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            align-items: center;
+            justify-content: center;
+        }
+        .lightbox.active {
+            display: flex;
+        }
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .lightbox-close:hover {
+            color: #1db954;
+        }
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 20px;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .lightbox-nav:hover {
+            color: #1db954;
+        }
+        .lightbox-prev {
+            left: 20px;
+        }
+        .lightbox-next {
+            right: 20px;
+        }
         @media print {
             body { background: white; color: black; }
             .container { box-shadow: none; }
+            .lightbox { display: none !important; }
         }
     </style>
 </head>
@@ -346,10 +437,22 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                     <th>Waga całk. [kg]</th>
                     <th>Waga jedn. [kg]</th>
                     <th>Ilość waż.</th>
+                    <th>Zdjęcia</th>
                 </tr>
             </thead>
             <tbody>
-                ${parts.map(part => `
+                ${parts.map(part => {
+                    const partPhotos = photosByPartId[part.id] || [];
+                    const photoThumbnails = partPhotos.length > 0
+                        ? partPhotos.map((photo, index) =>
+                            `<img src="file:///${photo.photo_path.replace(/\\/g, '/')}"
+                                 class="photo-thumbnail"
+                                 onclick="openLightbox(${index}, ${JSON.stringify(partPhotos.map(p => p.photo_path.replace(/\\/g, '/')))})"
+                                 alt="Zdjęcie ${index + 1}">`
+                          ).join('')
+                        : '-';
+
+                    return `
                     <tr>
                         <td>${part.excel_row_number}</td>
                         <td><strong>${part.sap_index}</strong></td>
@@ -364,8 +467,14 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                         <td>${part.weight_total ? part.weight_total.toFixed(3) : '-'}</td>
                         <td>${part.weight_per_unit ? part.weight_per_unit.toFixed(4) : '-'}</td>
                         <td>${part.weight_quantity || '-'}</td>
+                        <td>
+                            <div class="photo-thumbnails">
+                                ${photoThumbnails}
+                            </div>
+                        </td>
                     </tr>
-                `).join('')}
+                    `;
+                }).join('')}
             </tbody>
         </table>
 
@@ -388,6 +497,64 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
             </div>
         </div>
     </div>
+
+    <!-- Lightbox modal -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+        <span class="lightbox-close" onclick="closeLightbox(event)">&times;</span>
+        <span class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1, event)">&#10094;</span>
+        <img id="lightbox-image" class="lightbox-content" src="" alt="Full size image">
+        <span class="lightbox-nav lightbox-next" onclick="navigateLightbox(1, event)">&#10095;</span>
+    </div>
+
+    <script>
+        let currentLightboxIndex = 0;
+        let currentLightboxImages = [];
+
+        function openLightbox(index, images) {
+            currentLightboxIndex = index;
+            currentLightboxImages = images;
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImage = document.getElementById('lightbox-image');
+            lightboxImage.src = 'file:///' + images[index];
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox(event) {
+            if (event.target.id === 'lightbox' || event.target.classList.contains('lightbox-close')) {
+                const lightbox = document.getElementById('lightbox');
+                lightbox.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function navigateLightbox(direction, event) {
+            event.stopPropagation();
+            currentLightboxIndex += direction;
+
+            if (currentLightboxIndex < 0) {
+                currentLightboxIndex = currentLightboxImages.length - 1;
+            } else if (currentLightboxIndex >= currentLightboxImages.length) {
+                currentLightboxIndex = 0;
+            }
+
+            const lightboxImage = document.getElementById('lightbox-image');
+            lightboxImage.src = 'file:///' + currentLightboxImages[currentLightboxIndex];
+        }
+
+        // Close lightbox on ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const lightbox = document.getElementById('lightbox');
+                lightbox.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            } else if (event.key === 'ArrowLeft') {
+                navigateLightbox(-1, event);
+            } else if (event.key === 'ArrowRight') {
+                navigateLightbox(1, event);
+            }
+        });
+    </script>
 </body>
 </html>
     `;
