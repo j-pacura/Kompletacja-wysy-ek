@@ -243,7 +243,7 @@ const SettingsScreen: React.FC = () => {
                     onClick={() => setMode('dark')}
                     className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-lg border-2 transition-all ${
                       mode === 'dark'
-                        ? 'border-accent-primary bg-accent-primary bg-opacity-10 text-accent-primary'
+                        ? 'border-accent-primary bg-accent-primary bg-opacity-10 text-text-primary'
                         : 'border-bg-tertiary bg-bg-tertiary text-text-secondary hover:border-accent-primary hover:border-opacity-50'
                     }`}
                   >
@@ -254,7 +254,7 @@ const SettingsScreen: React.FC = () => {
                     onClick={() => setMode('light')}
                     className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-lg border-2 transition-all ${
                       mode === 'light'
-                        ? 'border-accent-primary bg-accent-primary bg-opacity-10 text-accent-primary'
+                        ? 'border-accent-primary bg-accent-primary bg-opacity-10 text-text-primary'
                         : 'border-bg-tertiary bg-bg-tertiary text-text-secondary hover:border-accent-primary hover:border-opacity-50'
                     }`}
                   >

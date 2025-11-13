@@ -1,7 +1,6 @@
 import * as ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
-import { app } from 'electron';
 import { queryOne, getShipmentFolderPath, query } from './database';
 
 /**

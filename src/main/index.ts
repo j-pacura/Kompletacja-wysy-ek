@@ -134,8 +134,8 @@ function setupIPCHandlers() {
         `INSERT INTO shipments (
           shipment_number, destination, notes, created_at, status,
           require_weight, require_country, require_photos,
-          packed_by, created_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          packed_by, created_date, password
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           shipmentData.shipment_number,
           shipmentData.destination,
@@ -147,6 +147,7 @@ function setupIPCHandlers() {
           shipmentData.require_photos ? 1 : 0,
           shipmentData.packed_by || null,
           new Date().toISOString().split('T')[0], // YYYY-MM-DD
+          shipmentData.password || null,
         ]
       );
       return { success: true, data: { id: result.lastInsertRowid } };
