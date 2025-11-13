@@ -410,15 +410,25 @@ function setupIPCHandlers() {
   // Photo operations
   ipcMain.handle(IPC_CHANNELS.DB_SAVE_PHOTO, async (_event, partId: number, imageData: string) => {
     try {
-      // Get part data to retrieve SAP index
+      // Get part data to retrieve SAP index and excel row number
       const part = queryOne<any>(
-        `SELECT sap_index FROM parts WHERE id = ?`,
+        `SELECT sap_index, excel_row_number FROM parts WHERE id = ?`,
         [partId]
       );
 
       if (!part) {
         return { success: false, error: 'Part not found' };
       }
+
+      // Count existing photos for this part to determine sequence letter
+      const photoCountResult = queryOne<any>(
+        `SELECT COUNT(*) as count FROM photos WHERE part_id = ?`,
+        [partId]
+      );
+      const photoCount = photoCountResult?.count || 0;
+
+      // Convert photo count to sequence letter (0 -> A, 1 -> B, 2 -> C, etc.)
+      const sequenceLetter = String.fromCharCode(65 + photoCount); // 65 is ASCII for 'A'
 
       // Create photos directory if it doesn't exist
       const photosDir = path.join(app.getPath('userData'), 'photos');
@@ -432,9 +442,10 @@ function setupIPCHandlers() {
         .replace(/\s+/g, '_')             // Replace spaces with underscore
         .trim();
 
-      // Generate filename: SAP_[sapIndex]_[timestamp].jpg
+      // Generate filename: line_[rowNumber][sequenceLetter]_SAP_[sapIndex].jpg
       const timestamp = Date.now();
-      const filename = `SAP_${safeSapIndex}_${timestamp}.jpg`;
+      const lineNumber = part.excel_row_number || 0;
+      const filename = `line_${lineNumber}${sequenceLetter}_SAP_${safeSapIndex}.jpg`;
       const photoPath = path.join(photosDir, filename);
 
       // Remove data URL prefix (data:image/jpeg;base64,)
