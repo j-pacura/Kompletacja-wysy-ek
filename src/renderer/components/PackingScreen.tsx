@@ -42,6 +42,13 @@ const PackingScreen: React.FC = () => {
   const [scaleConnected, setScaleConnected] = useState<boolean>(false);
   const [scaleStable, setScaleStable] = useState<boolean>(false);
 
+  // Photo state
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [savingPhoto, setSavingPhoto] = useState(false);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
   useEffect(() => {
     if (shipmentId) {
       loadShipment(parseInt(shipmentId));
@@ -492,6 +499,126 @@ const PackingScreen: React.FC = () => {
     setScanBuffer('');
   };
 
+  // Camera functions
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 },
+        audio: false
+      });
+
+      setCameraStream(stream);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error starting camera:', error);
+      toast.error('❌ Nie można uruchomić kamery', {
+        duration: 3000,
+        position: 'top-right',
+      });
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    // Set canvas size to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // Draw video frame to canvas
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert to JPEG data URL
+      const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      setCapturedPhoto(photoDataUrl);
+
+      // Stop camera
+      stopCamera();
+    }
+  };
+
+  const handleRetakePhoto = () => {
+    setCapturedPhoto(null);
+    startCamera();
+  };
+
+  const handlePhotoConfirm = async () => {
+    if (!selectedPart || !capturedPhoto) return;
+
+    setSavingPhoto(true);
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      // Save photo to disk and database
+      const result = await ipcRenderer.invoke('db:save-photo', selectedPart.id, capturedPhoto);
+
+      if (!result.success) {
+        console.error('Failed to save photo:', result.error);
+        toast.error(`❌ Błąd zapisu zdjęcia: ${result.error}`, {
+          duration: 3000,
+          position: 'top-right',
+        });
+        setSavingPhoto(false);
+        return;
+      }
+
+      toast.success('📸 Zdjęcie zapisane', {
+        duration: 2000,
+        position: 'top-right',
+      });
+
+      // Pack part and close modal
+      await packPartDirectly(selectedPart);
+      setIsModalOpen(false);
+      setSelectedPart(null);
+      setModalStep(1);
+      setCapturedPhoto(null);
+    } catch (error) {
+      console.error('Error saving photo:', error);
+      toast.error(`❌ Błąd zapisu zdjęcia`, {
+        duration: 3000,
+        position: 'top-right',
+      });
+    } finally {
+      setSavingPhoto(false);
+    }
+  };
+
+  // Start camera when modal opens on photo step
+  useEffect(() => {
+    if (modalStep === 3 && isModalOpen && !capturedPhoto) {
+      startCamera();
+    }
+
+    return () => {
+      if (modalStep !== 3) {
+        stopCamera();
+      }
+    };
+  }, [modalStep, isModalOpen]);
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
   // Scale control functions
   const handleScaleZero = async () => {
     try {
@@ -898,17 +1025,81 @@ const PackingScreen: React.FC = () => {
               </div>
             )}
 
-            {/* Step 3: Photo (placeholder for now) */}
-            {modalStep === 3 && (
+            {/* Step 3: Photo */}
+            {modalStep === 3 && selectedPart && (
               <div className="text-center">
-                <h2 className="text-text-primary text-2xl mb-4">Zdjęcie (wkrótce)</h2>
-                <p className="text-text-secondary mb-6">Funkcja zdjęć będzie dostępna w następnej wersji</p>
-                <button
-                  onClick={handleCloseModal}
-                  className="px-6 py-3 gradient-primary text-white rounded-lg"
-                >
-                  Zamknij
-                </button>
+                <h2 className="text-text-secondary text-lg mb-6">Zdjęcie:</h2>
+
+                {/* Part info */}
+                <div className="text-accent-primary font-bold text-4xl mb-8">
+                  {selectedPart.sap_index}
+                </div>
+
+                {/* Camera or captured photo */}
+                <div className="relative mb-6">
+                  {!capturedPhoto ? (
+                    // Live camera view
+                    <div className="relative bg-black rounded-xl overflow-hidden" style={{ maxHeight: '400px' }}>
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full h-auto"
+                        style={{ maxHeight: '400px' }}
+                      />
+                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                        <button
+                          onClick={capturePhoto}
+                          className="px-8 py-4 bg-white text-black rounded-full hover:bg-gray-200 transition-all font-bold text-lg shadow-lg"
+                        >
+                          📸 Zrób zdjęcie
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // Captured photo preview
+                    <div className="relative">
+                      <img
+                        src={capturedPhoto}
+                        alt="Captured"
+                        className="w-full h-auto rounded-xl"
+                        style={{ maxHeight: '400px', objectFit: 'contain' }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Hidden canvas for capturing */}
+                  <canvas ref={canvasRef} style={{ display: 'none' }} />
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleCloseModal}
+                    className="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
+                  >
+                    Anuluj
+                  </button>
+                  {capturedPhoto ? (
+                    <>
+                      <button
+                        onClick={handleRetakePhoto}
+                        className="flex-1 px-6 py-4 bg-accent-warning hover:opacity-90 text-white rounded-lg transition-all text-lg font-semibold"
+                      >
+                        🔄 Ponów
+                      </button>
+                      <button
+                        onClick={handlePhotoConfirm}
+                        disabled={savingPhoto}
+                        className={`flex-1 px-6 py-4 gradient-primary text-white rounded-lg transition-all text-lg font-semibold ${
+                          savingPhoto ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                        }`}
+                      >
+                        {savingPhoto ? '⏳ Zapisywanie...' : '✓ Potwierdź'}
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               </div>
             )}
           </div>

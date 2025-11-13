@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
 import { initDatabase, closeDatabase, query, queryOne, execute } from './database';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import { selectExcelFile, parseExcelFile, openFolder } from './fileSystem';
@@ -366,6 +367,53 @@ function setupIPCHandlers() {
       return { success: result };
     } catch (error: any) {
       console.error('Scale tare error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Photo operations
+  ipcMain.handle(IPC_CHANNELS.DB_SAVE_PHOTO, async (_event, partId: number, imageData: string) => {
+    try {
+      // Create photos directory if it doesn't exist
+      const photosDir = path.join(app.getPath('userData'), 'photos');
+      if (!fs.existsSync(photosDir)) {
+        fs.mkdirSync(photosDir, { recursive: true });
+      }
+
+      // Generate filename: part_[partId]_[timestamp].jpg
+      const timestamp = Date.now();
+      const filename = `part_${partId}_${timestamp}.jpg`;
+      const photoPath = path.join(photosDir, filename);
+
+      // Remove data URL prefix (data:image/jpeg;base64,)
+      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      // Save file
+      fs.writeFileSync(photoPath, buffer);
+
+      // Save to database
+      const result = execute(
+        `INSERT INTO photos (part_id, photo_path, created_at, file_size) VALUES (?, ?, ?, ?)`,
+        [partId, photoPath, timestamp, buffer.length]
+      );
+
+      return { success: true, data: { id: result.lastInsertRowid, path: photoPath } };
+    } catch (error: any) {
+      console.error('Save photo error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.DB_GET_PHOTOS, async (_event, partId: number) => {
+    try {
+      const photos = query(
+        `SELECT * FROM photos WHERE part_id = ? ORDER BY created_at DESC`,
+        [partId]
+      );
+      return { success: true, data: photos };
+    } catch (error: any) {
+      console.error('Get photos error:', error);
       return { success: false, error: error.message };
     }
   });

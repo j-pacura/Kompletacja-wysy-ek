@@ -97,7 +97,7 @@ const Dashboard: React.FC = () => {
             </button>
             <button
               className="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all btn-active"
-              onClick={() => {/* TODO: Open settings */}}
+              onClick={() => navigate('/settings')}
             >
               <Settings className="w-5 h-5" />
               Ustawienia
