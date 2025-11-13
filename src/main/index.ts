@@ -263,6 +263,29 @@ function setupIPCHandlers() {
     return { success: true, data: app.getVersion() };
   });
 
+  // Notification operations
+  ipcMain.handle(IPC_CHANNELS.NOTIFICATION_SEND, async (_event, title: string, body: string) => {
+    try {
+      const { Notification } = require('electron');
+
+      if (Notification.isSupported()) {
+        const notification = new Notification({
+          title,
+          body,
+          icon: path.join(__dirname, '../../resources/icon.png'), // Optional: add app icon
+        });
+
+        notification.show();
+        return { success: true };
+      } else {
+        return { success: false, error: 'Notifications not supported' };
+      }
+    } catch (error: any) {
+      console.error('Notification error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   // App paths
   ipcMain.handle(IPC_CHANNELS.APP_GET_PATH, async (_event, name: string) => {
     try {

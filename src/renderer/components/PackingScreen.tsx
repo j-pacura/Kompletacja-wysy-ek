@@ -166,6 +166,18 @@ const PackingScreen: React.FC = () => {
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 5000); // Hide after 5 seconds
           playCompleted();
+
+          // Send desktop notification
+          try {
+            const { ipcRenderer } = window.require('electron');
+            ipcRenderer.invoke('notification:send',
+              '🎉 Wysyłka zakończona!',
+              `Wszystkie części zostały spakowane dla wysyłki ${shipment?.shipment_number || ''}`
+            ).catch(console.error);
+          } catch (error) {
+            console.error('Notification error:', error);
+          }
+
           toast.success('🎉 Wszystkie części spakowane!', {
             duration: 5000,
             position: 'top-center',
@@ -223,6 +235,18 @@ const PackingScreen: React.FC = () => {
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 5000); // Hide after 5 seconds
           playCompleted();
+
+          // Send desktop notification
+          try {
+            const { ipcRenderer } = window.require('electron');
+            ipcRenderer.invoke('notification:send',
+              '🎉 Wysyłka zakończona!',
+              `Wszystkie części zostały spakowane dla wysyłki ${shipment?.shipment_number || ''}`
+            ).catch(console.error);
+          } catch (error) {
+            console.error('Notification error:', error);
+          }
+
           toast.success('🎉 Wszystkie części spakowane!', {
             duration: 5000,
             position: 'top-center',
