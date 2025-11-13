@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
-import { ArrowLeft, Save, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Save, RefreshCw, FolderOpen } from 'lucide-react';
 
 const SettingsScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -110,6 +110,33 @@ const SettingsScreen: React.FC = () => {
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('❌ Błąd zapisu ustawień');
+    }
+  };
+
+  const handleOpenPhotosFolder = async () => {
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      // Get userData path
+      const userDataResult = await ipcRenderer.invoke('app:get-path', 'userData');
+      if (!userDataResult.success) {
+        toast.error('❌ Nie można znaleźć folderu');
+        return;
+      }
+
+      const path = window.require('path');
+      const photosPath = path.join(userDataResult.data, 'photos');
+
+      // Open folder
+      const result = await ipcRenderer.invoke('file:open-folder', photosPath);
+      if (result.success) {
+        toast.success('📁 Folder otwarty');
+      } else {
+        toast.error('❌ Nie można otworzyć folderu');
+      }
+    } catch (error) {
+      console.error('Error opening photos folder:', error);
+      toast.error('❌ Błąd otwierania folderu');
     }
   };
 
@@ -257,6 +284,39 @@ const SettingsScreen: React.FC = () => {
                   <li>• Parity: None</li>
                   <li>• Stop Bits: 1</li>
                   <li>• Kabel: NULL-MODEM (skrzyżowany TX/RX)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Photos Settings */}
+          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
+            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+              📸 Zdjęcia
+            </h2>
+
+            <div className="space-y-4">
+              <p className="text-text-secondary text-sm mb-4">
+                Zdjęcia są zapisywane w folderze aplikacji i powiązane z produktami.
+              </p>
+
+              <button
+                onClick={handleOpenPhotosFolder}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-accent-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold"
+              >
+                <FolderOpen className="w-5 h-5" />
+                📁 Otwórz folder ze zdjęciami
+              </button>
+
+              <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4">
+                <h3 className="text-text-primary font-semibold mb-2">
+                  📋 Informacje
+                </h3>
+                <ul className="text-text-secondary text-sm space-y-1">
+                  <li>• Format: JPEG (jakość 90%)</li>
+                  <li>• Rozdzielczość: 1280x720</li>
+                  <li>• Nazwa pliku: part_[ID]_[timestamp].jpg</li>
+                  <li>• Można przeglądać zdjęcia klikając ikonę 📷 przy spakowanych produktach</li>
                 </ul>
               </div>
             </div>

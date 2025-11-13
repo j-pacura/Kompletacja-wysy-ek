@@ -1,10 +1,11 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { initDatabase, closeDatabase, query, queryOne, execute } from './database';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 import { selectExcelFile, parseExcelFile, openFolder } from './fileSystem';
 import * as Scale from './scale';
+import * as Reports from './reports';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -414,6 +415,87 @@ function setupIPCHandlers() {
       return { success: true, data: photos };
     } catch (error: any) {
       console.error('Get photos error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Export operations
+  ipcMain.handle(IPC_CHANNELS.FILE_EXPORT_EXCEL, async (_event, shipmentId: number) => {
+    try {
+      // Get shipment data
+      const shipment = queryOne(`SELECT * FROM shipments WHERE id = ?`, [shipmentId]);
+      if (!shipment) {
+        return { success: false, error: 'Shipment not found' };
+      }
+
+      // Get parts data
+      const parts = query(`SELECT * FROM parts WHERE shipment_id = ? ORDER BY excel_row_number ASC`, [shipmentId]);
+
+      // Export to Excel
+      const filePath = await Reports.exportToExcel(shipmentId, shipment, parts);
+
+      // Open file location
+      shell.showItemInFolder(filePath);
+
+      return { success: true, data: { path: filePath } };
+    } catch (error: any) {
+      console.error('Excel export error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FILE_EXPORT_HTML, async (_event, shipmentId: number) => {
+    try {
+      // Get shipment data
+      const shipment = queryOne(`SELECT * FROM shipments WHERE id = ?`, [shipmentId]);
+      if (!shipment) {
+        return { success: false, error: 'Shipment not found' };
+      }
+
+      // Get parts data
+      const parts = query(`SELECT * FROM parts WHERE shipment_id = ? ORDER BY excel_row_number ASC`, [shipmentId]);
+
+      // Export to HTML
+      const filePath = await Reports.exportToHTML(shipmentId, shipment, parts);
+
+      // Open file in default browser
+      shell.openPath(filePath);
+
+      return { success: true, data: { path: filePath } };
+    } catch (error: any) {
+      console.error('HTML export error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FILE_EXPORT_ALL, async (_event, shipmentId: number) => {
+    try {
+      // Get shipment data
+      const shipment = queryOne(`SELECT * FROM shipments WHERE id = ?`, [shipmentId]);
+      if (!shipment) {
+        return { success: false, error: 'Shipment not found' };
+      }
+
+      // Get parts data
+      const parts = query(`SELECT * FROM parts WHERE shipment_id = ? ORDER BY excel_row_number ASC`, [shipmentId]);
+
+      // Export all formats
+      const excelPath = await Reports.exportToExcel(shipmentId, shipment, parts);
+      const htmlPath = await Reports.exportToHTML(shipmentId, shipment, parts);
+
+      // Open folder with reports
+      const reportsDir = path.dirname(excelPath);
+      shell.openPath(reportsDir);
+
+      return {
+        success: true,
+        data: {
+          excel: excelPath,
+          html: htmlPath
+        }
+      };
+    } catch (error: any) {
+      console.error('Export all error:', error);
       return { success: false, error: error.message };
     }
   });

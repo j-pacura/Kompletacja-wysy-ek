@@ -12,6 +12,8 @@ import {
   BarChart3,
   CheckCircle2,
   Clock,
+  Camera,
+  X,
 } from 'lucide-react';
 import { Shipment } from '../types/shipment';
 import { Part } from '../types/part';
@@ -48,6 +50,14 @@ const PackingScreen: React.FC = () => {
   const [savingPhoto, setSavingPhoto] = useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  // Photo viewer state
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
+  const [viewerPhotos, setViewerPhotos] = useState<any[]>([]);
+  const [viewingPart, setViewingPart] = useState<Part | null>(null);
+
+  // Export menu state
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   useEffect(() => {
     if (shipmentId) {
@@ -662,6 +672,102 @@ const PackingScreen: React.FC = () => {
     }
   };
 
+  // Photo viewer functions
+  const handleViewPhotos = async (part: Part, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent unpacking when clicking camera icon
+
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('db:get-photos', part.id);
+
+      if (result.success) {
+        setViewerPhotos(result.data);
+        setViewingPart(part);
+        setPhotoViewerOpen(true);
+
+        if (result.data.length === 0) {
+          toast('📷 Brak zdjęć dla tego produktu', {
+            duration: 2000,
+            position: 'top-center',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading photos:', error);
+      toast.error('❌ Błąd ładowania zdjęć');
+    }
+  };
+
+  const handleClosePhotoViewer = () => {
+    setPhotoViewerOpen(false);
+    setViewerPhotos([]);
+    setViewingPart(null);
+  };
+
+  // Export functions
+  const handleExportExcel = async () => {
+    if (!shipmentId) return;
+
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('file:export-excel', parseInt(shipmentId));
+
+      if (result.success) {
+        toast.success('📊 Raport Excel wygenerowany!', {
+          duration: 3000,
+          position: 'top-right',
+        });
+      } else {
+        toast.error(`❌ Błąd eksportu: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('❌ Błąd eksportu');
+    }
+  };
+
+  const handleExportHTML = async () => {
+    if (!shipmentId) return;
+
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('file:export-html', parseInt(shipmentId));
+
+      if (result.success) {
+        toast.success('📄 Raport HTML wygenerowany!', {
+          duration: 3000,
+          position: 'top-right',
+        });
+      } else {
+        toast.error(`❌ Błąd eksportu: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('❌ Błąd eksportu');
+    }
+  };
+
+  const handleExportAll = async () => {
+    if (!shipmentId) return;
+
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('file:export-all', parseInt(shipmentId));
+
+      if (result.success) {
+        toast.success('📦 Wszystkie raporty wygenerowane!', {
+          duration: 3000,
+          position: 'top-right',
+        });
+      } else {
+        toast.error(`❌ Błąd eksportu: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('❌ Błąd eksportu');
+    }
+  };
+
   const pendingParts = parts.filter(p => p.status === 'pending');
   const packedParts = parts.filter(p => p.status === 'packed');
   const progress = parts.length > 0 ? (packedParts.length / parts.length) * 100 : 0;
@@ -1117,6 +1223,66 @@ const PackingScreen: React.FC = () => {
         />
       )}
 
+      {/* Photo Viewer Modal */}
+      {photoViewerOpen && viewingPart && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 animate-fade-in"
+          onClick={handleClosePhotoViewer}
+        >
+          <div
+            className="bg-bg-secondary rounded-2xl p-8 max-w-5xl w-full mx-4 max-h-[90vh] overflow-auto animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-text-primary text-2xl font-bold mb-2">
+                  📸 Zdjęcia: {viewingPart.sap_index}
+                </h2>
+                <p className="text-text-secondary text-sm">{viewingPart.description}</p>
+              </div>
+              <button
+                onClick={handleClosePhotoViewer}
+                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-text-primary" />
+              </button>
+            </div>
+
+            {/* Photos Grid */}
+            {viewerPhotos.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {viewerPhotos.map((photo) => (
+                  <div
+                    key={photo.id}
+                    className="bg-bg-tertiary rounded-xl overflow-hidden hover:ring-2 hover:ring-accent-primary transition-all"
+                  >
+                    <img
+                      src={`file://${photo.photo_path}`}
+                      alt={`Photo ${photo.id}`}
+                      className="w-full h-64 object-cover"
+                    />
+                    <div className="p-3">
+                      <p className="text-text-tertiary text-xs">
+                        {new Date(photo.created_at).toLocaleString('pl-PL')}
+                      </p>
+                      <p className="text-text-tertiary text-xs">
+                        {(photo.file_size / 1024).toFixed(0)} KB
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Camera className="w-16 h-16 text-text-tertiary mx-auto mb-4" />
+                <p className="text-text-secondary text-lg">Brak zdjęć dla tego produktu</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
         <div className="flex items-center justify-between">
@@ -1190,12 +1356,59 @@ const PackingScreen: React.FC = () => {
               >
                 <Pause className="w-5 h-5 text-text-secondary" />
               </button>
-              <button
-                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
-                title="Raport"
-              >
-                <FileText className="w-5 h-5 text-text-secondary" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setExportMenuOpen(!exportMenuOpen)}
+                  className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+                  title="Raport"
+                >
+                  <FileText className="w-5 h-5 text-text-secondary" />
+                </button>
+
+                {exportMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-bg-secondary border border-bg-tertiary rounded-lg shadow-xl z-50 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        handleExportExcel();
+                        setExportMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-bg-tertiary transition-colors flex items-center gap-3"
+                    >
+                      <span className="text-xl">📊</span>
+                      <div>
+                        <div className="text-text-primary font-semibold">Excel</div>
+                        <div className="text-text-tertiary text-xs">Z wagami jednostkowymi</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleExportHTML();
+                        setExportMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-bg-tertiary transition-colors flex items-center gap-3"
+                    >
+                      <span className="text-xl">📄</span>
+                      <div>
+                        <div className="text-text-primary font-semibold">HTML</div>
+                        <div className="text-text-tertiary text-xs">Interaktywny raport</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleExportAll();
+                        setExportMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-bg-tertiary transition-colors flex items-center gap-3 border-t border-bg-tertiary"
+                    >
+                      <span className="text-xl">📦</span>
+                      <div>
+                        <div className="text-text-primary font-semibold">Wszystkie</div>
+                        <div className="text-text-tertiary text-xs">Excel + HTML</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
                 title="Statystyki"
@@ -1324,7 +1537,18 @@ const PackingScreen: React.FC = () => {
                           <span>📦 {part.quantity} {part.unit}</span>
                         </div>
                       </div>
-                      <CheckCircle2 className="w-8 h-8 text-accent-success group-hover:text-accent-warning transition-colors" />
+                      <div className="flex items-center gap-2">
+                        {shipment?.require_photos && (
+                          <button
+                            onClick={(e) => handleViewPhotos(part, e)}
+                            className="p-2 hover:bg-accent-primary hover:bg-opacity-20 rounded-lg transition-all"
+                            title="Pokaż zdjęcia"
+                          >
+                            <Camera className="w-6 h-6 text-accent-primary" />
+                          </button>
+                        )}
+                        <CheckCircle2 className="w-8 h-8 text-accent-success group-hover:text-accent-warning transition-colors" />
+                      </div>
                     </div>
                   </div>
                 ))}
