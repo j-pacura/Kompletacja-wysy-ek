@@ -11,6 +11,10 @@ import {
   Trash2,
   Lock,
   X,
+  TrendingUp,
+  Calendar,
+  Play,
+  FileText,
 } from 'lucide-react';
 import { Shipment } from '../types/shipment';
 import { format } from 'date-fns';
@@ -25,10 +29,15 @@ const Dashboard: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'in_progress' | 'completed'>('all');
   const [userName, setUserName] = useState('');
   const [userSurname, setUserSurname] = useState('');
+  const [shipmentParts, setShipmentParts] = useState<{ [shipmentId: number]: any[] }>({});
 
   // Delete modal state
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; shipment: Shipment | null }>({ open: false, shipment: null });
   const [deletePassword, setDeletePassword] = useState('');
+
+  // Password unlock modal state (for opening protected shipments)
+  const [unlockModal, setUnlockModal] = useState<{ open: boolean; shipment: Shipment | null }>({ open: false, shipment: null });
+  const [unlockPassword, setUnlockPassword] = useState('');
 
   // Welcome modal state
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -40,6 +49,12 @@ const Dashboard: React.FC = () => {
     loadShipments();
     loadUserData();
   }, []);
+
+  useEffect(() => {
+    if (shipments.length > 0) {
+      loadAllParts();
+    }
+  }, [shipments]);
 
   const loadUserData = async () => {
     try {
@@ -79,6 +94,24 @@ const Dashboard: React.FC = () => {
       console.error('Error loading shipments:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAllParts = async () => {
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const partsData: { [shipmentId: number]: any[] } = {};
+
+      for (const shipment of shipments) {
+        const result = await ipcRenderer.invoke('db:get-parts', shipment.id);
+        if (result.success) {
+          partsData[shipment.id] = result.data;
+        }
+      }
+
+      setShipmentParts(partsData);
+    } catch (error) {
+      console.error('Error loading parts:', error);
     }
   };
 
@@ -176,6 +209,34 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleShipmentClick = (shipment: Shipment) => {
+    // If shipment has password, show unlock modal
+    if (shipment.password) {
+      setUnlockModal({ open: true, shipment });
+      setUnlockPassword('');
+    } else {
+      // No password, navigate directly
+      navigate(`/packing/${shipment.id}`);
+    }
+  };
+
+  const handleUnlockConfirm = () => {
+    if (!unlockModal.shipment) return;
+
+    const shipment = unlockModal.shipment;
+
+    // Check password
+    if (unlockPassword !== shipment.password) {
+      alert('❌ Nieprawidłowe hasło!');
+      return;
+    }
+
+    // Password correct, navigate to shipment
+    navigate(`/packing/${shipment.id}`);
+    setUnlockModal({ open: false, shipment: null });
+    setUnlockPassword('');
+  };
+
   return (
     <div className="flex flex-col w-full h-full">
       {/* Header */}
@@ -216,6 +277,82 @@ const Dashboard: React.FC = () => {
               <Plus className="w-5 h-5" />
               Nowa Wysyłka
             </button>
+          </div>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          {/* Total Shipments */}
+          <div className="group relative bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-blue-600/0 group-hover:from-blue-500/5 group-hover:to-blue-600/5 rounded-xl transition-all duration-300" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <Package className="w-6 h-6 text-blue-400" />
+                </div>
+                <TrendingUp className="w-5 h-5 text-blue-400 opacity-50" />
+              </div>
+              <h3 className="text-text-tertiary text-sm font-medium mb-1">Wszystkie</h3>
+              <p className="text-3xl font-bold text-text-primary mb-1">{shipments.length}</p>
+              <p className="text-blue-400 text-xs font-medium">wysyłek łącznie</p>
+            </div>
+          </div>
+
+          {/* In Progress */}
+          <div className="group relative bg-gradient-to-br from-yellow-500/10 to-orange-600/10 border border-yellow-500/20 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-yellow-500/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/0 to-orange-600/0 group-hover:from-yellow-500/5 group-hover:to-orange-600/5 rounded-xl transition-all duration-300" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 bg-yellow-500/20 rounded-lg">
+                  <Clock className="w-6 h-6 text-yellow-400" />
+                </div>
+                <TrendingUp className="w-5 h-5 text-yellow-400 opacity-50" />
+              </div>
+              <h3 className="text-text-tertiary text-sm font-medium mb-1">W trakcie</h3>
+              <p className="text-3xl font-bold text-text-primary mb-1">
+                {shipments.filter(s => s.status === 'in_progress').length}
+              </p>
+              <p className="text-yellow-400 text-xs font-medium">aktywnych wysyłek</p>
+            </div>
+          </div>
+
+          {/* Completed */}
+          <div className="group relative bg-gradient-to-br from-green-500/10 to-emerald-600/10 border border-green-500/20 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-emerald-600/0 group-hover:from-green-500/5 group-hover:to-emerald-600/5 rounded-xl transition-all duration-300" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 bg-green-500/20 rounded-lg">
+                  <CheckCircle2 className="w-6 h-6 text-green-400" />
+                </div>
+                <TrendingUp className="w-5 h-5 text-green-400 opacity-50" />
+              </div>
+              <h3 className="text-text-tertiary text-sm font-medium mb-1">Ukończone</h3>
+              <p className="text-3xl font-bold text-text-primary mb-1">
+                {shipments.filter(s => s.status === 'completed').length}
+              </p>
+              <p className="text-green-400 text-xs font-medium">zrealizowanych</p>
+            </div>
+          </div>
+
+          {/* Today's Shipments */}
+          <div className="group relative bg-gradient-to-br from-purple-500/10 to-pink-600/10 border border-purple-500/20 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-pink-600/0 group-hover:from-purple-500/5 group-hover:to-pink-600/5 rounded-xl transition-all duration-300" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <Calendar className="w-6 h-6 text-purple-400" />
+                </div>
+                <TrendingUp className="w-5 h-5 text-purple-400 opacity-50" />
+              </div>
+              <h3 className="text-text-tertiary text-sm font-medium mb-1">Dzisiaj</h3>
+              <p className="text-3xl font-bold text-text-primary mb-1">
+                {shipments.filter(s => {
+                  const today = new Date().toISOString().split('T')[0];
+                  return s.created_date === today;
+                }).length}
+              </p>
+              <p className="text-purple-400 text-xs font-medium">nowych wysyłek</p>
+            </div>
           </div>
         </div>
       </div>
@@ -293,11 +430,16 @@ const Dashboard: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredShipments.map((shipment) => (
+            {filteredShipments.map((shipment) => {
+              const parts = shipmentParts[shipment.id] || [];
+              const totalParts = parts.length;
+              const packedParts = parts.filter(p => p.status === 'packed').length;
+              const progress = totalParts > 0 ? (packedParts / totalParts) * 100 : 0;
+
+              return (
               <div
                 key={shipment.id}
-                className="relative group bg-bg-tertiary rounded-xl p-6 card-hover cursor-pointer animate-slide-in"
-                onClick={() => navigate(`/packing/${shipment.id}`)}
+                className="relative group bg-bg-tertiary rounded-xl p-6 transition-all animate-slide-in overflow-hidden"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -325,32 +467,61 @@ const Dashboard: React.FC = () => {
                   </p>
                 )}
 
-                <div className="flex items-center gap-4 text-xs text-text-tertiary">
+                {/* Progress Bar */}
+                {totalParts > 0 && (
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs text-text-secondary">Postęp pakowania</span>
+                      <span className="text-xs font-semibold text-accent-primary">
+                        {packedParts}/{totalParts} części
+                      </span>
+                    </div>
+                    <div className="h-2 bg-bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-accent-primary to-green-400 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4 text-xs text-text-tertiary mb-4">
                   {shipment.require_weight && <span>⚖️ Waga</span>}
                   {shipment.require_country && <span>🌍 Kraj</span>}
                   {shipment.require_photos && <span>📷 Zdjęcia</span>}
                   {shipment.password && <span>🔒 Chroniona</span>}
                 </div>
 
-                {shipment.status === 'completed' && shipment.packing_time_seconds && (
-                  <div className="mt-4 pt-4 border-t border-bg-secondary">
-                    <span className="text-text-secondary text-xs">
-                      ⏱️ Czas pakowania:{' '}
-                      {Math.floor(shipment.packing_time_seconds / 60)} min
-                    </span>
-                  </div>
-                )}
-
-                {/* Delete button */}
-                <button
-                  onClick={(e) => handleDeleteClick(shipment, e)}
-                  className="absolute top-4 right-4 p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                  title="Usuń wysyłkę"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {/* Quick Actions */}
+                <div className="flex gap-2 mt-4 pt-4 border-t border-bg-secondary">
+                  <button
+                    onClick={() => handleShipmentClick(shipment)}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-accent-primary hover:bg-opacity-90 text-white rounded-lg transition-all text-sm font-medium"
+                  >
+                    <Play className="w-4 h-4" />
+                    {shipment.status === 'completed' ? 'Zobacz' : 'Kontynuuj'}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // TODO: Open reports menu
+                    }}
+                    className="flex items-center justify-center gap-2 px-3 py-2 bg-bg-secondary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-sm"
+                    title="Raporty"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteClick(shipment, e)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all text-sm"
+                    title="Usuń"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -423,6 +594,80 @@ const Dashboard: React.FC = () => {
                 className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all font-medium"
               >
                 Usuń
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password unlock modal */}
+      {unlockModal.open && unlockModal.shipment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-bg-secondary rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl animate-scale-in">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+                <Lock className="w-6 h-6 text-accent-primary" />
+                Wysyłka chroniona
+              </h2>
+              <button
+                onClick={() => {
+                  setUnlockModal({ open: false, shipment: null });
+                  setUnlockPassword('');
+                }}
+                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-text-tertiary" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-text-secondary mb-4">
+                Wysyłka{' '}
+                <span className="font-semibold text-text-primary">
+                  {unlockModal.shipment.shipment_number}
+                </span>
+                {' '}jest chroniona hasłem
+              </p>
+              <p className="text-text-tertiary text-sm">
+                🔒 Wprowadź hasło aby uzyskać dostęp
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="flex items-center gap-2 text-text-primary font-medium mb-2">
+                <Lock className="w-5 h-5" />
+                Hasło
+              </label>
+              <input
+                type="password"
+                value={unlockPassword}
+                onChange={(e) => setUnlockPassword(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleUnlockConfirm();
+                  }
+                }}
+                placeholder="Wprowadź hasło..."
+                className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setUnlockModal({ open: false, shipment: null });
+                  setUnlockPassword('');
+                }}
+                className="flex-1 px-4 py-3 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all font-medium"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleUnlockConfirm}
+                className="flex-1 px-4 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-medium"
+              >
+                Otwórz
               </button>
             </div>
           </div>
