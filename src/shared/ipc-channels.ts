@@ -9,6 +9,7 @@ export const IPC_CHANNELS = {
   DB_CREATE_SHIPMENT: 'db:create-shipment',
   DB_UPDATE_SHIPMENT: 'db:update-shipment',
   DB_DELETE_SHIPMENT: 'db:delete-shipment',
+  DB_ARCHIVE_SHIPMENT: 'db:archive-shipment',
   DB_GET_PARTS: 'db:get-parts',
   DB_UPDATE_PART: 'db:update-part',
   DB_SAVE_PHOTO: 'db:save-photo',
@@ -17,6 +18,12 @@ export const IPC_CHANNELS = {
   DB_UPDATE_SETTING: 'db:update-setting',
   DB_GET_STATS: 'db:get-stats',
   DB_UPDATE_STATS: 'db:update-stats',
+
+  // User operations
+  DB_GET_USERS: 'db:get-users',
+  DB_CREATE_USER: 'db:create-user',
+  DB_LOGIN_USER: 'db:login-user',
+  DB_DELETE_USER: 'db:delete-user',
 
   // Scale operations
   SCALE_CONNECT: 'scale:connect',

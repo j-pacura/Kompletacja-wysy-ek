@@ -155,6 +155,49 @@ function runMigrations(): void {
     console.error('Migration error:', error);
   }
 
+  // Migration 6: Add archived column to shipments table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(shipments)");
+    const columns = tableInfo[0]?.values || [];
+    const hasArchived = columns.some((col: any) => col[1] === 'archived');
+
+    if (!hasArchived) {
+      console.log('Adding archived column to shipments table');
+      db.run('ALTER TABLE shipments ADD COLUMN archived INTEGER DEFAULT 0');
+      saveDatabase();
+      console.log('Migration completed: added archived column');
+    } else {
+      console.log('archived column already exists');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
+  // Migration 7: Create users table
+  try {
+    const tableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
+
+    if (!tableExists || tableExists.length === 0 || tableExists[0]?.values.length === 0) {
+      console.log('Creating users table');
+      db.run(`
+        CREATE TABLE users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          surname TEXT,
+          password_hash TEXT,
+          created_at INTEGER NOT NULL,
+          last_login_at INTEGER
+        )
+      `);
+      saveDatabase();
+      console.log('Migration completed: created users table');
+    } else {
+      console.log('users table already exists');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
   console.log('Migrations complete');
 }
 

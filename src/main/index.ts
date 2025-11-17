@@ -6,6 +6,7 @@ import { IPC_CHANNELS } from '../shared/ipc-channels';
 import { selectExcelFile, parseExcelFile, openFolder } from './fileSystem';
 import * as Scale from './scale';
 import * as Reports from './reports';
+import { hashPassword, verifyPassword } from './auth';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -193,6 +194,17 @@ function setupIPCHandlers() {
     }
   });
 
+  // Archive shipment
+  ipcMain.handle(IPC_CHANNELS.DB_ARCHIVE_SHIPMENT, async (_event, id: number) => {
+    try {
+      execute('UPDATE shipments SET archived = 1 WHERE id = ?', [id]);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Archive shipment error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   // Get parts for shipment
   ipcMain.handle(IPC_CHANNELS.DB_GET_PARTS, async (_event, shipmentId: number) => {
     try {
@@ -267,6 +279,88 @@ function setupIPCHandlers() {
       return { success: true, data: stats };
     } catch (error: any) {
       console.error('Get stats error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // User operations
+  ipcMain.handle(IPC_CHANNELS.DB_GET_USERS, async () => {
+    try {
+      const users = query(`SELECT id, name, surname, created_at, last_login_at FROM users ORDER BY name ASC`);
+      return { success: true, data: users };
+    } catch (error: any) {
+      console.error('Get users error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.DB_CREATE_USER, async (_event, name: string, surname: string, password?: string) => {
+    try {
+      let passwordHash = null;
+
+      // Hash password if provided
+      if (password && password.trim()) {
+        passwordHash = await hashPassword(password);
+      }
+
+      const result = execute(
+        `INSERT INTO users (name, surname, password_hash, created_at) VALUES (?, ?, ?, ?)`,
+        [name, surname || null, passwordHash, Date.now()]
+      );
+
+      return { success: true, data: { id: result.lastInsertRowid } };
+    } catch (error: any) {
+      console.error('Create user error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.DB_LOGIN_USER, async (_event, userId: number, password?: string) => {
+    try {
+      const user = queryOne<any>(`SELECT * FROM users WHERE id = ?`, [userId]);
+
+      if (!user) {
+        return { success: false, error: 'User not found' };
+      }
+
+      // Check password if user has one set
+      if (user.password_hash) {
+        if (!password) {
+          return { success: false, error: 'Password required', needsPassword: true };
+        }
+
+        const isValid = await verifyPassword(password, user.password_hash);
+        if (!isValid) {
+          return { success: false, error: 'Invalid password' };
+        }
+      }
+
+      // Update last login time
+      execute(`UPDATE users SET last_login_at = ? WHERE id = ?`, [Date.now(), userId]);
+
+      // Return user data (without password hash)
+      return {
+        success: true,
+        data: {
+          id: user.id,
+          name: user.name,
+          surname: user.surname,
+          created_at: user.created_at,
+          last_login_at: Date.now()
+        }
+      };
+    } catch (error: any) {
+      console.error('Login user error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.DB_DELETE_USER, async (_event, userId: number) => {
+    try {
+      execute(`DELETE FROM users WHERE id = ?`, [userId]);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Delete user error:', error);
       return { success: false, error: error.message };
     }
   });

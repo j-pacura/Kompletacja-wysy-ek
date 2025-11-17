@@ -5,9 +5,18 @@ import Dashboard from './components/Dashboard';
 import ShipmentCreator from './components/ShipmentCreator';
 import PackingScreen from './components/PackingScreen';
 import SettingsScreen from './components/SettingsScreen';
+import Archive from './components/Archive';
+import UserSelector from './components/UserSelector';
+
+interface CurrentUser {
+  id: number;
+  name: string;
+  surname?: string;
+}
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
     // Initialize app
@@ -22,6 +31,16 @@ const App: React.FC = () => {
         } else {
           console.error('Failed to initialize app:', result.error);
         }
+
+        // Try to restore user from localStorage
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          try {
+            setCurrentUser(JSON.parse(savedUser));
+          } catch (e) {
+            console.error('Failed to parse saved user:', e);
+          }
+        }
       } catch (error) {
         console.error('App initialization error:', error);
       } finally {
@@ -31,6 +50,11 @@ const App: React.FC = () => {
 
     initApp();
   }, []);
+
+  const handleUserSelected = (user: CurrentUser) => {
+    setCurrentUser(user);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+  };
 
   if (isLoading) {
     return (
@@ -43,6 +67,15 @@ const App: React.FC = () => {
     );
   }
 
+  // Show user selector if no user is logged in
+  if (!currentUser) {
+    return (
+      <ThemeProvider>
+        <UserSelector onUserSelected={handleUserSelected} />
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider>
       <BrowserRouter>
@@ -52,6 +85,7 @@ const App: React.FC = () => {
             <Route path="/create" element={<ShipmentCreator />} />
             <Route path="/packing/:shipmentId" element={<PackingScreen />} />
             <Route path="/settings" element={<SettingsScreen />} />
+            <Route path="/archive" element={<Archive />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

@@ -16,6 +16,7 @@ export interface Shipment {
   excel_file_path?: string;
   password?: string;
   created_date: string;
+  archived?: boolean;
 }
 
 export interface CreateShipmentInput {

@@ -15,6 +15,7 @@ import {
   Calendar,
   Play,
   FileText,
+  Archive,
 } from 'lucide-react';
 import { Shipment } from '../types/shipment';
 import { format } from 'date-fns';
@@ -144,8 +145,29 @@ const Dashboard: React.FC = () => {
 
     const matchesStatus = filterStatus === 'all' || shipment.status === filterStatus;
 
-    return matchesSearch && matchesStatus;
+    const notArchived = !shipment.archived;
+
+    return matchesSearch && matchesStatus && notArchived;
   });
+
+  const handleArchiveClick = async (shipment: Shipment, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('db:archive-shipment', shipment.id);
+
+      if (result.success) {
+        // Remove from list by reloading shipments
+        loadShipments();
+      } else {
+        alert('❌ Błąd archiwizowania wysyłki');
+      }
+    } catch (error) {
+      console.error('Error archiving shipment:', error);
+      alert('❌ Błąd archiwizowania wysyłki');
+    }
+  };
 
   const handleDeleteClick = (shipment: Shipment, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -258,6 +280,13 @@ const Dashboard: React.FC = () => {
           <div className="flex gap-3">
             <button
               className="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all btn-active"
+              onClick={() => navigate('/archive')}
+            >
+              <Archive className="w-5 h-5" />
+              Archiwum
+            </button>
+            <button
+              className="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all btn-active"
               onClick={() => {/* TODO: Open statistics */}}
             >
               <BarChart3 className="w-5 h-5" />
@@ -281,77 +310,77 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
           {/* Total Shipments */}
-          <div className="group relative bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-blue-600/0 group-hover:from-blue-500/5 group-hover:to-blue-600/5 rounded-xl transition-all duration-300" />
+          <div className="group relative bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-lg p-3 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-blue-600/0 group-hover:from-blue-500/5 group-hover:to-blue-600/5 rounded-lg transition-all duration-300" />
             <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Package className="w-6 h-6 text-blue-400" />
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-1.5 bg-blue-500/20 rounded-md">
+                  <Package className="w-4 h-4 text-blue-400" />
                 </div>
-                <TrendingUp className="w-5 h-5 text-blue-400 opacity-50" />
+                <TrendingUp className="w-3 h-3 text-blue-400 opacity-50" />
               </div>
-              <h3 className="text-text-tertiary text-sm font-medium mb-1">Wszystkie</h3>
-              <p className="text-3xl font-bold text-text-primary mb-1">{shipments.length}</p>
-              <p className="text-blue-400 text-xs font-medium">wysyłek łącznie</p>
+              <h3 className="text-text-tertiary text-xs font-medium mb-0.5">Wszystkie</h3>
+              <p className="text-xl font-bold text-text-primary mb-0.5">{shipments.filter(s => !s.archived).length}</p>
+              <p className="text-blue-400 text-[10px] font-medium">wysyłek łącznie</p>
             </div>
           </div>
 
           {/* In Progress */}
-          <div className="group relative bg-gradient-to-br from-yellow-500/10 to-orange-600/10 border border-yellow-500/20 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-yellow-500/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/0 to-orange-600/0 group-hover:from-yellow-500/5 group-hover:to-orange-600/5 rounded-xl transition-all duration-300" />
+          <div className="group relative bg-gradient-to-br from-yellow-500/10 to-orange-600/10 border border-yellow-500/20 rounded-lg p-3 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-yellow-500/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/0 to-orange-600/0 group-hover:from-yellow-500/5 group-hover:to-orange-600/5 rounded-lg transition-all duration-300" />
             <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-yellow-500/20 rounded-lg">
-                  <Clock className="w-6 h-6 text-yellow-400" />
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-1.5 bg-yellow-500/20 rounded-md">
+                  <Clock className="w-4 h-4 text-yellow-400" />
                 </div>
-                <TrendingUp className="w-5 h-5 text-yellow-400 opacity-50" />
+                <TrendingUp className="w-3 h-3 text-yellow-400 opacity-50" />
               </div>
-              <h3 className="text-text-tertiary text-sm font-medium mb-1">W trakcie</h3>
-              <p className="text-3xl font-bold text-text-primary mb-1">
-                {shipments.filter(s => s.status === 'in_progress').length}
+              <h3 className="text-text-tertiary text-xs font-medium mb-0.5">W trakcie</h3>
+              <p className="text-xl font-bold text-text-primary mb-0.5">
+                {shipments.filter(s => s.status === 'in_progress' && !s.archived).length}
               </p>
-              <p className="text-yellow-400 text-xs font-medium">aktywnych wysyłek</p>
+              <p className="text-yellow-400 text-[10px] font-medium">aktywnych wysyłek</p>
             </div>
           </div>
 
           {/* Completed */}
-          <div className="group relative bg-gradient-to-br from-green-500/10 to-emerald-600/10 border border-green-500/20 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-emerald-600/0 group-hover:from-green-500/5 group-hover:to-emerald-600/5 rounded-xl transition-all duration-300" />
+          <div className="group relative bg-gradient-to-br from-green-500/10 to-emerald-600/10 border border-green-500/20 rounded-lg p-3 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-emerald-600/0 group-hover:from-green-500/5 group-hover:to-emerald-600/5 rounded-lg transition-all duration-300" />
             <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <CheckCircle2 className="w-6 h-6 text-green-400" />
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-1.5 bg-green-500/20 rounded-md">
+                  <CheckCircle2 className="w-4 h-4 text-green-400" />
                 </div>
-                <TrendingUp className="w-5 h-5 text-green-400 opacity-50" />
+                <TrendingUp className="w-3 h-3 text-green-400 opacity-50" />
               </div>
-              <h3 className="text-text-tertiary text-sm font-medium mb-1">Ukończone</h3>
-              <p className="text-3xl font-bold text-text-primary mb-1">
-                {shipments.filter(s => s.status === 'completed').length}
+              <h3 className="text-text-tertiary text-xs font-medium mb-0.5">Ukończone</h3>
+              <p className="text-xl font-bold text-text-primary mb-0.5">
+                {shipments.filter(s => s.status === 'completed' && !s.archived).length}
               </p>
-              <p className="text-green-400 text-xs font-medium">zrealizowanych</p>
+              <p className="text-green-400 text-[10px] font-medium">zrealizowanych</p>
             </div>
           </div>
 
           {/* Today's Shipments */}
-          <div className="group relative bg-gradient-to-br from-purple-500/10 to-pink-600/10 border border-purple-500/20 rounded-xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-pink-600/0 group-hover:from-purple-500/5 group-hover:to-pink-600/5 rounded-xl transition-all duration-300" />
+          <div className="group relative bg-gradient-to-br from-purple-500/10 to-pink-600/10 border border-purple-500/20 rounded-lg p-3 hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-pink-600/0 group-hover:from-purple-500/5 group-hover:to-pink-600/5 rounded-lg transition-all duration-300" />
             <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <Calendar className="w-6 h-6 text-purple-400" />
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-1.5 bg-purple-500/20 rounded-md">
+                  <Calendar className="w-4 h-4 text-purple-400" />
                 </div>
-                <TrendingUp className="w-5 h-5 text-purple-400 opacity-50" />
+                <TrendingUp className="w-3 h-3 text-purple-400 opacity-50" />
               </div>
-              <h3 className="text-text-tertiary text-sm font-medium mb-1">Dzisiaj</h3>
-              <p className="text-3xl font-bold text-text-primary mb-1">
+              <h3 className="text-text-tertiary text-xs font-medium mb-0.5">Dzisiaj</h3>
+              <p className="text-xl font-bold text-text-primary mb-0.5">
                 {shipments.filter(s => {
                   const today = new Date().toISOString().split('T')[0];
-                  return s.created_date === today;
+                  return s.created_date === today && !s.archived;
                 }).length}
               </p>
-              <p className="text-purple-400 text-xs font-medium">nowych wysyłek</p>
+              <p className="text-purple-400 text-[10px] font-medium">nowych wysyłek</p>
             </div>
           </div>
         </div>
@@ -501,6 +530,15 @@ const Dashboard: React.FC = () => {
                     <Play className="w-4 h-4" />
                     {shipment.status === 'completed' ? 'Zobacz' : 'Kontynuuj'}
                   </button>
+                  {shipment.status === 'completed' && (
+                    <button
+                      onClick={(e) => handleArchiveClick(shipment, e)}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-all text-sm"
+                      title="Przenieś do archiwum"
+                    >
+                      <Archive className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
