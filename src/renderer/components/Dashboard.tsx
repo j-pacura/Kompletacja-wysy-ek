@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import toast from 'react-hot-toast';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -120,8 +121,23 @@ const Dashboard: React.FC = () => {
     return matchesSearch && matchesStatus && notArchived;
   });
 
+  // Permission helper function
+  const canModifyShipment = (shipment: Shipment): boolean => {
+    if (!currentUser) return false;
+    // Admin can modify all shipments
+    if (currentUser.role === 'admin') return true;
+    // Regular user can only modify their own shipments
+    return shipment.user_id === currentUser.id;
+  };
+
   const handleArchiveClick = async (shipment: Shipment, e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Check permissions
+    if (!canModifyShipment(shipment)) {
+      toast.error('Nie masz uprawnień do archiwizowania tej wysyłki. Tylko właściciel lub administrator może to zrobić.');
+      return;
+    }
 
     try {
       const { ipcRenderer } = window.require('electron');
@@ -130,17 +146,25 @@ const Dashboard: React.FC = () => {
       if (result.success) {
         // Remove from list by reloading shipments
         loadShipments();
+        toast.success('Wysyłka przeniesiona do archiwum');
       } else {
-        alert('❌ Błąd archiwizowania wysyłki');
+        toast.error('Błąd archiwizowania wysyłki');
       }
     } catch (error) {
       console.error('Error archiving shipment:', error);
-      alert('❌ Błąd archiwizowania wysyłki');
+      toast.error('Błąd archiwizowania wysyłki');
     }
   };
 
   const handleDeleteClick = (shipment: Shipment, e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Check permissions
+    if (!canModifyShipment(shipment)) {
+      toast.error('Nie masz uprawnień do usunięcia tej wysyłki. Tylko właściciel lub administrator może to zrobić.');
+      return;
+    }
+
     setDeleteModal({ open: true, shipment });
     setDeletePassword('');
   };
