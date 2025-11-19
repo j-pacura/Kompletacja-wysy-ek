@@ -371,6 +371,35 @@ function setupIPCHandlers() {
     }
   });
 
+  ipcMain.handle(IPC_CHANNELS.DB_CHANGE_PASSWORD, async (_event, data: { userId: number; currentPassword: string; newPassword: string }) => {
+    try {
+      const { userId, currentPassword, newPassword } = data;
+
+      // Get user
+      const user = queryOne<any>(`SELECT * FROM users WHERE id = ?`, [userId]);
+      if (!user) {
+        return { success: false, error: 'Użytkownik nie istnieje' };
+      }
+
+      // Verify current password
+      const isValid = await verifyPassword(currentPassword, user.password_hash);
+      if (!isValid) {
+        return { success: false, error: 'Nieprawidłowe obecne hasło' };
+      }
+
+      // Hash new password
+      const newPasswordHash = await hashPassword(newPassword);
+
+      // Update password
+      execute(`UPDATE users SET password_hash = ? WHERE id = ?`, [newPasswordHash, userId]);
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Change password error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   // App version
   ipcMain.handle(IPC_CHANNELS.APP_GET_VERSION, async () => {
     return { success: true, data: app.getVersion() };
