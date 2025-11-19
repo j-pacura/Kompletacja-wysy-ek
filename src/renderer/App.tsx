@@ -9,6 +9,7 @@ import PackingScreen from './components/PackingScreen';
 import SettingsScreen from './components/SettingsScreen';
 import Archive from './components/Archive';
 import LoginScreen from './components/LoginScreen';
+import AdminPanel from './components/AdminPanel';
 
 const AppContent: React.FC = () => {
   const { currentUser, isLoading } = useUser();
@@ -39,6 +40,7 @@ const AppContent: React.FC = () => {
           <Route path="/packing/:shipmentId" element={<PackingScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
           <Route path="/archive" element={<Archive />} />
+          <Route path="/admin" element={<AdminPanel />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

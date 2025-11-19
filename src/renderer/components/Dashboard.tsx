@@ -17,6 +17,7 @@ import {
   FileText,
   Archive,
   LogOut,
+  Shield,
 } from 'lucide-react';
 import { Shipment } from '../types/shipment';
 import { format } from 'date-fns';
@@ -27,7 +28,7 @@ import toast from 'react-hot-toast';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser, logout } = useUser();
+  const { currentUser, logout, isAdmin } = useUser();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -267,6 +268,16 @@ const Dashboard: React.FC = () => {
               <Settings className="w-5 h-5" />
               Ustawienia
             </button>
+            {isAdmin() && (
+              <button
+                className="flex items-center gap-2 px-4 py-2 bg-accent-primary/20 hover:bg-accent-primary/30 text-accent-primary rounded-lg transition-all btn-active border border-accent-primary/30"
+                onClick={() => navigate('/admin')}
+                title="Panel administratora"
+              >
+                <Shield className="w-5 h-5" />
+                Admin
+              </button>
+            )}
             <button
               className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-all btn-active border border-red-500/30"
               onClick={logout}
