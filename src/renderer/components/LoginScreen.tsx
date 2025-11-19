@@ -189,7 +189,7 @@ const LoginScreen: React.FC = () => {
             <Package className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-text-primary mb-2">
-            {isFirstLaunch ? 'Konfiguracja Administratora' : 'Pakowanie Wysyłek'}
+            {isFirstLaunch ? 'Konfiguracja Administratora' : 'Asystent Pakowania'}
           </h1>
           <p className="text-text-secondary">
             {isFirstLaunch
@@ -507,7 +507,7 @@ const LoginScreen: React.FC = () => {
 
         {/* Footer */}
         <div className="text-center mt-6 text-sm text-text-tertiary">
-          Warehouse Packing Application v1.0
+          Asystent Pakowania 1.0
         </div>
       </div>
     </div>

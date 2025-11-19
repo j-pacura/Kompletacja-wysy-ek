@@ -234,7 +234,7 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-text-primary mb-2">
-              📦 Pakowanie Wysyłek
+              📦 Asystent Pakowania
             </h1>
             <p className="text-text-secondary">
               Zarządzaj wysyłkami i śledź postęp pakowania

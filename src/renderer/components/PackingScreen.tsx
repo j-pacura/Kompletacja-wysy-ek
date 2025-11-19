@@ -317,6 +317,12 @@ const PackingScreen: React.FC = () => {
   };
 
   const handleUnpackPart = async (part: Part) => {
+    // Check permissions
+    if (!canModifyShipment()) {
+      toast.error('Nie masz uprawnień do edycji tej wysyłki. Tylko właściciel lub administrator może to zrobić.');
+      return;
+    }
+
     console.log('Unpacking part:', part.sap_index);
     try {
       const { ipcRenderer } = window.require('electron');

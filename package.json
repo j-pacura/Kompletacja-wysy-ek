@@ -1,7 +1,7 @@
 {
-  "name": "warehouse-packing-app",
+  "name": "asystent-pakowania",
   "version": "1.0.0",
-  "description": "Desktop application for warehouse packing operations",
+  "description": "Asystent Pakowania - Aplikacja do zarządzania wysyłkami",
   "main": "dist/main/index.js",
   "author": "Warehouse Team",
   "license": "MIT",
@@ -52,8 +52,8 @@
     "autoprefixer": "^10.4.0"
   },
   "build": {
-    "appId": "com.warehouse.packing",
-    "productName": "PakowanieApp",
+    "appId": "com.asystent.pakowania",
+    "productName": "Asystent Pakowania",
     "directories": {
       "output": "dist-electron",
       "buildResources": "resources"
