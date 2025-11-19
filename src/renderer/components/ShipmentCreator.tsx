@@ -14,11 +14,13 @@ import {
   Lock,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../contexts/UserContext';
 import { CreateShipmentInput } from '../types/shipment';
 import { PartFromExcel } from '../types/part';
 
 const ShipmentCreator: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useUser();
   const [step, setStep] = useState<'info' | 'excel' | 'config'>('info');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +80,7 @@ const ShipmentCreator: React.FC = () => {
       const { ipcRenderer } = window.require('electron');
 
       // Create shipment
-      const shipmentData: CreateShipmentInput = {
+      const shipmentData: any = {
         shipment_number: shipmentNumber,
         destination,
         notes: notes || undefined,
@@ -87,6 +89,8 @@ const ShipmentCreator: React.FC = () => {
         require_photos: requirePhotos,
         excel_file_path: excelFile || undefined,
         password: password || undefined,
+        user_id: currentUser?.id,
+        packed_by: currentUser ? `${currentUser.name} ${currentUser.surname}` : undefined,
       };
 
       const createResult = await ipcRenderer.invoke('db:create-shipment', shipmentData);

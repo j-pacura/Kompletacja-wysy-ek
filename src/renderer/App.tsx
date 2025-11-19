@@ -1,60 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { UserProvider, useUser } from './contexts/UserContext';
 import Dashboard from './components/Dashboard';
 import ShipmentCreator from './components/ShipmentCreator';
 import PackingScreen from './components/PackingScreen';
 import SettingsScreen from './components/SettingsScreen';
 import Archive from './components/Archive';
-import UserSelector from './components/UserSelector';
+import LoginScreen from './components/LoginScreen';
 
-interface CurrentUser {
-  id: number;
-  name: string;
-  surname?: string;
-}
-
-const App: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-
-  useEffect(() => {
-    // Initialize app
-    const initApp = async () => {
-      try {
-        // Test database connection
-        const { ipcRenderer } = window.require('electron');
-        const result = await ipcRenderer.invoke('db:get-settings');
-
-        if (result.success) {
-          console.log('App initialized successfully');
-        } else {
-          console.error('Failed to initialize app:', result.error);
-        }
-
-        // Try to restore user from localStorage
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-          try {
-            setCurrentUser(JSON.parse(savedUser));
-          } catch (e) {
-            console.error('Failed to parse saved user:', e);
-          }
-        }
-      } catch (error) {
-        console.error('App initialization error:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initApp();
-  }, []);
-
-  const handleUserSelected = (user: CurrentUser) => {
-    setCurrentUser(user);
-    localStorage.setItem('currentUser', JSON.stringify(user));
-  };
+const AppContent: React.FC = () => {
+  const { currentUser, isLoading } = useUser();
 
   if (isLoading) {
     return (
@@ -67,29 +24,57 @@ const App: React.FC = () => {
     );
   }
 
-  // Show user selector if no user is logged in
+  // Show login screen if no user is logged in
   if (!currentUser) {
-    return (
-      <ThemeProvider>
-        <UserSelector onUserSelected={handleUserSelected} />
-      </ThemeProvider>
-    );
+    return <LoginScreen />;
   }
 
+  // User is logged in - show main app
+  return (
+    <BrowserRouter>
+      <div className="w-screen h-screen bg-bg-primary overflow-hidden">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/create" element={<ShipmentCreator />} />
+          <Route path="/packing/:shipmentId" element={<PackingScreen />} />
+          <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/archive" element={<Archive />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  );
+};
+
+const App: React.FC = () => {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <div className="w-screen h-screen bg-bg-primary overflow-hidden">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/create" element={<ShipmentCreator />} />
-            <Route path="/packing/:shipmentId" element={<PackingScreen />} />
-            <Route path="/settings" element={<SettingsScreen />} />
-            <Route path="/archive" element={<Archive />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </BrowserRouter>
+      <UserProvider>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: 'var(--color-bg-tertiary)',
+              color: 'var(--color-text-primary)',
+              border: '1px solid var(--color-bg-tertiary)',
+            },
+            success: {
+              iconTheme: {
+                primary: 'var(--color-accent-success)',
+                secondary: 'white',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: 'var(--color-accent-error)',
+                secondary: 'white',
+              },
+            },
+          }}
+        />
+        <AppContent />
+      </UserProvider>
     </ThemeProvider>
   );
 };

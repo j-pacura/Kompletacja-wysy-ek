@@ -271,6 +271,32 @@ function runMigrations(): void {
     console.error('Migration error:', error);
   }
 
+  // Migration 11: Assign existing shipments to first admin user
+  try {
+    // Check if there are any shipments without user_id
+    const unassignedShipments = db.exec("SELECT COUNT(*) as count FROM shipments WHERE user_id IS NULL");
+    const count = unassignedShipments[0]?.values[0]?.[0] || 0;
+
+    if (count > 0) {
+      // Find first admin user
+      const adminResult = db.exec("SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1");
+
+      if (adminResult && adminResult[0]?.values.length > 0) {
+        const adminId = adminResult[0].values[0][0];
+        console.log(`Assigning ${count} unassigned shipments to admin user ${adminId}`);
+        db.run('UPDATE shipments SET user_id = ? WHERE user_id IS NULL', [adminId]);
+        saveDatabase();
+        console.log('Migration completed: assigned shipments to admin');
+      } else {
+        console.log('No admin user found, skipping shipment assignment');
+      }
+    } else {
+      console.log('All shipments already have user_id assigned');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
   console.log('Migrations complete');
 }
 
