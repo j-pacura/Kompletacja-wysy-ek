@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { LogIn, UserPlus, Package, AlertCircle, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Package, AlertCircle, Loader2, Key } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
+import { PublicUser } from '../types/user';
 import toast from 'react-hot-toast';
 
 const LoginScreen: React.FC = () => {
-  const { login } = useUser();
+  const { login, setUser } = useUser();
 
   // Mode: 'login' | 'register' | 'admin-setup'
   const [mode, setMode] = useState<'login' | 'register' | 'admin-setup'>('login');
@@ -18,6 +19,13 @@ const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [reportLanguage, setReportLanguage] = useState<'pl' | 'en'>('pl');
+
+  // Forced password change state
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
+  const [userPendingPasswordChange, setUserPendingPasswordChange] = useState<PublicUser | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   // Check if this is first launch (no users exist)
   useEffect(() => {
@@ -53,8 +61,18 @@ const LoginScreen: React.FC = () => {
 
     if (!result.success) {
       toast.error(result.error || 'Błąd logowania');
+      return;
     }
-    // Success is handled by UserContext + App.tsx redirect
+
+    // Check if user needs to change password
+    if (result.forcePasswordChange && result.userData) {
+      setUserPendingPasswordChange(result.userData);
+      setShowPasswordChangeModal(true);
+      setPassword(''); // Clear login password
+      return;
+    }
+
+    // Success - user is logged in via UserContext
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -177,6 +195,69 @@ const LoginScreen: React.FC = () => {
       toast.error('Wystąpił błąd podczas konfiguracji');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForcedPasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newPassword || !confirmNewPassword) {
+      toast.error('Wypełnij wszystkie pola');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error('Hasła nie są identyczne');
+      return;
+    }
+
+    if (newPassword.length < 4) {
+      toast.error('Nowe hasło musi mieć minimum 4 znaki');
+      return;
+    }
+
+    if (!userPendingPasswordChange) {
+      toast.error('Błąd: brak danych użytkownika');
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      // Use the initial password (Start.123) as current password
+      const result = await ipcRenderer.invoke('db:change-password', {
+        userId: userPendingPasswordChange.id,
+        currentPassword: 'Start.123',
+        newPassword,
+      });
+
+      if (result.success) {
+        toast.success('✅ Hasło zostało zmienione pomyślnie!');
+
+        // Update user data to clear force_password_change flag
+        const updatedUser: PublicUser = {
+          ...userPendingPasswordChange,
+          force_password_change: false,
+        };
+
+        // Set user as logged in
+        setUser(updatedUser);
+
+        // Close modal and reset state
+        setShowPasswordChangeModal(false);
+        setUserPendingPasswordChange(null);
+        setNewPassword('');
+        setConfirmNewPassword('');
+      } else {
+        toast.error(result.error || 'Błąd zmiany hasła');
+      }
+    } catch (error: any) {
+      console.error('Forced password change error:', error);
+      toast.error('Wystąpił błąd podczas zmiany hasła');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -510,6 +591,80 @@ const LoginScreen: React.FC = () => {
           Asystent Pakowania 1.0
         </div>
       </div>
+
+      {/* Forced Password Change Modal */}
+      {showPasswordChangeModal && userPendingPasswordChange && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-bg-secondary rounded-2xl p-8 max-w-md w-full border border-bg-tertiary">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-accent-warning/20 flex items-center justify-center">
+                <Key className="w-6 h-6 text-accent-warning" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-text-primary">Zmiana hasła wymagana</h2>
+                <p className="text-text-secondary text-sm">Musisz ustawić nowe hasło</p>
+              </div>
+            </div>
+
+            <div className="bg-accent-warning/10 border border-accent-warning/30 rounded-lg p-4 mb-6">
+              <p className="text-accent-warning text-sm font-medium">
+                Twoje hasło zostało zresetowane przez administratora. Ze względów bezpieczeństwa musisz ustawić nowe hasło przed kontynuowaniem.
+              </p>
+            </div>
+
+            <form onSubmit={handleForcedPasswordChange} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  Nowe hasło
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                  placeholder="Wprowadź nowe hasło"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  Potwierdź nowe hasło
+                </label>
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                  placeholder="Potwierdź nowe hasło"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={changingPassword}
+                className="w-full py-4 bg-accent-primary hover:bg-opacity-90 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {changingPassword ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Zmieniam hasło...
+                  </>
+                ) : (
+                  <>
+                    <Key className="w-5 h-5" />
+                    Ustaw nowe hasło
+                  </>
+                )}
+              </button>
+
+              <p className="text-text-tertiary text-xs text-center">
+                Hasło musi mieć minimum 4 znaki
+              </p>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

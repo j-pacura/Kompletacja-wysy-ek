@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, UserPlus, Trash2, Shield, User, Search, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, UserPlus, Trash2, Shield, User, Search, Loader2, AlertCircle, Key } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { PublicUser } from '../types/user';
 
@@ -25,6 +25,9 @@ const AdminPanel: React.FC = () => {
 
   // Delete confirmation state
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<PublicUser | null>(null);
+
+  // Reset password confirmation state
+  const [resetPasswordUser, setResetPasswordUser] = useState<PublicUser | null>(null);
 
   useEffect(() => {
     // Check if user is admin
@@ -130,6 +133,31 @@ const AdminPanel: React.FC = () => {
     } catch (error) {
       console.error('Error deleting user:', error);
       toast.error('Błąd usuwania użytkownika');
+    }
+  };
+
+  const handleResetPassword = async (user: PublicUser) => {
+    if (user.id === currentUser?.id) {
+      toast.error('Nie możesz zresetować hasła swojego własnego konta');
+      return;
+    }
+
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('db:reset-user-password', user.id);
+
+      if (result.success) {
+        toast.success(`🔑 Hasło użytkownika ${user.login} zostało zresetowane do "Start.123". Użytkownik będzie musiał zmienić hasło przy następnym logowaniu.`, {
+          duration: 6000
+        });
+        setResetPasswordUser(null);
+        loadUsers();
+      } else {
+        toast.error('Błąd resetowania hasła');
+      }
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast.error('Błąd resetowania hasła');
     }
   };
 
@@ -364,14 +392,25 @@ const AdminPanel: React.FC = () => {
                         }
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setDeleteConfirmUser(user)}
-                          disabled={user.id === currentUser?.id}
-                          className="inline-flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Usuń
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setResetPasswordUser(user)}
+                            disabled={user.id === currentUser?.id}
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-accent-warning/20 hover:bg-accent-warning/30 text-accent-warning rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Resetuj hasło do Start.123"
+                          >
+                            <Key className="w-4 h-4" />
+                            Reset hasła
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmUser(user)}
+                            disabled={user.id === currentUser?.id}
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Usuń
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -441,6 +480,49 @@ const AdminPanel: React.FC = () => {
                 className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all font-semibold"
               >
                 Usuń użytkownika
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Confirmation Modal */}
+      {resetPasswordUser && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-bg-secondary rounded-2xl p-6 max-w-md w-full border border-bg-tertiary">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-accent-warning/20 flex items-center justify-center">
+                <Key className="w-6 h-6 text-accent-warning" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-text-primary">Potwierdź reset hasła</h3>
+                <p className="text-text-secondary text-sm">Ustaw hasło na domyślne</p>
+              </div>
+            </div>
+
+            <div className="bg-bg-tertiary rounded-lg p-4 mb-6">
+              <p className="text-text-secondary text-sm mb-3">Czy na pewno chcesz zresetować hasło użytkownika:</p>
+              <p className="text-text-primary font-semibold mb-4">
+                {resetPasswordUser.name} {resetPasswordUser.surname} ({resetPasswordUser.login})
+              </p>
+              <div className="bg-accent-warning/10 border border-accent-warning/30 rounded-lg p-3">
+                <p className="text-accent-warning text-sm font-medium mb-1">Nowe hasło: <span className="font-bold">Start.123</span></p>
+                <p className="text-text-tertiary text-xs">Użytkownik będzie musiał zmienić hasło przy następnym logowaniu</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setResetPasswordUser(null)}
+                className="flex-1 px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg hover:bg-opacity-80 transition-all font-medium"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={() => handleResetPassword(resetPasswordUser)}
+                className="flex-1 px-4 py-3 bg-accent-warning hover:opacity-90 text-white rounded-lg transition-all font-semibold"
+              >
+                Resetuj hasło
               </button>
             </div>
           </div>

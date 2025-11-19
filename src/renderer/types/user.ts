@@ -9,6 +9,7 @@ export interface User {
   created_at: number;
   last_login: number | null;
   active: boolean;
+  force_password_change: boolean;
 }
 
 export interface LoginCredentials {

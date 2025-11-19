@@ -4,7 +4,8 @@ import { PublicUser } from '../types/user';
 interface UserContextType {
   currentUser: PublicUser | null;
   isLoading: boolean;
-  login: (login: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (login: string, password: string) => Promise<{ success: boolean; error?: string; forcePasswordChange?: boolean; userData?: PublicUser }>;
+  setUser: (user: PublicUser) => void;
   logout: () => void;
   isAdmin: () => boolean;
 }
@@ -32,7 +33,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setIsLoading(false);
   }, []);
 
-  const login = async (login: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (login: string, password: string): Promise<{ success: boolean; error?: string; forcePasswordChange?: boolean; userData?: PublicUser }> => {
     try {
       const { ipcRenderer } = window.require('electron');
       const result = await ipcRenderer.invoke('db:login-user', { login, password });
@@ -48,7 +49,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           created_at: result.data.created_at,
           last_login: result.data.last_login,
           active: result.data.active,
+          force_password_change: result.data.force_password_change,
         };
+
+        // Check if user needs to change password
+        if (user.force_password_change) {
+          // Don't set currentUser yet - return user data for password change modal
+          return { success: true, forcePasswordChange: true, userData: user };
+        }
 
         // Session stored in memory only - cleared when app closes
         setCurrentUser(user);
@@ -61,6 +69,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       console.error('Login error:', error);
       return { success: false, error: 'Wystąpił błąd podczas logowania' };
     }
+  };
+
+  const setUser = (user: PublicUser) => {
+    setCurrentUser(user);
   };
 
   const logout = () => {
@@ -77,6 +89,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         currentUser,
         isLoading,
         login,
+        setUser,
         logout,
         isAdmin,
       }}

@@ -1550,21 +1550,24 @@ const PackingScreen: React.FC = () => {
 
         {/* Requirements badges */}
         {(shipment.require_weight || shipment.require_country || shipment.require_photos) && (
-          <div className="flex gap-3 mt-3">
-            <span className="text-text-secondary text-sm">Wymagane dane:</span>
+          <div className="flex items-center gap-3 mt-4 p-3 bg-bg-tertiary rounded-lg">
+            <span className="text-text-primary text-sm font-semibold">Wymagane dane:</span>
             {shipment.require_weight && (
-              <span className="px-3 py-1 bg-accent-primary bg-opacity-10 text-accent-primary text-xs rounded-full">
-                ⚖️ Waga
+              <span className="px-4 py-2 bg-accent-primary bg-opacity-20 text-accent-primary text-sm font-semibold rounded-lg border border-accent-primary border-opacity-30 flex items-center gap-2">
+                <span className="text-lg">⚖️</span>
+                <span>Waga</span>
               </span>
             )}
             {shipment.require_country && (
-              <span className="px-3 py-1 bg-accent-secondary bg-opacity-10 text-accent-secondary text-xs rounded-full">
-                🌍 Kraj pochodzenia
+              <span className="px-4 py-2 bg-accent-secondary bg-opacity-20 text-accent-secondary text-sm font-semibold rounded-lg border border-accent-secondary border-opacity-30 flex items-center gap-2">
+                <span className="text-lg">🌍</span>
+                <span>Kraj pochodzenia</span>
               </span>
             )}
             {shipment.require_photos && (
-              <span className="px-3 py-1 bg-accent-warning bg-opacity-10 text-accent-warning text-xs rounded-full">
-                📷 Zdjęcia
+              <span className="px-4 py-2 bg-accent-warning bg-opacity-20 text-accent-warning text-sm font-semibold rounded-lg border border-accent-warning border-opacity-30 flex items-center gap-2">
+                <span className="text-lg">📷</span>
+                <span>Zdjęcia</span>
               </span>
             )}
           </div>

@@ -287,7 +287,7 @@ function setupIPCHandlers() {
   // User operations
   ipcMain.handle(IPC_CHANNELS.DB_GET_USERS, async () => {
     try {
-      const users = query(`SELECT id, name, surname, login, report_language, role, active, created_at, last_login FROM users WHERE active = 1 ORDER BY surname ASC, name ASC`);
+      const users = query(`SELECT id, name, surname, login, report_language, role, active, created_at, last_login, force_password_change FROM users WHERE active = 1 ORDER BY surname ASC, name ASC`);
       return { success: true, data: users };
     } catch (error: any) {
       console.error('Get users error:', error);
@@ -352,7 +352,8 @@ function setupIPCHandlers() {
           role: user.role,
           created_at: user.created_at,
           last_login: Date.now(),
-          active: user.active
+          active: user.active,
+          force_password_change: Boolean(user.force_password_change)
         }
       };
     } catch (error: any) {
@@ -390,12 +391,27 @@ function setupIPCHandlers() {
       // Hash new password
       const newPasswordHash = await hashPassword(newPassword);
 
-      // Update password
-      execute(`UPDATE users SET password_hash = ? WHERE id = ?`, [newPasswordHash, userId]);
+      // Update password and clear force_password_change flag
+      execute(`UPDATE users SET password_hash = ?, force_password_change = 0 WHERE id = ?`, [newPasswordHash, userId]);
 
       return { success: true };
     } catch (error: any) {
       console.error('Change password error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.DB_RESET_USER_PASSWORD, async (_event, userId: number) => {
+    try {
+      // Reset password to 'Start.123' and set force_password_change flag
+      const defaultPassword = 'Start.123';
+      const passwordHash = await hashPassword(defaultPassword);
+
+      execute(`UPDATE users SET password_hash = ?, force_password_change = 1 WHERE id = ?`, [passwordHash, userId]);
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Reset user password error:', error);
       return { success: false, error: error.message };
     }
   });

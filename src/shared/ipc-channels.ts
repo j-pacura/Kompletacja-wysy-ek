@@ -25,6 +25,7 @@ export const IPC_CHANNELS = {
   DB_LOGIN_USER: 'db:login-user',
   DB_DELETE_USER: 'db:delete-user',
   DB_CHANGE_PASSWORD: 'db:change-password',
+  DB_RESET_USER_PASSWORD: 'db:reset-user-password',
 
   // Scale operations
   SCALE_CONNECT: 'scale:connect',

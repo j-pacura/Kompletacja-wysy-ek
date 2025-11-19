@@ -345,6 +345,24 @@ function runMigrations(): void {
     console.error('Migration 13 error:', error);
   }
 
+  // Migration 14: Add force_password_change column to users table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(users)");
+    const columns = tableInfo[0]?.values || [];
+    const hasForcePasswordChange = columns.some((col: any) => col[1] === 'force_password_change');
+
+    if (!hasForcePasswordChange) {
+      console.log('Adding force_password_change column to users table');
+      db.run("ALTER TABLE users ADD COLUMN force_password_change INTEGER NOT NULL DEFAULT 0");
+      saveDatabase();
+      console.log('Migration completed: added force_password_change column');
+    } else {
+      console.log('force_password_change column already exists');
+    }
+  } catch (error) {
+    console.error('Migration 14 error:', error);
+  }
+
   console.log('Migrations complete');
 }
 
