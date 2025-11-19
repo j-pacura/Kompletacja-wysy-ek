@@ -1524,7 +1524,7 @@ const PackingScreen: React.FC = () => {
                   </button>
                   {selectedCountry && (
                     <button
-                      onClick={handleCountryConfirm}
+                      onClick={() => handleCountryConfirm()}
                       className="flex-1 px-6 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold"
                     >
                       ✓ Potwierdź

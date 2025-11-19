@@ -13,7 +13,7 @@ export interface Part {
 
   weight_total?: number;
   weight_per_unit?: number;
-  country_of_origin?: string;
+  country_of_origin?: string | null;
 
   excel_row_number?: number;
 }

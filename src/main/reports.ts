@@ -440,7 +440,7 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                 </tr>
             </thead>
             <tbody>
-                ${parts.map((part, partIndex) => {
+                ${parts.map(part => {
                     const partPhotos = photosByPartId[part.id] || [];
                     const photoThumbnails = partPhotos.length > 0
                         ? partPhotos.map((photo, index) => {
