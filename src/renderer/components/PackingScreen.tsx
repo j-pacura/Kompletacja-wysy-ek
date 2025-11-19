@@ -52,6 +52,7 @@ const PackingScreen: React.FC = () => {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [savingPhoto, setSavingPhoto] = useState(false);
+  const [photosSavedCount, setPhotosSavedCount] = useState<number>(0);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
@@ -614,6 +615,8 @@ const PackingScreen: React.FC = () => {
     setSelectedPart(null);
     setModalStep(1);
     setScanBuffer('');
+    setPhotosSavedCount(0);
+    setCapturedPhoto(null);
   };
 
   // Camera functions
@@ -674,7 +677,7 @@ const PackingScreen: React.FC = () => {
     startCamera();
   };
 
-  const handlePhotoConfirm = async () => {
+  const handlePhotoConfirm = async (continueWithMore: boolean = false) => {
     if (!selectedPart || !capturedPhoto) return;
 
     setSavingPhoto(true);
@@ -694,17 +697,29 @@ const PackingScreen: React.FC = () => {
         return;
       }
 
-      toast.success('📸 Zdjęcie zapisane', {
+      // Increment saved photos counter
+      const newCount = photosSavedCount + 1;
+      setPhotosSavedCount(newCount);
+
+      toast.success(`📸 Zdjęcie ${newCount} zapisane`, {
         duration: 2000,
         position: 'top-right',
       });
 
-      // Pack part and close modal
-      await packPartDirectly(selectedPart);
-      setIsModalOpen(false);
-      setSelectedPart(null);
-      setModalStep(1);
-      setCapturedPhoto(null);
+      if (continueWithMore) {
+        // Clear captured photo and restart camera for next photo
+        setCapturedPhoto(null);
+        setSavingPhoto(false);
+        startCamera();
+      } else {
+        // Pack part and close modal
+        await packPartDirectly(selectedPart);
+        setIsModalOpen(false);
+        setSelectedPart(null);
+        setModalStep(1);
+        setCapturedPhoto(null);
+        setPhotosSavedCount(0);
+      }
     } catch (error) {
       console.error('Error saving photo:', error);
       toast.error(`❌ Błąd zapisu zdjęcia`, {
@@ -712,7 +727,9 @@ const PackingScreen: React.FC = () => {
         position: 'top-right',
       });
     } finally {
-      setSavingPhoto(false);
+      if (!continueWithMore) {
+        setSavingPhoto(false);
+      }
     }
   };
 
@@ -1241,12 +1258,23 @@ const PackingScreen: React.FC = () => {
             {/* Step 3: Photo */}
             {modalStep === 3 && selectedPart && (
               <div className="text-center">
-                <h2 className="text-text-secondary text-lg mb-6">Zdjęcie:</h2>
+                <h2 className="text-text-secondary text-lg mb-4">Zdjęcie:</h2>
 
                 {/* Part info */}
-                <div className="text-accent-primary font-bold text-4xl mb-8">
+                <div className="text-accent-primary font-bold text-4xl mb-2">
                   {selectedPart.sap_index}
                 </div>
+
+                {/* Photo counter */}
+                {photosSavedCount > 0 && (
+                  <div className="mb-6 px-4 py-2 bg-accent-success/10 border border-accent-success/30 rounded-lg inline-block">
+                    <p className="text-accent-success text-sm font-semibold">
+                      ✓ Zapisano zdjęć: {photosSavedCount}
+                    </p>
+                  </div>
+                )}
+
+                {photosSavedCount === 0 && <div className="mb-8"></div>}
 
                 {/* Camera or captured photo */}
                 <div className="relative mb-6">
@@ -1286,32 +1314,58 @@ const PackingScreen: React.FC = () => {
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex gap-4">
-                  <button
-                    onClick={handleCloseModal}
-                    className="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
-                  >
-                    Anuluj
-                  </button>
+                <div className="flex flex-col gap-3">
                   {capturedPhoto ? (
                     <>
-                      <button
-                        onClick={handleRetakePhoto}
-                        className="flex-1 px-6 py-4 bg-accent-warning hover:opacity-90 text-white rounded-lg transition-all text-lg font-semibold"
-                      >
-                        🔄 Ponów
-                      </button>
-                      <button
-                        onClick={handlePhotoConfirm}
-                        disabled={savingPhoto}
-                        className={`flex-1 px-6 py-4 gradient-primary text-white rounded-lg transition-all text-lg font-semibold ${
-                          savingPhoto ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
-                        }`}
-                      >
-                        {savingPhoto ? '⏳ Zapisywanie...' : '✓ Potwierdź'}
-                      </button>
+                      {/* Primary action buttons */}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handlePhotoConfirm(true)}
+                          disabled={savingPhoto}
+                          className={`flex-1 px-6 py-4 bg-accent-secondary/20 hover:bg-accent-secondary/30 text-accent-secondary rounded-lg transition-all text-lg font-semibold flex items-center justify-center gap-2 ${
+                            savingPhoto ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                          title="Zapisz zdjęcie i zrób kolejne"
+                        >
+                          📸 Kolejne
+                        </button>
+                        <button
+                          onClick={() => handlePhotoConfirm(false)}
+                          disabled={savingPhoto}
+                          className={`flex-1 px-6 py-4 gradient-primary text-white rounded-lg transition-all text-lg font-semibold ${
+                            savingPhoto ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                          }`}
+                        >
+                          {savingPhoto ? '⏳ Zapisywanie...' : '✓ Potwierdź'}
+                        </button>
+                      </div>
+
+                      {/* Secondary action buttons */}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleRetakePhoto}
+                          disabled={savingPhoto}
+                          className="flex-1 px-6 py-3 bg-accent-warning/20 hover:bg-accent-warning/30 text-accent-warning rounded-lg transition-all font-semibold"
+                        >
+                          🔄 Nowe zdjęcie
+                        </button>
+                        <button
+                          onClick={handleCloseModal}
+                          disabled={savingPhoto}
+                          className="flex-1 px-6 py-3 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all font-semibold"
+                        >
+                          ✕ Anuluj
+                        </button>
+                      </div>
                     </>
-                  ) : null}
+                  ) : (
+                    <button
+                      onClick={handleCloseModal}
+                      className="w-full px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
+                    >
+                      ✕ Anuluj
+                    </button>
+                  )}
                 </div>
               </div>
             )}
