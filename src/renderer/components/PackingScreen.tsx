@@ -153,12 +153,14 @@ const PackingScreen: React.FC = () => {
       return;
     }
 
-    // Check if weight or photos are required
+    // Check if weight, photos or country are required
     const needsWeight = shipment?.require_weight;
     const needsPhotos = shipment?.require_photos;
+    const needsCountry = shipment?.require_country;
+    const hasCountry = part.country_of_origin && part.country_of_origin.trim() !== '';
 
-    // If manual click and needs weight/photo, open modal
-    if (needsWeight || needsPhotos) {
+    // If manual click and needs weight/photo/country, open modal
+    if (needsWeight || needsPhotos || (needsCountry && !hasCountry)) {
       setSelectedPart(part);
       setModalStep(1);
       setIsModalOpen(true);
@@ -838,6 +840,24 @@ const PackingScreen: React.FC = () => {
     };
   }, [modalStep, isModalOpen]);
 
+  // Handle keyboard shortcuts for country selection (Step 4)
+  useEffect(() => {
+    if (modalStep !== 4 || !isModalOpen) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only handle if not typing in input field
+      if (e.target instanceof HTMLInputElement) return;
+
+      const country = COUNTRIES.find(c => c.key === e.key);
+      if (country) {
+        handleCountryConfirm(country.name);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [modalStep, isModalOpen, selectedPart]);
+
   // Cleanup camera on unmount
   useEffect(() => {
     return () => {
@@ -1504,7 +1524,6 @@ const PackingScreen: React.FC = () => {
                     }}
                     placeholder="Wpisz nazwę kraju..."
                     className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                    autoFocus
                   />
                 </div>
 

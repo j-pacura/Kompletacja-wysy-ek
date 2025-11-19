@@ -425,27 +425,27 @@ const ShipmentCreator: React.FC = () => {
                 </label>
               </div>
 
-              <div className="bg-accent-primary bg-opacity-10 border border-accent-primary rounded-lg p-6">
-                <h3 className="text-text-primary font-medium mb-3">Podsumowanie:</h3>
+              <div className="bg-bg-tertiary border-2 border-accent-primary/30 rounded-lg p-6">
+                <h3 className="text-accent-primary font-semibold mb-4 text-lg">📋 Podsumowanie</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-text-secondary">Numer wysyłki:</p>
-                    <p className="text-text-primary font-medium">{shipmentNumber}</p>
+                    <p className="text-text-tertiary text-xs mb-1">Numer wysyłki:</p>
+                    <p className="text-text-primary font-semibold text-base">{shipmentNumber}</p>
                   </div>
                   <div>
-                    <p className="text-text-secondary">Miejsce docelowe:</p>
-                    <p className="text-text-primary font-medium">{destination}</p>
+                    <p className="text-text-tertiary text-xs mb-1">Miejsce docelowe:</p>
+                    <p className="text-text-primary font-semibold text-base">{destination}</p>
                   </div>
                   <div>
-                    <p className="text-text-secondary">Liczba części:</p>
-                    <p className="text-text-primary font-medium">{parts.length}</p>
+                    <p className="text-text-tertiary text-xs mb-1">Liczba części:</p>
+                    <p className="text-text-primary font-semibold text-base">{parts.length}</p>
                   </div>
                   <div>
-                    <p className="text-text-secondary">Wymagania:</p>
+                    <p className="text-text-tertiary text-xs mb-1">Wymagania:</p>
                     <div className="flex gap-2 flex-wrap">
-                      {requireWeight && <span className="text-accent-primary">⚖️ Waga</span>}
-                      {requireCountry && <span className="text-accent-secondary">🌍 Kraj</span>}
-                      {requirePhotos && <span className="text-accent-warning">📷 Zdjęcia</span>}
+                      {requireWeight && <span className="text-accent-primary font-medium">⚖️ Waga</span>}
+                      {requireCountry && <span className="text-accent-secondary font-medium">🌍 Kraj</span>}
+                      {requirePhotos && <span className="text-accent-warning font-medium">📷 Zdjęcia</span>}
                       {!requireWeight && !requireCountry && !requirePhotos && (
                         <span className="text-text-tertiary">Brak</span>
                       )}
