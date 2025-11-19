@@ -72,6 +72,7 @@ const PackingScreen: React.FC = () => {
 
   // Country of origin state
   const [selectedCountry, setSelectedCountry] = useState<string>('');
+  const countryInputRef = React.useRef<HTMLInputElement>(null);
 
   // Photo viewer state
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
@@ -845,11 +846,14 @@ const PackingScreen: React.FC = () => {
     if (modalStep !== 4 || !isModalOpen) return;
 
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Only handle if not typing in input field
-      if (e.target instanceof HTMLInputElement) return;
+      // Check if user is typing in the country input field
+      if (document.activeElement === countryInputRef.current) {
+        return; // Don't handle shortcuts when typing
+      }
 
       const country = COUNTRIES.find(c => c.key === e.key);
       if (country) {
+        e.preventDefault();
         handleCountryConfirm(country.name);
       }
     };
@@ -1514,6 +1518,7 @@ const PackingScreen: React.FC = () => {
                     Inny kraj (wpisz ręcznie):
                   </label>
                   <input
+                    ref={countryInputRef}
                     type="text"
                     value={selectedCountry}
                     onChange={(e) => setSelectedCountry(e.target.value)}
@@ -1522,7 +1527,8 @@ const PackingScreen: React.FC = () => {
                         handleCountryConfirm();
                       }
                     }}
-                    placeholder="Wpisz nazwę kraju..."
+                    onClick={() => countryInputRef.current?.focus()}
+                    placeholder="Wpisz nazwę kraju... (lub kliknij aby wpisać)"
                     className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
                   />
                 </div>

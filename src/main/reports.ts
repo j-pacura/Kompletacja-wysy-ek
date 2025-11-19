@@ -35,7 +35,7 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
     const worksheet = workbook.addWorksheet('Pakowanie');
 
     // Add header info
-    worksheet.mergeCells('A1:I1');
+    worksheet.mergeCells('A1:J1');
     const titleCell = worksheet.getCell('A1');
     titleCell.value = `Raport pakowania - ${shipmentData.shipment_number}`;
     titleCell.font = { size: 16, bold: true };
@@ -65,6 +65,7 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
       'Ilość',
       'Jednostka',
       'Status',
+      'Kraj pochodzenia',
       'Waga całkowita [kg]',
       'Waga jednostkowa [kg]',
       'Ilość ważona [szt]'
@@ -89,6 +90,7 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
         part.quantity,
         part.unit,
         part.status === 'packed' ? 'Spakowano' : 'Oczekuje',
+        part.country_of_origin || '-',
         part.weight_total ? part.weight_total.toFixed(3) : '-',
         part.weight_per_unit ? part.weight_per_unit.toFixed(4) : '-',
         part.weight_quantity || '-'
@@ -112,6 +114,7 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
       { width: 10 },  // Ilość
       { width: 12 },  // Jednostka
       { width: 12 },  // Status
+      { width: 20 },  // Kraj pochodzenia
       { width: 18 },  // Waga całkowita
       { width: 20 },  // Waga jednostkowa
       { width: 18 }   // Ilość ważona
@@ -433,6 +436,7 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                     <th>Ilość</th>
                     <th>Jedn.</th>
                     <th>Status</th>
+                    <th>Kraj pochodzenia</th>
                     <th>Waga całk. [kg]</th>
                     <th>Waga jedn. [kg]</th>
                     <th>Ilość waż.</th>
@@ -467,6 +471,7 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                                 ${part.status === 'packed' ? 'Spakowano' : 'Oczekuje'}
                             </span>
                         </td>
+                        <td>${part.country_of_origin || '-'}</td>
                         <td>${part.weight_total ? part.weight_total.toFixed(3) : '-'}</td>
                         <td>${part.weight_per_unit ? part.weight_per_unit.toFixed(4) : '-'}</td>
                         <td>${part.weight_quantity || '-'}</td>
