@@ -18,11 +18,13 @@ import {
 import { Shipment } from '../types/shipment';
 import { Part } from '../types/part';
 import { useAudio } from '../hooks/useAudio';
+import { useUser } from '../contexts/UserContext';
 
 const PackingScreen: React.FC = () => {
   const { shipmentId } = useParams<{ shipmentId: string }>();
   const navigate = useNavigate();
   const { playScanned, playPacked, playError, playCompleted, playProgress } = useAudio();
+  const { currentUser } = useUser();
 
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [parts, setParts] = useState<Part[]>([]);
@@ -85,6 +87,15 @@ const PackingScreen: React.FC = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Permission helper function
+  const canModifyShipment = (): boolean => {
+    if (!currentUser || !shipment) return false;
+    // Admin can modify all shipments
+    if (currentUser.role === 'admin') return true;
+    // Regular user can only modify their own shipments
+    return shipment.user_id === currentUser.id;
+  };
+
   const loadShipment = async (id: number) => {
     try {
       const { ipcRenderer } = window.require('electron');
@@ -118,6 +129,12 @@ const PackingScreen: React.FC = () => {
   };
 
   const handlePackPart = async (part: Part) => {
+    // Check permissions
+    if (!canModifyShipment()) {
+      toast.error('Nie masz uprawnień do edycji tej wysyłki. Tylko właściciel lub administrator może to zrobić.');
+      return;
+    }
+
     // Check if weight or photos are required
     const needsWeight = shipment?.require_weight;
     const needsPhotos = shipment?.require_photos;
@@ -213,6 +230,12 @@ const PackingScreen: React.FC = () => {
 
   // Pack part without modal (called from modal confirmation)
   const packPartDirectly = async (part: Part) => {
+    // Check permissions
+    if (!canModifyShipment()) {
+      toast.error('Nie masz uprawnień do edycji tej wysyłki. Tylko właściciel lub administrator może to zrobić.');
+      return;
+    }
+
     try {
       const { ipcRenderer } = window.require('electron');
 
