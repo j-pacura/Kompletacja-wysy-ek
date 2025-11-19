@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
-import { ArrowLeft, Save, RefreshCw, FolderOpen, Sun, Moon, Palette, Volume2, VolumeX, User } from 'lucide-react';
+import { ArrowLeft, Save, RefreshCw, FolderOpen, Sun, Moon, Palette, Volume2, VolumeX, User, Lock, Key } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useUser } from '../contexts/UserContext';
 
 const SettingsScreen: React.FC = () => {
   const navigate = useNavigate();
   const { mode, colorScheme, setMode, setColorScheme } = useTheme();
+  const { currentUser } = useUser();
 
   // Scale settings
   const [availablePorts, setAvailablePorts] = useState<string[]>([]);
@@ -24,6 +26,12 @@ const SettingsScreen: React.FC = () => {
   // Personalization settings
   const [userName, setUserName] = useState('');
   const [userSurname, setUserSurname] = useState('');
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -43,8 +51,22 @@ const SettingsScreen: React.FC = () => {
         setVoiceEnabled(settings.enable_voice === 'true');
         setSoundVolume(parseInt(settings.sound_volume || '70'));
         setVoiceVolume(parseInt(settings.voice_volume || '80'));
-        setUserName(settings.user_name || '');
-        setUserSurname(settings.user_surname || '');
+
+        // Auto-fill user data from logged-in user
+        if (currentUser) {
+          setUserName(currentUser.name);
+          setUserSurname(currentUser.surname);
+          // Update settings if not already set
+          if (!settings.user_name || settings.user_name !== currentUser.name) {
+            await ipcRenderer.invoke('db:update-setting', 'user_name', currentUser.name);
+          }
+          if (!settings.user_surname || settings.user_surname !== currentUser.surname) {
+            await ipcRenderer.invoke('db:update-setting', 'user_surname', currentUser.surname);
+          }
+        } else {
+          setUserName(settings.user_name || '');
+          setUserSurname(settings.user_surname || '');
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -139,6 +161,54 @@ const SettingsScreen: React.FC = () => {
     } catch (error) {
       console.error('Error saving audio setting:', error);
       toast.error('Błąd zapisu ustawienia');
+    }
+  };
+
+  const handleChangePassword = async () => {
+    // Validation
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      toast.error('Wypełnij wszystkie pola');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error('Nowe hasła nie są identyczne');
+      return;
+    }
+
+    if (newPassword.length < 4) {
+      toast.error('Nowe hasło musi mieć minimum 4 znaki');
+      return;
+    }
+
+    if (!currentUser) {
+      toast.error('Użytkownik nie zalogowany');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('db:change-password', {
+        userId: currentUser.id,
+        currentPassword,
+        newPassword,
+      });
+
+      if (result.success) {
+        toast.success('✅ Hasło zostało zmienione pomyślnie');
+        // Clear form
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+      } else {
+        toast.error(result.error || 'Błąd zmiany hasła');
+      }
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      toast.error('Wystąpił błąd podczas zmiany hasła');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -398,6 +468,75 @@ const SettingsScreen: React.FC = () => {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Change Password */}
+          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
+            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+              <Key className="w-6 h-6" />
+              Zmiana hasła
+            </h2>
+
+            <div className="space-y-4">
+              {/* Current Password */}
+              <div>
+                <label className="block text-text-secondary text-sm mb-2">
+                  Obecne hasło
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Wprowadź obecne hasło"
+                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* New Password */}
+              <div>
+                <label className="block text-text-secondary text-sm mb-2">
+                  Nowe hasło
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Wprowadź nowe hasło (min. 4 znaki)"
+                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* Confirm New Password */}
+              <div>
+                <label className="block text-text-secondary text-sm mb-2">
+                  Potwierdź nowe hasło
+                </label>
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Wprowadź ponownie nowe hasło"
+                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* Change Password Button */}
+              <button
+                onClick={handleChangePassword}
+                disabled={changingPassword || !currentPassword || !newPassword || !confirmNewPassword}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent-primary hover:bg-accent-primary/90 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Lock className="w-5 h-5" />
+                {changingPassword ? 'Zmieniam hasło...' : 'Zmień hasło'}
+              </button>
+
+              {/* Info */}
+              <div className="bg-accent-warning/10 border border-accent-warning/30 rounded-lg p-4">
+                <p className="text-text-secondary text-sm">
+                  🔒 <strong>Ważne:</strong> Po zmianie hasła użyj nowego hasła przy następnym logowaniu
+                </p>
+              </div>
             </div>
           </div>
 
