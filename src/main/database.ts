@@ -297,6 +297,54 @@ function runMigrations(): void {
     console.error('Migration error:', error);
   }
 
+  // Migration 12: Add login column to users table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(users)");
+    const columns = tableInfo[0]?.values || [];
+    const hasLogin = columns.some((col: any) => col[1] === 'login');
+
+    if (!hasLogin) {
+      console.log('Adding login column to users table');
+      // Add login column
+      db.run("ALTER TABLE users ADD COLUMN login TEXT");
+
+      // Generate unique logins for existing users based on name.surname
+      const users = db.exec("SELECT id, name, surname FROM users");
+      if (users && users[0]?.values.length > 0) {
+        for (const [id, name, surname] of users[0].values) {
+          // Create login as name.surname in lowercase, removing spaces
+          const login = `${name}.${surname}`.toLowerCase().replace(/\s+/g, '');
+          db.run('UPDATE users SET login = ? WHERE id = ?', [login, id]);
+        }
+      }
+
+      saveDatabase();
+      console.log('Migration completed: added login column and generated logins');
+    } else {
+      console.log('login column already exists');
+    }
+  } catch (error) {
+    console.error('Migration 12 error:', error);
+  }
+
+  // Migration 13: Add report_language column to users table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(users)");
+    const columns = tableInfo[0]?.values || [];
+    const hasReportLanguage = columns.some((col: any) => col[1] === 'report_language');
+
+    if (!hasReportLanguage) {
+      console.log('Adding report_language column to users table');
+      db.run("ALTER TABLE users ADD COLUMN report_language TEXT NOT NULL DEFAULT 'pl'");
+      saveDatabase();
+      console.log('Migration completed: added report_language column');
+    } else {
+      console.log('report_language column already exists');
+    }
+  } catch (error) {
+    console.error('Migration 13 error:', error);
+  }
+
   console.log('Migrations complete');
 }
 

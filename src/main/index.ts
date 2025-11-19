@@ -287,7 +287,7 @@ function setupIPCHandlers() {
   // User operations
   ipcMain.handle(IPC_CHANNELS.DB_GET_USERS, async () => {
     try {
-      const users = query(`SELECT id, name, surname, role, active, created_at, last_login FROM users WHERE active = 1 ORDER BY surname ASC, name ASC`);
+      const users = query(`SELECT id, name, surname, login, report_language, role, active, created_at, last_login FROM users WHERE active = 1 ORDER BY surname ASC, name ASC`);
       return { success: true, data: users };
     } catch (error: any) {
       console.error('Get users error:', error);
@@ -295,16 +295,22 @@ function setupIPCHandlers() {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.DB_CREATE_USER, async (_event, userData: { name: string; surname: string; password: string; role?: string }) => {
+  ipcMain.handle(IPC_CHANNELS.DB_CREATE_USER, async (_event, userData: { name: string; surname: string; login: string; password: string; report_language: string; role?: string }) => {
     try {
-      const { name, surname, password, role = 'user' } = userData;
+      const { name, surname, login, password, report_language, role = 'user' } = userData;
+
+      // Check if login already exists
+      const existingUser = queryOne<any>(`SELECT id FROM users WHERE login = ?`, [login]);
+      if (existingUser) {
+        return { success: false, error: 'Login już istnieje. Wybierz inny login.' };
+      }
 
       // Hash password (required)
       const passwordHash = await hashPassword(password);
 
       const result = execute(
-        `INSERT INTO users (name, surname, password_hash, role, created_at, active) VALUES (?, ?, ?, ?, ?, ?)`,
-        [name, surname, passwordHash, role, Date.now(), 1]
+        `INSERT INTO users (name, surname, login, password_hash, report_language, role, created_at, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, surname, login, passwordHash, report_language, role, Date.now(), 1]
       );
 
       return { success: true, data: { id: result.lastInsertRowid } };
@@ -314,21 +320,21 @@ function setupIPCHandlers() {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.DB_LOGIN_USER, async (_event, credentials: { name: string; surname: string; password: string }) => {
+  ipcMain.handle(IPC_CHANNELS.DB_LOGIN_USER, async (_event, credentials: { login: string; password: string }) => {
     try {
-      const { name, surname, password } = credentials;
+      const { login, password } = credentials;
 
-      // Find user by name and surname
-      const user = queryOne<any>(`SELECT * FROM users WHERE name = ? AND surname = ? AND active = 1`, [name, surname]);
+      // Find user by login
+      const user = queryOne<any>(`SELECT * FROM users WHERE login = ? AND active = 1`, [login]);
 
       if (!user) {
-        return { success: false, error: 'Nieprawidłowe dane logowania' };
+        return { success: false, error: 'Nieprawidłowy login lub hasło' };
       }
 
       // Verify password
       const isValid = await verifyPassword(password, user.password_hash);
       if (!isValid) {
-        return { success: false, error: 'Nieprawidłowe hasło' };
+        return { success: false, error: 'Nieprawidłowy login lub hasło' };
       }
 
       // Update last login time
@@ -341,6 +347,8 @@ function setupIPCHandlers() {
           id: user.id,
           name: user.name,
           surname: user.surname,
+          login: user.login,
+          report_language: user.report_language,
           role: user.role,
           created_at: user.created_at,
           last_login: Date.now(),

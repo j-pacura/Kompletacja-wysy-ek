@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     surname TEXT NOT NULL,
+    login TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
+    report_language TEXT NOT NULL DEFAULT 'pl',  -- 'pl' or 'en'
     role TEXT NOT NULL DEFAULT 'user',  -- 'admin' or 'user'
     created_at INTEGER NOT NULL,
     last_login INTEGER,
@@ -127,6 +129,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_surname ON users(surname);
+CREATE INDEX IF NOT EXISTS idx_users_login ON users(login);
 CREATE INDEX IF NOT EXISTS idx_parts_shipment ON parts(shipment_id);
 CREATE INDEX IF NOT EXISTS idx_parts_status ON parts(status);
 CREATE INDEX IF NOT EXISTS idx_photos_part ON photos(part_id);

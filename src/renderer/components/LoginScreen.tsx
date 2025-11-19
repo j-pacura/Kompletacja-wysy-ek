@@ -14,8 +14,10 @@ const LoginScreen: React.FC = () => {
   // Form fields
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
+  const [userLogin, setUserLogin] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [reportLanguage, setReportLanguage] = useState<'pl' | 'en'>('pl');
 
   // Check if this is first launch (no users exist)
   useEffect(() => {
@@ -40,13 +42,13 @@ const LoginScreen: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !surname || !password) {
+    if (!userLogin || !password) {
       toast.error('Wypełnij wszystkie pola');
       return;
     }
 
     setLoading(true);
-    const result = await login(name, surname, password);
+    const result = await login(userLogin, password);
     setLoading(false);
 
     if (!result.success) {
@@ -59,7 +61,7 @@ const LoginScreen: React.FC = () => {
     e.preventDefault();
 
     // Validation
-    if (!name || !surname || !password || !confirmPassword) {
+    if (!name || !surname || !userLogin || !password || !confirmPassword) {
       toast.error('Wypełnij wszystkie pola');
       return;
     }
@@ -74,6 +76,11 @@ const LoginScreen: React.FC = () => {
       return;
     }
 
+    if (userLogin.length < 3) {
+      toast.error('Login musi mieć minimum 3 znaki');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -83,7 +90,9 @@ const LoginScreen: React.FC = () => {
       const createResult = await ipcRenderer.invoke('db:create-user', {
         name,
         surname,
+        login: userLogin,
         password,
+        report_language: reportLanguage,
         role: 'user',
       });
 
@@ -94,7 +103,7 @@ const LoginScreen: React.FC = () => {
       }
 
       // Auto-login after registration
-      const loginResult = await login(name, surname, password);
+      const loginResult = await login(userLogin, password);
 
       if (!loginResult.success) {
         toast.error('Konto utworzone, ale błąd logowania. Spróbuj zalogować się ręcznie.');
@@ -113,7 +122,7 @@ const LoginScreen: React.FC = () => {
   const handleAdminSetup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !surname || !password || !confirmPassword) {
+    if (!name || !surname || !userLogin || !password || !confirmPassword) {
       toast.error('Wypełnij wszystkie pola');
       return;
     }
@@ -128,6 +137,11 @@ const LoginScreen: React.FC = () => {
       return;
     }
 
+    if (userLogin.length < 3) {
+      toast.error('Login musi mieć minimum 3 znaki');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -137,7 +151,9 @@ const LoginScreen: React.FC = () => {
       const createResult = await ipcRenderer.invoke('db:create-user', {
         name,
         surname,
+        login: userLogin,
         password,
+        report_language: reportLanguage,
         role: 'admin',
       });
 
@@ -148,7 +164,7 @@ const LoginScreen: React.FC = () => {
       }
 
       // Auto-login
-      const loginResult = await login(name, surname, password);
+      const loginResult = await login(userLogin, password);
 
       if (loginResult.success) {
         toast.success('Konto administratora utworzone! Witaj w aplikacji 🎉');
@@ -220,6 +236,20 @@ const LoginScreen: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Login
+                </label>
+                <input
+                  type="text"
+                  value={userLogin}
+                  onChange={(e) => setUserLogin(e.target.value)}
+                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  placeholder="admin"
+                  disabled={loading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Hasło
                 </label>
                 <input
@@ -244,6 +274,21 @@ const LoginScreen: React.FC = () => {
                   placeholder="••••••••"
                   disabled={loading}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Język Raportu
+                </label>
+                <select
+                  value={reportLanguage}
+                  onChange={(e) => setReportLanguage(e.target.value as 'pl' | 'en')}
+                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  disabled={loading}
+                >
+                  <option value="pl">Polski</option>
+                  <option value="en">English</option>
+                </select>
               </div>
 
               <button
@@ -276,30 +321,16 @@ const LoginScreen: React.FC = () => {
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Imię
+                  Login
                 </label>
                 <input
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={userLogin}
+                  onChange={(e) => setUserLogin(e.target.value)}
                   className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
-                  placeholder="Jan"
+                  placeholder="Twój login"
                   disabled={loading}
                   autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Nazwisko
-                </label>
-                <input
-                  type="text"
-                  value={surname}
-                  onChange={(e) => setSurname(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
-                  placeholder="Kowalski"
-                  disabled={loading}
                 />
               </div>
 
@@ -388,6 +419,20 @@ const LoginScreen: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Login
+                </label>
+                <input
+                  type="text"
+                  value={userLogin}
+                  onChange={(e) => setUserLogin(e.target.value)}
+                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  placeholder="jan.kowalski"
+                  disabled={loading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Hasło
                 </label>
                 <input
@@ -412,6 +457,21 @@ const LoginScreen: React.FC = () => {
                   placeholder="••••••••"
                   disabled={loading}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Język Raportu
+                </label>
+                <select
+                  value={reportLanguage}
+                  onChange={(e) => setReportLanguage(e.target.value as 'pl' | 'en')}
+                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  disabled={loading}
+                >
+                  <option value="pl">Polski</option>
+                  <option value="en">English</option>
+                </select>
               </div>
 
               <button

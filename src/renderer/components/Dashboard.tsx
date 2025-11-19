@@ -31,8 +31,6 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'in_progress' | 'completed'>('all');
-  const [userName, setUserName] = useState('');
-  const [userSurname, setUserSurname] = useState('');
   const [shipmentParts, setShipmentParts] = useState<{ [shipmentId: number]: any[] }>({});
 
   // Delete modal state
@@ -45,7 +43,6 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadShipments();
-    loadUserData();
   }, []);
 
   useEffect(() => {
@@ -53,31 +50,6 @@ const Dashboard: React.FC = () => {
       loadAllParts();
     }
   }, [shipments]);
-
-  const loadUserData = async () => {
-    try {
-      const { ipcRenderer } = window.require('electron');
-      const result = await ipcRenderer.invoke('db:get-settings');
-
-      if (result.success) {
-        const name = result.data.user_name || '';
-        const surname = result.data.user_surname || '';
-
-        setUserName(name);
-        setUserSurname(surname);
-
-        // Sync settings with logged-in user if not set
-        if (currentUser && (!name || !surname)) {
-          await ipcRenderer.invoke('db:update-setting', 'user_name', currentUser.name);
-          await ipcRenderer.invoke('db:update-setting', 'user_surname', currentUser.surname);
-          setUserName(currentUser.name);
-          setUserSurname(currentUser.surname);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    }
-  };
 
   const loadShipments = async () => {
     try {
@@ -243,9 +215,9 @@ const Dashboard: React.FC = () => {
             <p className="text-text-secondary">
               Zarządzaj wysyłkami i śledź postęp pakowania
             </p>
-            {(userName || userSurname) && (
+            {currentUser && (
               <p className="text-accent-primary text-sm mt-1 font-semibold">
-                👤 {userName} {userSurname}
+                👤 {currentUser.name} {currentUser.surname} ({currentUser.login})
               </p>
             )}
           </div>
