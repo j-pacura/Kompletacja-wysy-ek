@@ -198,6 +198,79 @@ function runMigrations(): void {
     console.error('Migration error:', error);
   }
 
+  // Migration 8: Add role and active columns to users table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(users)");
+    const columns = tableInfo[0]?.values || [];
+    const hasRole = columns.some((col: any) => col[1] === 'role');
+    const hasActive = columns.some((col: any) => col[1] === 'active');
+
+    if (!hasRole) {
+      console.log('Adding role column to users table');
+      db.run("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'");
+      saveDatabase();
+      console.log('Migration completed: added role column');
+    }
+
+    if (!hasActive) {
+      console.log('Adding active column to users table');
+      db.run('ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
+      saveDatabase();
+      console.log('Migration completed: added active column');
+    }
+
+    if (hasRole && hasActive) {
+      console.log('role and active columns already exist');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
+  // Migration 9: Rename last_login_at to last_login in users table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(users)");
+    const columns = tableInfo[0]?.values || [];
+    const hasLastLoginAt = columns.some((col: any) => col[1] === 'last_login_at');
+    const hasLastLogin = columns.some((col: any) => col[1] === 'last_login');
+
+    // SQLite doesn't support column rename, so we copy data if needed
+    if (hasLastLoginAt && !hasLastLogin) {
+      console.log('Migrating last_login_at to last_login');
+      db.run('ALTER TABLE users ADD COLUMN last_login INTEGER');
+      db.run('UPDATE users SET last_login = last_login_at');
+      // Note: We can't drop columns in SQLite easily, so we'll just leave last_login_at
+      saveDatabase();
+      console.log('Migration completed: added last_login column');
+    } else if (!hasLastLogin && !hasLastLoginAt) {
+      console.log('Adding last_login column to users table');
+      db.run('ALTER TABLE users ADD COLUMN last_login INTEGER');
+      saveDatabase();
+      console.log('Migration completed: added last_login column');
+    } else {
+      console.log('last_login column already exists');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
+  // Migration 10: Add user_id column to shipments table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(shipments)");
+    const columns = tableInfo[0]?.values || [];
+    const hasUserId = columns.some((col: any) => col[1] === 'user_id');
+
+    if (!hasUserId) {
+      console.log('Adding user_id column to shipments table');
+      db.run('ALTER TABLE shipments ADD COLUMN user_id INTEGER');
+      saveDatabase();
+      console.log('Migration completed: added user_id column');
+    } else {
+      console.log('user_id column already exists');
+    }
+  } catch (error) {
+    console.error('Migration error:', error);
+  }
+
   console.log('Migrations complete');
 }
 

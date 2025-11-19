@@ -135,8 +135,8 @@ function setupIPCHandlers() {
         `INSERT INTO shipments (
           shipment_number, destination, notes, created_at, status,
           require_weight, require_country, require_photos,
-          packed_by, created_date, password
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          packed_by, created_date, password, user_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           shipmentData.shipment_number,
           shipmentData.destination,
@@ -149,6 +149,7 @@ function setupIPCHandlers() {
           shipmentData.packed_by || null,
           new Date().toISOString().split('T')[0], // YYYY-MM-DD
           shipmentData.password || null,
+          shipmentData.user_id || null,
         ]
       );
       return { success: true, data: { id: result.lastInsertRowid } };
@@ -286,7 +287,7 @@ function setupIPCHandlers() {
   // User operations
   ipcMain.handle(IPC_CHANNELS.DB_GET_USERS, async () => {
     try {
-      const users = query(`SELECT id, name, surname, created_at, last_login_at FROM users ORDER BY name ASC`);
+      const users = query(`SELECT id, name, surname, role, active, created_at, last_login FROM users WHERE active = 1 ORDER BY surname ASC, name ASC`);
       return { success: true, data: users };
     } catch (error: any) {
       console.error('Get users error:', error);
@@ -294,18 +295,16 @@ function setupIPCHandlers() {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.DB_CREATE_USER, async (_event, name: string, surname: string, password?: string) => {
+  ipcMain.handle(IPC_CHANNELS.DB_CREATE_USER, async (_event, userData: { name: string; surname: string; password: string; role?: string }) => {
     try {
-      let passwordHash = null;
+      const { name, surname, password, role = 'user' } = userData;
 
-      // Hash password if provided
-      if (password && password.trim()) {
-        passwordHash = await hashPassword(password);
-      }
+      // Hash password (required)
+      const passwordHash = await hashPassword(password);
 
       const result = execute(
-        `INSERT INTO users (name, surname, password_hash, created_at) VALUES (?, ?, ?, ?)`,
-        [name, surname || null, passwordHash, Date.now()]
+        `INSERT INTO users (name, surname, password_hash, role, created_at, active) VALUES (?, ?, ?, ?, ?, ?)`,
+        [name, surname, passwordHash, role, Date.now(), 1]
       );
 
       return { success: true, data: { id: result.lastInsertRowid } };
@@ -315,28 +314,25 @@ function setupIPCHandlers() {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.DB_LOGIN_USER, async (_event, userId: number, password?: string) => {
+  ipcMain.handle(IPC_CHANNELS.DB_LOGIN_USER, async (_event, credentials: { name: string; surname: string; password: string }) => {
     try {
-      const user = queryOne<any>(`SELECT * FROM users WHERE id = ?`, [userId]);
+      const { name, surname, password } = credentials;
+
+      // Find user by name and surname
+      const user = queryOne<any>(`SELECT * FROM users WHERE name = ? AND surname = ? AND active = 1`, [name, surname]);
 
       if (!user) {
-        return { success: false, error: 'User not found' };
+        return { success: false, error: 'Nieprawidłowe dane logowania' };
       }
 
-      // Check password if user has one set
-      if (user.password_hash) {
-        if (!password) {
-          return { success: false, error: 'Password required', needsPassword: true };
-        }
-
-        const isValid = await verifyPassword(password, user.password_hash);
-        if (!isValid) {
-          return { success: false, error: 'Invalid password' };
-        }
+      // Verify password
+      const isValid = await verifyPassword(password, user.password_hash);
+      if (!isValid) {
+        return { success: false, error: 'Nieprawidłowe hasło' };
       }
 
       // Update last login time
-      execute(`UPDATE users SET last_login_at = ? WHERE id = ?`, [Date.now(), userId]);
+      execute(`UPDATE users SET last_login = ? WHERE id = ?`, [Date.now(), user.id]);
 
       // Return user data (without password hash)
       return {
@@ -345,8 +341,10 @@ function setupIPCHandlers() {
           id: user.id,
           name: user.name,
           surname: user.surname,
+          role: user.role,
           created_at: user.created_at,
-          last_login_at: Date.now()
+          last_login: Date.now(),
+          active: user.active
         }
       };
     } catch (error: any) {

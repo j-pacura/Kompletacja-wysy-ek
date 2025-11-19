@@ -1,3 +1,15 @@
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    surname TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user',  -- 'admin' or 'user'
+    created_at INTEGER NOT NULL,
+    last_login INTEGER,
+    active BOOLEAN NOT NULL DEFAULT 1
+);
+
 -- Main shipments table
 CREATE TABLE IF NOT EXISTS shipments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +35,13 @@ CREATE TABLE IF NOT EXISTS shipments (
     -- Password protection (optional)
     password TEXT,
 
-    created_date TEXT NOT NULL
+    created_date TEXT NOT NULL,
+
+    -- User ownership
+    user_id INTEGER,
+    archived BOOLEAN NOT NULL DEFAULT 0,
+
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- Parts in shipment
@@ -108,11 +126,13 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 -- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_users_surname ON users(surname);
 CREATE INDEX IF NOT EXISTS idx_parts_shipment ON parts(shipment_id);
 CREATE INDEX IF NOT EXISTS idx_parts_status ON parts(status);
 CREATE INDEX IF NOT EXISTS idx_photos_part ON photos(part_id);
 CREATE INDEX IF NOT EXISTS idx_shipments_status ON shipments(status);
 CREATE INDEX IF NOT EXISTS idx_shipments_date ON shipments(created_date);
+CREATE INDEX IF NOT EXISTS idx_shipments_user ON shipments(user_id);
 
 -- Initial data
 INSERT OR IGNORE INTO user_stats (id, total_shipments, total_parts, total_packing_time_seconds, last_updated)

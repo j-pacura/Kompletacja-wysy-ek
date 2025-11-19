@@ -17,6 +17,7 @@ export interface Shipment {
   password?: string;
   created_date: string;
   archived?: boolean;
+  user_id?: number;  // Owner of this shipment
 }
 
 export interface CreateShipmentInput {
