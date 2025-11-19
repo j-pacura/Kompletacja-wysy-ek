@@ -20,6 +20,20 @@ import { Part } from '../types/part';
 import { useAudio } from '../hooks/useAudio';
 import { useUser } from '../contexts/UserContext';
 
+// Country list for quick selection (keyboard 1-9, 0)
+const COUNTRIES = [
+  { key: '1', name: 'Niemcy', nameEn: 'Germany' },
+  { key: '2', name: 'Chiny', nameEn: 'China' },
+  { key: '3', name: 'Stany Zjednoczone', nameEn: 'United States' },
+  { key: '4', name: 'Meksyk', nameEn: 'Mexico' },
+  { key: '5', name: 'Japonia', nameEn: 'Japan' },
+  { key: '6', name: 'Korea Południowa', nameEn: 'South Korea' },
+  { key: '7', name: 'Polska', nameEn: 'Poland' },
+  { key: '8', name: 'Czechy', nameEn: 'Czech Republic' },
+  { key: '9', name: 'Włochy', nameEn: 'Italy' },
+  { key: '0', name: 'Francja', nameEn: 'France' },
+];
+
 const PackingScreen: React.FC = () => {
   const { shipmentId } = useParams<{ shipmentId: string }>();
   const navigate = useNavigate();
@@ -38,7 +52,7 @@ const PackingScreen: React.FC = () => {
   const [scanBuffer, setScanBuffer] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
-  const [modalStep, setModalStep] = useState<1 | 2 | 3>(1); // 1: confirm, 2: weight, 3: photo
+  const [modalStep, setModalStep] = useState<1 | 2 | 3 | 4>(1); // 1: confirm, 2: weight, 3: photo, 4: country
   const scannerInputRef = React.useRef<HTMLInputElement>(null);
 
   // Weight state
@@ -55,6 +69,9 @@ const PackingScreen: React.FC = () => {
   const [photosSavedCount, setPhotosSavedCount] = useState<number>(0);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  // Country of origin state
+  const [selectedCountry, setSelectedCountry] = useState<string>('');
 
   // Photo viewer state
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
@@ -514,19 +531,20 @@ const PackingScreen: React.FC = () => {
   const handleConfirmPart = async () => {
     if (!selectedPart) return;
 
-    // Check if weight or photos are required
+    // Check if weight, photos or country are required
     const needsWeight = shipment?.require_weight;
     const needsPhotos = shipment?.require_photos;
+    const needsCountry = shipment?.require_country;
+    const hasCountry = selectedPart.country_of_origin && selectedPart.country_of_origin.trim() !== '';
 
-    // For now, just pack the part (we'll add weight/photo steps later)
-    if (!needsWeight && !needsPhotos) {
-      // Pack immediately
+    // If no special requirements, pack immediately
+    if (!needsWeight && !needsPhotos && (!needsCountry || hasCountry)) {
       await packPartDirectly(selectedPart);
       setIsModalOpen(false);
       setSelectedPart(null);
       setModalStep(1);
     } else {
-      // Move to next step (weight or photo)
+      // Move to next step (weight, photo, or country)
       if (needsWeight) {
         // Initialize weight with default quantity from part
         setWeightQuantity(selectedPart.quantity);
@@ -535,6 +553,8 @@ const PackingScreen: React.FC = () => {
         setModalStep(2); // Weight step
       } else if (needsPhotos) {
         setModalStep(3); // Photo step
+      } else if (needsCountry && !hasCountry) {
+        setModalStep(4); // Country step
       }
     }
   };
@@ -601,11 +621,73 @@ const PackingScreen: React.FC = () => {
     if (needsPhotos) {
       setModalStep(3); // Photo step
     } else {
+      // Check if country is required
+      const needsCountry = shipment?.require_country;
+      const hasCountry = selectedPart.country_of_origin && selectedPart.country_of_origin.trim() !== '';
+
+      if (needsCountry && !hasCountry) {
+        setModalStep(4); // Country step
+      } else {
+        // Pack and close
+        await packPartDirectly(selectedPart);
+        setIsModalOpen(false);
+        setSelectedPart(null);
+        setModalStep(1);
+      }
+    }
+  };
+
+  // Handle country selection
+  const handleCountryConfirm = async (country?: string) => {
+    if (!selectedPart) return;
+
+    // Use provided country or current selectedCountry state
+    const countryToSave = country !== undefined ? country : selectedCountry;
+
+    // Save country to database (can be empty if skipped)
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      const result = await ipcRenderer.invoke('db:update-part', selectedPart.id, {
+        country_of_origin: countryToSave || null
+      });
+
+      if (!result.success) {
+        toast.error(`❌ Błąd zapisu kraju pochodzenia`, {
+          duration: 3000,
+          position: 'top-right',
+        });
+        return;
+      }
+
+      if (countryToSave) {
+        toast.success(`🌍 Kraj: ${countryToSave}`, {
+          duration: 2000,
+          position: 'top-right',
+        });
+      }
+
+      // Update local state
+      setParts(prevParts =>
+        prevParts.map(p =>
+          p.id === selectedPart.id
+            ? { ...p, country_of_origin: countryToSave || null }
+            : p
+        )
+      );
+
       // Pack and close
       await packPartDirectly(selectedPart);
       setIsModalOpen(false);
       setSelectedPart(null);
       setModalStep(1);
+      setSelectedCountry('');
+    } catch (error) {
+      console.error('Error saving country:', error);
+      toast.error(`❌ Błąd zapisu kraju`, {
+        duration: 3000,
+        position: 'top-right',
+      });
     }
   };
 
@@ -617,6 +699,7 @@ const PackingScreen: React.FC = () => {
     setScanBuffer('');
     setPhotosSavedCount(0);
     setCapturedPhoto(null);
+    setSelectedCountry('');
   };
 
   // Camera functions
@@ -712,13 +795,22 @@ const PackingScreen: React.FC = () => {
         setSavingPhoto(false);
         startCamera();
       } else {
-        // Pack part and close modal
-        await packPartDirectly(selectedPart);
-        setIsModalOpen(false);
-        setSelectedPart(null);
-        setModalStep(1);
-        setCapturedPhoto(null);
-        setPhotosSavedCount(0);
+        // Check if we need country of origin step
+        const needsCountry = shipment?.require_country;
+        const hasCountry = selectedPart.country_of_origin && selectedPart.country_of_origin.trim() !== '';
+
+        if (needsCountry && !hasCountry) {
+          // Move to country selection step
+          setModalStep(4);
+        } else {
+          // Pack part and close modal
+          await packPartDirectly(selectedPart);
+          setIsModalOpen(false);
+          setSelectedPart(null);
+          setModalStep(1);
+          setCapturedPhoto(null);
+          setPhotosSavedCount(0);
+        }
       }
     } catch (error) {
       console.error('Error saving photo:', error);
@@ -1364,6 +1456,78 @@ const PackingScreen: React.FC = () => {
                       className="w-full px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
                     >
                       ✕ Anuluj
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Country of Origin */}
+            {modalStep === 4 && selectedPart && (
+              <div className="text-center">
+                <h2 className="text-text-secondary text-lg mb-4">Kraj pochodzenia:</h2>
+
+                {/* Part info */}
+                <div className="text-accent-primary font-bold text-4xl mb-8">
+                  {selectedPart.sap_index}
+                </div>
+
+                {/* Country selection grid */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  {COUNTRIES.map(country => (
+                    <button
+                      key={country.key}
+                      onClick={() => handleCountryConfirm(country.name)}
+                      className="px-6 py-4 bg-accent-secondary/20 hover:bg-accent-secondary/30 text-accent-secondary rounded-lg transition-all font-semibold text-lg flex items-center justify-between group"
+                    >
+                      <span className="text-text-tertiary group-hover:text-accent-secondary transition-colors font-bold">
+                        {country.key}
+                      </span>
+                      <span>{country.name}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom country input */}
+                <div className="mb-6">
+                  <label className="block text-text-primary text-sm font-medium mb-2 text-left">
+                    Inny kraj (wpisz ręcznie):
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && selectedCountry.trim()) {
+                        handleCountryConfirm();
+                      }
+                    }}
+                    placeholder="Wpisz nazwę kraju..."
+                    className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCloseModal}
+                    className="flex-1 px-6 py-3 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all font-semibold"
+                  >
+                    ✕ Anuluj
+                  </button>
+                  <button
+                    onClick={() => handleCountryConfirm('')}
+                    className="flex-1 px-6 py-3 bg-accent-warning/20 hover:bg-accent-warning/30 text-accent-warning rounded-lg transition-all font-semibold"
+                  >
+                    ⏭️ Pomiń
+                  </button>
+                  {selectedCountry && (
+                    <button
+                      onClick={handleCountryConfirm}
+                      className="flex-1 px-6 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold"
+                    >
+                      ✓ Potwierdź
                     </button>
                   )}
                 </div>

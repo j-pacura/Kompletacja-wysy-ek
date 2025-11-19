@@ -33,6 +33,7 @@ const ShipmentCreator: React.FC = () => {
   const [requireWeight, setRequireWeight] = useState(false);
   const [requireCountry, setRequireCountry] = useState(false);
   const [requirePhotos, setRequirePhotos] = useState(false);
+  const [hasCountryColumn, setHasCountryColumn] = useState(false);
 
   const handleExcelSelect = async () => {
     try {
@@ -52,8 +53,12 @@ const ShipmentCreator: React.FC = () => {
         if (parseResult.success) {
           setParts(parseResult.data.parts);
 
-          // Auto-detect if country column exists
-          if (parseResult.data.hasCountryColumn) {
+          // Save whether country column exists
+          const hasCountry = parseResult.data.hasCountryColumn || false;
+          setHasCountryColumn(hasCountry);
+
+          // Auto-enable country requirement if column exists
+          if (hasCountry) {
             setRequireCountry(true);
           }
 
@@ -388,19 +393,22 @@ const ShipmentCreator: React.FC = () => {
                   </div>
                 </label>
 
-                <label className="flex items-center gap-4 bg-bg-tertiary rounded-lg p-6 cursor-pointer hover:bg-opacity-80 transition-all">
-                  <input
-                    type="checkbox"
-                    checked={requireCountry}
-                    onChange={(e) => setRequireCountry(e.target.checked)}
-                    className="w-6 h-6 rounded border-2 border-text-tertiary checked:bg-accent-primary checked:border-accent-primary"
-                  />
-                  <Globe className="w-8 h-8 text-accent-secondary" />
-                  <div className="flex-1">
-                    <p className="text-text-primary font-medium">Kraj Pochodzenia</p>
-                    <p className="text-text-secondary text-sm">Wymagaj podania kraju pochodzenia dla każdej części</p>
-                  </div>
-                </label>
+                {/* Only show country checkbox if Excel had country column */}
+                {hasCountryColumn && (
+                  <label className="flex items-center gap-4 bg-bg-tertiary rounded-lg p-6 cursor-pointer hover:bg-opacity-80 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={requireCountry}
+                      onChange={(e) => setRequireCountry(e.target.checked)}
+                      className="w-6 h-6 rounded border-2 border-text-tertiary checked:bg-accent-primary checked:border-accent-primary"
+                    />
+                    <Globe className="w-8 h-8 text-accent-secondary" />
+                    <div className="flex-1">
+                      <p className="text-text-primary font-medium">Kraj Pochodzenia</p>
+                      <p className="text-text-secondary text-sm">Wymagaj podania kraju pochodzenia dla części bez kraju</p>
+                    </div>
+                  </label>
+                )}
 
                 <label className="flex items-center gap-4 bg-bg-tertiary rounded-lg p-6 cursor-pointer hover:bg-opacity-80 transition-all">
                   <input
