@@ -440,15 +440,19 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                 </tr>
             </thead>
             <tbody>
-                ${parts.map(part => {
+                ${parts.map((part, partIndex) => {
                     const partPhotos = photosByPartId[part.id] || [];
                     const photoThumbnails = partPhotos.length > 0
-                        ? partPhotos.map((photo, index) =>
-                            `<img src="file:///${photo.photo_path.replace(/\\/g, '/')}"
+                        ? partPhotos.map((photo, index) => {
+                            const photoPaths = partPhotos.map(p => p.photo_path.replace(/\\/g, '/'));
+                            return `<img src="file:///${photo.photo_path.replace(/\\/g, '/')}"
                                  class="photo-thumbnail"
-                                 onclick="openLightbox(${index}, ${JSON.stringify(partPhotos.map(p => p.photo_path.replace(/\\/g, '/')))})"
-                                 alt="Zdjęcie ${index + 1}">`
-                          ).join('')
+                                 data-index="${index}"
+                                 data-photos='${JSON.stringify(photoPaths).replace(/'/g, '&apos;')}'
+                                 onclick="openLightbox(this.dataset.index, JSON.parse(this.dataset.photos))"
+                                 alt="Zdjęcie ${index + 1}"
+                                 style="cursor: pointer;">`;
+                          }).join('')
                         : '-';
 
                     return `

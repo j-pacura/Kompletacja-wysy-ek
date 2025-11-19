@@ -98,6 +98,7 @@ export async function parseExcelFile(filePath: string): Promise<ExcelParseResult
 
   const parts: ExcelParseResult['parts'] = [];
   let hasCountryColumn = countryCol !== -1;
+  let dataRowNumber = 0; // Counter for data rows (starting from 1)
 
   // Read data rows (skip header)
   worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
@@ -128,13 +129,16 @@ export async function parseExcelFile(filePath: string): Promise<ExcelParseResult
       return;
     }
 
+    // Increment data row counter for valid rows
+    dataRowNumber++;
+
     parts.push({
       sap_index: String(sapIndex).trim(),
       description: String(description).trim(),
       quantity: parsedQuantity,
       unit: String(unit).trim(),
       country_of_origin: country ? String(country).trim() : undefined,
-      excel_row_number: rowNumber,
+      excel_row_number: dataRowNumber,
     });
   });
 

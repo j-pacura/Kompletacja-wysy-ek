@@ -1607,19 +1607,19 @@ const PackingScreen: React.FC = () => {
           <div className="flex items-center gap-3 mt-4 p-3 bg-bg-tertiary rounded-lg">
             <span className="text-text-primary text-sm font-semibold">Wymagane dane:</span>
             {shipment.require_weight && (
-              <span className="px-4 py-2 bg-accent-primary bg-opacity-20 text-accent-primary text-sm font-semibold rounded-lg border border-accent-primary border-opacity-30 flex items-center gap-2">
+              <span className="px-4 py-2 bg-accent-primary text-white text-sm font-semibold rounded-lg border border-accent-primary border-opacity-50 flex items-center gap-2 shadow-sm">
                 <span className="text-lg">⚖️</span>
                 <span>Waga</span>
               </span>
             )}
             {shipment.require_country && (
-              <span className="px-4 py-2 bg-accent-secondary bg-opacity-20 text-accent-secondary text-sm font-semibold rounded-lg border border-accent-secondary border-opacity-30 flex items-center gap-2">
+              <span className="px-4 py-2 bg-accent-secondary text-white text-sm font-semibold rounded-lg border border-accent-secondary border-opacity-50 flex items-center gap-2 shadow-sm">
                 <span className="text-lg">🌍</span>
                 <span>Kraj pochodzenia</span>
               </span>
             )}
             {shipment.require_photos && (
-              <span className="px-4 py-2 bg-accent-warning bg-opacity-20 text-accent-warning text-sm font-semibold rounded-lg border border-accent-warning border-opacity-30 flex items-center gap-2">
+              <span className="px-4 py-2 bg-accent-warning text-white text-sm font-semibold rounded-lg border border-accent-warning border-opacity-50 flex items-center gap-2 shadow-sm">
                 <span className="text-lg">📷</span>
                 <span>Zdjęcia</span>
               </span>
