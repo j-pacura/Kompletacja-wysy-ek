@@ -275,7 +275,7 @@ function runMigrations(): void {
   try {
     // Check if there are any shipments without user_id
     const unassignedShipments = db.exec("SELECT COUNT(*) as count FROM shipments WHERE user_id IS NULL");
-    const count = unassignedShipments[0]?.values[0]?.[0] || 0;
+    const count = Number(unassignedShipments[0]?.values[0]?.[0] || 0);
 
     if (count > 0) {
       // Find first admin user

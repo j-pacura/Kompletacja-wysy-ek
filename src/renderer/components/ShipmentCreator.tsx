@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
-import { CreateShipmentInput } from '../types/shipment';
 import { PartFromExcel } from '../types/part';
 
 const ShipmentCreator: React.FC = () => {
