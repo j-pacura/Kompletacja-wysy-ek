@@ -27,24 +27,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<PublicUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing session on mount
+  // No session persistence - require login on every app launch
   useEffect(() => {
-    const checkSession = () => {
-      try {
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-          const user = JSON.parse(savedUser) as PublicUser;
-          setCurrentUser(user);
-        }
-      } catch (error) {
-        console.error('Error loading saved session:', error);
-        localStorage.removeItem('currentUser');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
+    setIsLoading(false);
   }, []);
 
   const login = async (name: string, surname: string, password: string): Promise<{ success: boolean; error?: string }> => {
@@ -63,8 +48,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           active: result.data.active,
         };
 
+        // Session stored in memory only - cleared when app closes
         setCurrentUser(user);
-        localStorage.setItem('currentUser', JSON.stringify(user));
 
         return { success: true };
       } else {
@@ -78,7 +63,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const logout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('currentUser');
   };
 
   const isAdmin = (): boolean => {

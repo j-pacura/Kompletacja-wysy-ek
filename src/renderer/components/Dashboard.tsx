@@ -16,6 +16,7 @@ import {
   Play,
   FileText,
   Archive,
+  LogOut,
 } from 'lucide-react';
 import { Shipment } from '../types/shipment';
 import { format } from 'date-fns';
@@ -25,7 +26,7 @@ import { useUser } from '../contexts/UserContext';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser } = useUser();
+  const { currentUser, logout } = useUser();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -271,6 +272,14 @@ const Dashboard: React.FC = () => {
               Ustawienia
             </button>
             <button
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-all btn-active border border-red-500/30"
+              onClick={logout}
+              title="Wyloguj się"
+            >
+              <LogOut className="w-5 h-5" />
+              Wyloguj
+            </button>
+            <button
               className="flex items-center gap-2 px-6 py-2 gradient-primary text-white rounded-lg hover:opacity-90 transition-all btn-active font-semibold"
               onClick={() => navigate('/create')}
             >
@@ -457,9 +466,15 @@ const Dashboard: React.FC = () => {
                   {shipment.shipment_number}
                 </h3>
 
-                <p className="text-text-secondary text-sm mb-4">
+                <p className="text-text-secondary text-sm mb-2">
                   📍 {shipment.destination}
                 </p>
+
+                {shipment.packed_by && (
+                  <p className="text-text-tertiary text-xs mb-4">
+                    👤 Utworzona przez: <span className="text-accent-primary font-medium">{shipment.packed_by}</span>
+                  </p>
+                )}
 
                 {shipment.notes && (
                   <p className="text-text-tertiary text-xs mb-4 line-clamp-2">
