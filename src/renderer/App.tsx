@@ -32,52 +32,52 @@ const AppContent: React.FC = () => {
 
   // User is logged in - show main app
   return (
-    <BrowserRouter>
-      <div className="w-screen h-screen bg-bg-primary overflow-hidden">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/create" element={<ShipmentCreator />} />
-          <Route path="/packing/:shipmentId" element={<PackingScreen />} />
-          <Route path="/settings" element={<SettingsScreen />} />
-          <Route path="/archive" element={<Archive />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
+    <div className="w-screen h-screen bg-bg-primary overflow-hidden">
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/create" element={<ShipmentCreator />} />
+        <Route path="/packing/:shipmentId" element={<PackingScreen />} />
+        <Route path="/settings" element={<SettingsScreen />} />
+        <Route path="/archive" element={<Archive />} />
+        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
   );
 };
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider>
-      <UserProvider>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-primary)',
-              border: '1px solid var(--color-bg-tertiary)',
-            },
-            success: {
-              iconTheme: {
-                primary: 'var(--color-accent-success)',
-                secondary: 'white',
+    <BrowserRouter>
+      <ThemeProvider>
+        <UserProvider>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: 'var(--color-bg-tertiary)',
+                color: 'var(--color-text-primary)',
+                border: '1px solid var(--color-bg-tertiary)',
               },
-            },
-            error: {
-              iconTheme: {
-                primary: 'var(--color-accent-error)',
-                secondary: 'white',
+              success: {
+                iconTheme: {
+                  primary: 'var(--color-accent-success)',
+                  secondary: 'white',
+                },
               },
-            },
-          }}
-        />
-        <AppContent />
-      </UserProvider>
-    </ThemeProvider>
+              error: {
+                iconTheme: {
+                  primary: 'var(--color-accent-error)',
+                  secondary: 'white',
+                },
+              },
+            }}
+          />
+          <AppContent />
+        </UserProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 };
 
