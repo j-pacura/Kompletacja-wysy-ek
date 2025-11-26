@@ -1,0 +1,62 @@
+name: Build Portable EXE
+
+on:
+  push:
+    branches:
+      - main
+      - claude/**
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.11.0'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build frontend (webpack)
+        run: npm run build
+
+      - name: Build main process (TypeScript)
+        run: npm run build:main
+
+      - name: Build portable .exe
+        run: npm run electron:build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get package version
+        id: package-version
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Upload portable .exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: Asystent-Pakowania-v${{ steps.package-version.outputs.version }}-portable
+          path: dist-electron/*.exe
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Upload build info
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-info
+          path: |
+            dist-electron/**/*
+            !dist-electron/*.exe
+          retention-days: 30
+          if-no-files-found: warn
