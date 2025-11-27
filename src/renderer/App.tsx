@@ -10,6 +10,7 @@ import SettingsScreen from './components/SettingsScreen';
 import Archive from './components/Archive';
 import LoginScreen from './components/LoginScreen';
 import AdminPanel from './components/AdminPanel';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const AppContent: React.FC = () => {
   const { currentUser, isLoading } = useUser();
@@ -37,17 +38,19 @@ const AppContent: React.FC = () => {
   // User is logged in - show main app
   console.log('[AppContent] User logged in - showing Dashboard, user:', currentUser);
   return (
-    <div className="w-screen h-screen bg-bg-primary overflow-hidden">
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/create" element={<ShipmentCreator />} />
-        <Route path="/packing/:shipmentId" element={<PackingScreen />} />
-        <Route path="/settings" element={<SettingsScreen />} />
-        <Route path="/archive" element={<Archive />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </div>
+    <ErrorBoundary>
+      <div className="w-screen h-screen bg-bg-primary overflow-hidden">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/create" element={<ShipmentCreator />} />
+          <Route path="/packing/:shipmentId" element={<PackingScreen />} />
+          <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/archive" element={<Archive />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </ErrorBoundary>
   );
 };
 
