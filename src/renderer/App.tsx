@@ -14,7 +14,10 @@ import AdminPanel from './components/AdminPanel';
 const AppContent: React.FC = () => {
   const { currentUser, isLoading } = useUser();
 
+  console.log('[AppContent] isLoading:', isLoading, 'currentUser:', currentUser);
+
   if (isLoading) {
+    console.log('[AppContent] Showing loading screen');
     return (
       <div className="flex items-center justify-center w-screen h-screen bg-bg-primary">
         <div className="text-center">
@@ -27,10 +30,12 @@ const AppContent: React.FC = () => {
 
   // Show login screen if no user is logged in
   if (!currentUser) {
+    console.log('[AppContent] No user logged in - showing LoginScreen');
     return <LoginScreen />;
   }
 
   // User is logged in - show main app
+  console.log('[AppContent] User logged in - showing Dashboard, user:', currentUser);
   return (
     <div className="w-screen h-screen bg-bg-primary overflow-hidden">
       <Routes>

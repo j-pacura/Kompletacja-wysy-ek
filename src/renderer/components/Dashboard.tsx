@@ -27,6 +27,7 @@ import { useUser } from '../contexts/UserContext';
 import toast from 'react-hot-toast';
 
 const Dashboard: React.FC = () => {
+  console.log('[Dashboard] Component rendering');
   const navigate = useNavigate();
   const { currentUser, logout, isAdmin } = useUser();
   const [shipments, setShipments] = useState<Shipment[]>([]);
@@ -44,28 +45,35 @@ const Dashboard: React.FC = () => {
   const [unlockPassword, setUnlockPassword] = useState('');
 
   useEffect(() => {
+    console.log('[Dashboard] useEffect - loading shipments');
     loadShipments();
   }, []);
 
   useEffect(() => {
     if (shipments.length > 0) {
+      console.log('[Dashboard] useEffect - loading parts for', shipments.length, 'shipments');
       loadAllParts();
     }
   }, [shipments]);
 
   const loadShipments = async () => {
+    console.log('[Dashboard] loadShipments - starting');
     try {
       const { ipcRenderer } = window.require('electron');
+      console.log('[Dashboard] loadShipments - invoking db:get-shipments');
       const result = await ipcRenderer.invoke('db:get-shipments');
+      console.log('[Dashboard] loadShipments - result:', result);
 
       if (result.success) {
+        console.log('[Dashboard] loadShipments - setting shipments:', result.data);
         setShipments(result.data);
       } else {
-        console.error('Failed to load shipments:', result.error);
+        console.error('[Dashboard] Failed to load shipments:', result.error);
       }
     } catch (error) {
-      console.error('Error loading shipments:', error);
+      console.error('[Dashboard] Error loading shipments:', error);
     } finally {
+      console.log('[Dashboard] loadShipments - setting loading to false');
       setLoading(false);
     }
   };
