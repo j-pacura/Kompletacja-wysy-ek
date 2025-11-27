@@ -1,19 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { UserProvider, useUser } from './contexts/UserContext';
-import Dashboard from './components/Dashboard';
-import ShipmentCreator from './components/ShipmentCreator';
-import PackingScreen from './components/PackingScreen';
-import SettingsScreen from './components/SettingsScreen';
-import Archive from './components/Archive';
 import LoginScreen from './components/LoginScreen';
-import AdminPanel from './components/AdminPanel';
 import ErrorBoundary from './components/ErrorBoundary';
-
-console.log('[App] Dashboard import:', Dashboard);
-console.log('[App] Dashboard type:', typeof Dashboard);
 
 const AppContent: React.FC = () => {
   const { currentUser, isLoading } = useUser();
@@ -39,26 +30,25 @@ const AppContent: React.FC = () => {
   }
 
   // User is logged in - show main app
-  console.log('[AppContent] User logged in - showing Dashboard, user:', currentUser);
-  console.log('[AppContent] About to render Routes');
-  console.log('[AppContent] Dashboard component:', Dashboard);
+  console.log('[AppContent] User logged in - showing test UI, user:', currentUser);
 
   return (
     <ErrorBoundary>
       <div className="w-screen h-screen bg-bg-primary overflow-hidden">
+        <div className="p-8 text-white text-4xl">
+          TEST: Routes działa! User: {currentUser.name}
+        </div>
         <Routes>
           <Route path="/" element={
-            <>
-              {console.log('[AppContent] Rendering Dashboard element')}
-              <Dashboard />
-            </>
+            <div className="p-8 text-white text-4xl bg-green-500">
+              TEST: Route "/" zadziałał!
+            </div>
           } />
-          <Route path="/create" element={<ShipmentCreator />} />
-          <Route path="/packing/:shipmentId" element={<PackingScreen />} />
-          <Route path="/settings" element={<SettingsScreen />} />
-          <Route path="/archive" element={<Archive />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={
+            <div className="p-8 text-white text-4xl bg-red-500">
+              TEST: Catch-all route!
+            </div>
+          } />
         </Routes>
       </div>
     </ErrorBoundary>
