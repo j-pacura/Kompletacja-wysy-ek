@@ -40,6 +40,9 @@ module.exports = {
       filename: 'index.html',
     }),
   ],
+  optimization: {
+    minimize: false, // Disable minification to keep console.log
+  },
   devServer: {
     static: {
       directory: path.join(__dirname, 'dist/renderer'),
