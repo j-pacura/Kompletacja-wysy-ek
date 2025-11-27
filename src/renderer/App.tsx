@@ -12,6 +12,9 @@ import LoginScreen from './components/LoginScreen';
 import AdminPanel from './components/AdminPanel';
 import ErrorBoundary from './components/ErrorBoundary';
 
+console.log('[App] Dashboard import:', Dashboard);
+console.log('[App] Dashboard type:', typeof Dashboard);
+
 const AppContent: React.FC = () => {
   const { currentUser, isLoading } = useUser();
 
@@ -37,11 +40,19 @@ const AppContent: React.FC = () => {
 
   // User is logged in - show main app
   console.log('[AppContent] User logged in - showing Dashboard, user:', currentUser);
+  console.log('[AppContent] About to render Routes');
+  console.log('[AppContent] Dashboard component:', Dashboard);
+
   return (
     <ErrorBoundary>
       <div className="w-screen h-screen bg-bg-primary overflow-hidden">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={
+            <>
+              {console.log('[AppContent] Rendering Dashboard element')}
+              <Dashboard />
+            </>
+          } />
           <Route path="/create" element={<ShipmentCreator />} />
           <Route path="/packing/:shipmentId" element={<PackingScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
