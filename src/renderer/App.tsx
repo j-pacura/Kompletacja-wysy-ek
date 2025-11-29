@@ -1,18 +1,21 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { UserProvider, useUser } from './contexts/UserContext';
+import Dashboard from './components/Dashboard';
+import ShipmentCreator from './components/ShipmentCreator';
+import PackingScreen from './components/PackingScreen';
+import SettingsScreen from './components/SettingsScreen';
+import Archive from './components/Archive';
 import LoginScreen from './components/LoginScreen';
+import AdminPanel from './components/AdminPanel';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const AppContent: React.FC = () => {
   const { currentUser, isLoading } = useUser();
 
-  console.log('[AppContent] isLoading:', isLoading, 'currentUser:', currentUser);
-
   if (isLoading) {
-    console.log('[AppContent] Showing loading screen');
     return (
       <div className="flex items-center justify-center w-screen h-screen bg-bg-primary">
         <div className="text-center">
@@ -25,30 +28,20 @@ const AppContent: React.FC = () => {
 
   // Show login screen if no user is logged in
   if (!currentUser) {
-    console.log('[AppContent] No user logged in - showing LoginScreen');
     return <LoginScreen />;
   }
 
   // User is logged in - show main app
-  console.log('[AppContent] User logged in - showing test UI, user:', currentUser);
-
   return (
     <ErrorBoundary>
       <div className="w-screen h-screen bg-bg-primary overflow-hidden">
-        <div className="p-8 text-white text-4xl">
-          TEST: Routes działa! User: {currentUser.name}
-        </div>
         <Routes>
-          <Route path="/" element={
-            <div className="p-8 text-white text-4xl bg-green-500">
-              TEST: Route "/" zadziałał!
-            </div>
-          } />
-          <Route path="*" element={
-            <div className="p-8 text-white text-4xl bg-red-500">
-              TEST: Catch-all route!
-            </div>
-          } />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/create" element={<ShipmentCreator />} />
+          <Route path="/packing/:shipmentId" element={<PackingScreen />} />
+          <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/archive" element={<Archive />} />
+          <Route path="/admin" element={<AdminPanel />} />
         </Routes>
       </div>
     </ErrorBoundary>
@@ -57,7 +50,7 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <ThemeProvider>
         <UserProvider>
           <Toaster
@@ -86,7 +79,7 @@ const App: React.FC = () => {
           <AppContent />
         </UserProvider>
       </ThemeProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 
