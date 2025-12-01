@@ -15,7 +15,10 @@ import ErrorBoundary from './components/ErrorBoundary';
 const AppContent: React.FC = () => {
   const { currentUser, isLoading } = useUser();
 
+  console.log('🔍 [AppContent] Rendering - isLoading:', isLoading, 'currentUser:', currentUser);
+
   if (isLoading) {
+    console.log('🔍 [AppContent] Showing loading screen');
     return (
       <div className="flex items-center justify-center w-screen h-screen bg-bg-primary">
         <div className="text-center">
@@ -28,10 +31,12 @@ const AppContent: React.FC = () => {
 
   // Show login screen if no user is logged in
   if (!currentUser) {
+    console.log('🔍 [AppContent] No user - showing LoginScreen');
     return <LoginScreen />;
   }
 
   // User is logged in - show main app
+  console.log('🔍 [AppContent] User logged in - rendering Routes');
   return (
     <ErrorBoundary>
       <div className="w-screen h-screen bg-bg-primary overflow-hidden">
@@ -49,6 +54,7 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  console.log('🔍 [App] Component rendering - using HashRouter');
   return (
     <HashRouter>
       <ThemeProvider>
