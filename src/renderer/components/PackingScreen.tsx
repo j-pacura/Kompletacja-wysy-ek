@@ -450,16 +450,29 @@ const PackingScreen: React.FC = () => {
     }
   };
 
-  // Keep focus on scanner input at all times
+  // Keep focus on scanner input at all times (but not when user is typing in other inputs)
   useEffect(() => {
     const interval = setInterval(() => {
-      if (scannerInputRef.current && document.activeElement !== scannerInputRef.current) {
+      // Don't steal focus if user is typing in an input or textarea
+      const activeEl = document.activeElement;
+      if (activeEl instanceof HTMLInputElement || activeEl instanceof HTMLTextAreaElement) {
+        // Allow user to type in other inputs
+        return;
+      }
+
+      // Don't steal focus if modal is open
+      if (isModalOpen) {
+        return;
+      }
+
+      // Refocus scanner input if nothing else is focused
+      if (scannerInputRef.current && activeEl !== scannerInputRef.current) {
         scannerInputRef.current.focus();
       }
     }, 100);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isModalOpen]);
 
   // Re-focus scanner input when modal closes
   useEffect(() => {

@@ -21,6 +21,34 @@ export const useAudio = () => {
     voiceLanguage: 'pl-PL',
   });
   const [isLoading, setIsLoading] = useState(true);
+  const voicesLoadedRef = useRef<boolean>(false);
+  const cachedVoicesRef = useRef<SpeechSynthesisVoice[]>([]);
+
+  // Load and cache available voices
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        cachedVoicesRef.current = voices;
+        voicesLoadedRef.current = true;
+        console.log('Voices loaded:', voices.length, 'Polish voices:', voices.filter(v => v.lang.startsWith('pl')).length);
+      }
+    };
+
+    // Load voices immediately
+    loadVoices();
+
+    // Listen for voiceschanged event (fires when voices are loaded in Chromium)
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    }
+
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+      }
+    };
+  }, []);
 
   // Load settings from database
   useEffect(() => {
@@ -147,11 +175,28 @@ export const useAudio = () => {
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
 
-    // Try to find Polish voice
-    const voices = window.speechSynthesis.getVoices();
-    const polishVoice = voices.find(voice => voice.lang.startsWith('pl'));
-    if (polishVoice) {
-      utterance.voice = polishVoice;
+    // Use cached voices to find Polish voice
+    if (cachedVoicesRef.current.length > 0) {
+      // Try to find exact match first (pl-PL)
+      let polishVoice = cachedVoicesRef.current.find(voice =>
+        voice.lang === settings.voiceLanguage
+      );
+
+      // If not found, try any Polish voice (pl-*)
+      if (!polishVoice) {
+        polishVoice = cachedVoicesRef.current.find(voice =>
+          voice.lang.startsWith('pl')
+        );
+      }
+
+      if (polishVoice) {
+        utterance.voice = polishVoice;
+        console.log('Using Polish voice:', polishVoice.name, polishVoice.lang);
+      } else {
+        console.warn('No Polish voice found. Available voices:', cachedVoicesRef.current.map(v => v.lang));
+      }
+    } else {
+      console.warn('Voices not yet loaded, using default voice');
     }
 
     window.speechSynthesis.speak(utterance);
