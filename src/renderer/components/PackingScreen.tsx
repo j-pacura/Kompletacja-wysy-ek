@@ -1794,8 +1794,8 @@ const PackingScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Search bar */}
-      <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
+      {/* Search bar - TEMPORARILY DISABLED FOR DEBUGGING */}
+      {/* <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
@@ -1803,12 +1803,13 @@ const PackingScreen: React.FC = () => {
             placeholder="🔍 Skanuj QR lub wyszukaj część..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            autoFocus
             className="w-full pl-12 pr-4 py-4 bg-bg-tertiary text-text-primary text-lg rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
           />
         </div>
+      </div> */}
 
-        {/* Requirements badges */}
+      {/* Requirements badges */}
+      <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
         {(shipment.require_weight || shipment.require_country || shipment.require_photos) && (
           <div className="flex items-center gap-3 mt-4 p-3 bg-bg-tertiary rounded-lg">
             <span className="text-text-primary text-sm font-semibold">Wymagane dane:</span>
