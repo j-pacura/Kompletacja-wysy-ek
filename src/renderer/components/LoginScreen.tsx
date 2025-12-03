@@ -442,7 +442,7 @@ const LoginScreen: React.FC = () => {
                 ) : (
                   <>
                     <LogIn className="w-5 h-5" />
-                    🔴 TEST - NOWA WERSJA 🔴
+                    Zaloguj się
                   </>
                 )}
               </button>

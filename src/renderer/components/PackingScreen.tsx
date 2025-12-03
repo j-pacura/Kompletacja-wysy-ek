@@ -4,7 +4,7 @@ import Confetti from 'react-confetti';
 import toast, { Toaster } from 'react-hot-toast';
 import {
   ArrowLeft,
-  // Search, // Temporarily disabled
+  Search,
   Settings,
   Save,
   Pause,
@@ -43,7 +43,7 @@ const PackingScreen: React.FC = () => {
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [parts, setParts] = useState<Part[]>([]);
   const [loading, setLoading] = useState(true);
-  // const [searchQuery, setSearchQuery] = useState(''); // Temporarily disabled
+  const [searchQuery, setSearchQuery] = useState('');
   const [sessionStartTime] = useState<number>(Date.now()); // We don't need setter - timer starts once
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -1029,9 +1029,15 @@ const PackingScreen: React.FC = () => {
   const packedParts = parts.filter(p => p.status === 'packed');
   const progress = parts.length > 0 ? (packedParts.length / parts.length) * 100 : 0;
 
-  // Search temporarily disabled
-  const filteredPendingParts = pendingParts;
-  const filteredPackedParts = packedParts;
+  const filteredPendingParts = pendingParts.filter(part =>
+    part.sap_index.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    part.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredPackedParts = packedParts.filter(part =>
+    part.sap_index.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    part.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Circular progress ring component
   const CircularProgress = ({ percent, size = 80 }: { percent: number; size?: number }) => {
@@ -1788,8 +1794,8 @@ const PackingScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Search bar - TEMPORARILY DISABLED FOR DEBUGGING */}
-      {/* <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
+      {/* Search bar */}
+      <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
@@ -1800,10 +1806,8 @@ const PackingScreen: React.FC = () => {
             className="w-full pl-12 pr-4 py-4 bg-bg-tertiary text-text-primary text-lg rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
           />
         </div>
-      </div> */}
 
-      {/* Requirements badges */}
-      <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
+        {/* Requirements badges */}
         {(shipment.require_weight || shipment.require_country || shipment.require_photos) && (
           <div className="flex items-center gap-3 mt-4 p-3 bg-bg-tertiary rounded-lg">
             <span className="text-text-primary text-sm font-semibold">Wymagane dane:</span>
