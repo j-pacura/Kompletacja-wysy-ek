@@ -4,7 +4,7 @@ import Confetti from 'react-confetti';
 import toast, { Toaster } from 'react-hot-toast';
 import {
   ArrowLeft,
-  Search,
+  // Search, // Temporarily disabled
   Settings,
   Save,
   Pause,
@@ -43,7 +43,7 @@ const PackingScreen: React.FC = () => {
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [parts, setParts] = useState<Part[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  // const [searchQuery, setSearchQuery] = useState(''); // Temporarily disabled
   const [sessionStartTime] = useState<number>(Date.now()); // We don't need setter - timer starts once
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -1029,15 +1029,9 @@ const PackingScreen: React.FC = () => {
   const packedParts = parts.filter(p => p.status === 'packed');
   const progress = parts.length > 0 ? (packedParts.length / parts.length) * 100 : 0;
 
-  const filteredPendingParts = pendingParts.filter(part =>
-    part.sap_index.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    part.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredPackedParts = packedParts.filter(part =>
-    part.sap_index.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    part.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Search temporarily disabled
+  const filteredPendingParts = pendingParts;
+  const filteredPackedParts = packedParts;
 
   // Circular progress ring component
   const CircularProgress = ({ percent, size = 80 }: { percent: number; size?: number }) => {
