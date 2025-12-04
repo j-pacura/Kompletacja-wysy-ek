@@ -533,7 +533,7 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                 </tr>
             </thead>
             <tbody>
-                ${group.parts.map(part => {
+                ${group.parts.map((part: any) => {
                     const partPhotos = photosByPartId[part.id] || [];
                     const photoThumbnails = partPhotos.length > 0
                         ? partPhotos.map((photo, index) => {
