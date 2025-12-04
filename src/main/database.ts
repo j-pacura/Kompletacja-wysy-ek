@@ -363,6 +363,42 @@ function runMigrations(): void {
     console.error('Migration 14 error:', error);
   }
 
+  // Migration 15: Add order_number column to parts table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(parts)");
+    const columns = tableInfo[0]?.values || [];
+    const hasOrderNumber = columns.some((col: any) => col[1] === 'order_number');
+
+    if (!hasOrderNumber) {
+      console.log('Adding order_number column to parts table');
+      db.run('ALTER TABLE parts ADD COLUMN order_number TEXT');
+      saveDatabase();
+      console.log('Migration completed: added order_number column');
+    } else {
+      console.log('order_number column already exists');
+    }
+  } catch (error) {
+    console.error('Migration 15 error:', error);
+  }
+
+  // Migration 16: Add order_description column to parts table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(parts)");
+    const columns = tableInfo[0]?.values || [];
+    const hasOrderDescription = columns.some((col: any) => col[1] === 'order_description');
+
+    if (!hasOrderDescription) {
+      console.log('Adding order_description column to parts table');
+      db.run('ALTER TABLE parts ADD COLUMN order_description TEXT');
+      saveDatabase();
+      console.log('Migration completed: added order_description column');
+    } else {
+      console.log('order_description column already exists');
+    }
+  } catch (error) {
+    console.error('Migration 16 error:', error);
+  }
+
   console.log('Migrations complete');
 }
 

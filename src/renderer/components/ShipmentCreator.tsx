@@ -107,8 +107,8 @@ const ShipmentCreator: React.FC = () => {
         await ipcRenderer.invoke('db:execute',
           `INSERT INTO parts (
             shipment_id, sap_index, description, quantity, unit,
-            country_of_origin, excel_row_number, status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
+            country_of_origin, order_number, order_description, excel_row_number, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
           [
             shipmentId,
             part.sap_index,
@@ -116,6 +116,8 @@ const ShipmentCreator: React.FC = () => {
             part.quantity,
             part.unit,
             part.country_of_origin || null,
+            part.order_number || null,
+            part.order_description || null,
             part.excel_row_number,
           ]
         );

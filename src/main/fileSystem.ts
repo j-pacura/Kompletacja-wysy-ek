@@ -10,9 +10,12 @@ export interface ExcelParseResult {
     quantity: number;
     unit: string;
     country_of_origin?: string;
+    order_number?: string;
+    order_description?: string;
     excel_row_number: number;
   }>;
   hasCountryColumn: boolean;
+  hasOrderColumns: boolean;
 }
 
 /**
@@ -70,6 +73,8 @@ export async function parseExcelFile(filePath: string): Promise<ExcelParseResult
   let quantityCol = -1;
   let unitCol = -1;
   let countryCol = -1;
+  let orderNumberCol = -1;
+  let orderDescriptionCol = -1;
 
   headers.forEach((header, index) => {
     if (header.includes('sap') || header.includes('index') || header === 'a') {
@@ -82,6 +87,10 @@ export async function parseExcelFile(filePath: string): Promise<ExcelParseResult
       unitCol = index;
     } else if (header.includes('country') || header.includes('kraj') || header.includes('coo') || header === 'e') {
       countryCol = index;
+    } else if (header.includes('nr zlecenia') || header.includes('nr_zlecenia') || header.includes('order number')) {
+      orderNumberCol = index;
+    } else if (header.includes('zlecenie_opis') || header.includes('zlecenie opis') || header.includes('order description')) {
+      orderDescriptionCol = index;
     }
   });
 
@@ -98,6 +107,7 @@ export async function parseExcelFile(filePath: string): Promise<ExcelParseResult
 
   const parts: ExcelParseResult['parts'] = [];
   let hasCountryColumn = countryCol !== -1;
+  let hasOrderColumns = orderNumberCol !== -1 && orderDescriptionCol !== -1;
   let dataRowNumber = 0; // Counter for data rows (starting from 1)
 
   // Read data rows (skip header)
@@ -109,10 +119,12 @@ export async function parseExcelFile(filePath: string): Promise<ExcelParseResult
     const quantity = row.getCell(quantityCol + 1).value;
     const unit = row.getCell(unitCol + 1).value;
     const country = countryCol !== -1 ? row.getCell(countryCol + 1).value : null;
+    const orderNumber = orderNumberCol !== -1 ? row.getCell(orderNumberCol + 1).value : null;
+    const orderDescription = orderDescriptionCol !== -1 ? row.getCell(orderDescriptionCol + 1).value : null;
 
-    // Validate row
-    if (!sapIndex || !description || !quantity || !unit) {
-      console.warn(`Row ${rowNumber}: Missing required data, skipping`);
+    // Validate row - SAP index is now optional, but description, quantity, and unit are required
+    if (!description || !quantity || !unit) {
+      console.warn(`Row ${rowNumber}: Missing required data (description, quantity, or unit), skipping`);
       return;
     }
 
@@ -132,12 +144,19 @@ export async function parseExcelFile(filePath: string): Promise<ExcelParseResult
     // Increment data row counter for valid rows
     dataRowNumber++;
 
+    // If SAP index is empty, use placeholder like "MANUAL-001", "MANUAL-002", etc.
+    const finalSapIndex = sapIndex && String(sapIndex).trim()
+      ? String(sapIndex).trim()
+      : `MANUAL-${dataRowNumber.toString().padStart(3, '0')}`;
+
     parts.push({
-      sap_index: String(sapIndex).trim(),
+      sap_index: finalSapIndex,
       description: String(description).trim(),
       quantity: parsedQuantity,
       unit: String(unit).trim(),
       country_of_origin: country ? String(country).trim() : undefined,
+      order_number: orderNumber ? String(orderNumber).trim() : undefined,
+      order_description: orderDescription ? String(orderDescription).trim() : undefined,
       excel_row_number: dataRowNumber,
     });
   });
@@ -149,6 +168,7 @@ export async function parseExcelFile(filePath: string): Promise<ExcelParseResult
   return {
     parts,
     hasCountryColumn,
+    hasOrderColumns,
   };
 }
 
