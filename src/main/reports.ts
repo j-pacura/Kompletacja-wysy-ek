@@ -35,7 +35,7 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
     const worksheet = workbook.addWorksheet('Pakowanie');
 
     // Add header info
-    worksheet.mergeCells('A1:J1');
+    worksheet.mergeCells('A1:K1');
     const titleCell = worksheet.getCell('A1');
     titleCell.value = `Raport pakowania - ${shipmentData.shipment_number}`;
     titleCell.font = { size: 16, bold: true };
@@ -68,7 +68,8 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
       'Kraj pochodzenia',
       'Waga całkowita [kg]',
       'Waga jednostkowa [kg]',
-      'Ilość ważona [szt]'
+      'Ilość ważona [szt]',
+      'Nr zlecenia'
     ]);
 
     // Style header row
@@ -93,7 +94,8 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
         part.country_of_origin || '-',
         part.weight_total ? part.weight_total.toFixed(3) : '-',
         part.weight_per_unit ? part.weight_per_unit.toFixed(4) : '-',
-        part.weight_quantity || '-'
+        part.weight_quantity || '-',
+        part.order_number || '-'
       ]);
 
       // Color code by status
@@ -427,6 +429,13 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
             </div>
         </div>
 
+        ${(() => {
+            // Check if any parts have order numbers
+            const hasOrders = parts.some(p => p.order_number);
+
+            if (!hasOrders) {
+                // No orders - display as before
+                return `
         <table>
             <thead>
                 <tr>
@@ -485,6 +494,89 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                 }).join('')}
             </tbody>
         </table>
+                `;
+            } else {
+                // Has orders - group by order number
+                const orderGroups = new Map();
+
+                parts.forEach(part => {
+                    const orderKey = part.order_number || 'Bez zlecenia';
+                    if (!orderGroups.has(orderKey)) {
+                        orderGroups.set(orderKey, {
+                            orderNumber: part.order_number,
+                            orderDescription: part.order_description,
+                            parts: []
+                        });
+                    }
+                    orderGroups.get(orderKey).parts.push(part);
+                });
+
+                return Array.from(orderGroups.values()).map(group => `
+        <h2 style="color: #1db954; margin: 30px 0 20px; font-size: 24px;">
+            📋 Zlecenie: ${group.orderNumber || 'Brak numeru'}
+            ${group.orderDescription ? `<span style="color: #888; font-size: 16px; font-weight: normal;"> (${group.orderDescription})</span>` : ''}
+        </h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nr</th>
+                    <th>Indeks SAP</th>
+                    <th>Opis</th>
+                    <th>Ilość</th>
+                    <th>Jedn.</th>
+                    <th>Status</th>
+                    <th>Kraj pochodzenia</th>
+                    <th>Waga całk. [kg]</th>
+                    <th>Waga jedn. [kg]</th>
+                    <th>Ilość waż.</th>
+                    <th>Zdjęcia</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${group.parts.map(part => {
+                    const partPhotos = photosByPartId[part.id] || [];
+                    const photoThumbnails = partPhotos.length > 0
+                        ? partPhotos.map((photo, index) => {
+                            const photoPaths = partPhotos.map(p => p.photo_path.replace(/\\/g, '/'));
+                            return `<img src="file:///${photo.photo_path.replace(/\\/g, '/')}"
+                                 class="photo-thumbnail"
+                                 data-index="${index}"
+                                 data-photos='${JSON.stringify(photoPaths).replace(/'/g, '&apos;')}'
+                                 onclick="openLightbox(this.dataset.index, JSON.parse(this.dataset.photos))"
+                                 alt="Zdjęcie ${index + 1}"
+                                 style="cursor: pointer;">`;
+                          }).join('')
+                        : '-';
+
+                    return `
+                    <tr>
+                        <td>${part.excel_row_number}</td>
+                        <td><strong>${part.sap_index}</strong></td>
+                        <td>${part.description}</td>
+                        <td>${part.quantity}</td>
+                        <td>${part.unit}</td>
+                        <td>
+                            <span class="${part.status === 'packed' ? 'status-packed' : 'status-pending'}">
+                                ${part.status === 'packed' ? 'Spakowano' : 'Oczekuje'}
+                            </span>
+                        </td>
+                        <td>${part.country_of_origin || '-'}</td>
+                        <td>${part.weight_total ? part.weight_total.toFixed(3) : '-'}</td>
+                        <td>${part.weight_per_unit ? part.weight_per_unit.toFixed(4) : '-'}</td>
+                        <td>${part.weight_quantity || '-'}</td>
+                        <td>
+                            <div class="photo-thumbnails">
+                                ${photoThumbnails}
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+                `).join('');
+            }
+        })()}
 
         <div class="summary">
             <div class="summary-item">

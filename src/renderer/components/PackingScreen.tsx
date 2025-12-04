@@ -1186,9 +1186,24 @@ const PackingScreen: React.FC = () => {
                 </div>
 
                 {/* Description - mały */}
-                <p className="text-text-secondary text-xl mb-8">
+                <p className="text-text-secondary text-xl mb-4">
                   {selectedPart.description}
                 </p>
+
+                {/* Order information - if available */}
+                {selectedPart.order_number && (
+                  <div className="bg-bg-tertiary rounded-lg p-4 mb-6">
+                    <p className="text-text-tertiary text-sm mb-1">Zlecenie:</p>
+                    <p className="text-accent-primary text-lg font-semibold">
+                      {selectedPart.order_number}
+                      {selectedPart.order_description && (
+                        <span className="text-text-secondary text-base font-normal ml-2">
+                          ({selectedPart.order_description})
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
 
                 {/* Quantity - DUŻY */}
                 <div className="flex items-center justify-center gap-3 mb-8">
