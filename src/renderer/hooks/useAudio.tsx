@@ -209,7 +209,12 @@ export const useAudio = () => {
 
   const playPacked = (sapIndex: string) => {
     playSound('success');
-    speak(`Spakowano część ${sapIndex}`, 'high');
+    // If no SAP index (empty or MANUAL-xxx), just say "Spakowano część"
+    if (!sapIndex || sapIndex.trim() === '' || sapIndex.startsWith('MANUAL-')) {
+      speak('Spakowano część', 'high');
+    } else {
+      speak(`Spakowano część ${sapIndex}`, 'high');
+    }
   };
 
   const playError = (message?: string) => {

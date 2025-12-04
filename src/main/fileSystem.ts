@@ -144,10 +144,10 @@ export async function parseExcelFile(filePath: string): Promise<ExcelParseResult
     // Increment data row counter for valid rows
     dataRowNumber++;
 
-    // If SAP index is empty, use placeholder like "MANUAL-001", "MANUAL-002", etc.
+    // If SAP index is empty, leave it empty (user can pack manually by clicking)
     const finalSapIndex = sapIndex && String(sapIndex).trim()
       ? String(sapIndex).trim()
-      : `MANUAL-${dataRowNumber.toString().padStart(3, '0')}`;
+      : '';
 
     parts.push({
       sap_index: finalSapIndex,
