@@ -79,7 +79,7 @@ export async function parseExcelFile(filePath: string): Promise<ExcelParseResult
   headers.forEach((header, index) => {
     if (header.includes('sap') || header.includes('index') || header === 'a') {
       sapIndexCol = index;
-    } else if (header.includes('descr') || header.includes('opis') || header === 'b') {
+    } else if ((header.includes('descr') || (header.includes('opis') && !header.includes('zlecenie'))) || header === 'b') {
       descriptionCol = index;
     } else if (header.includes('quant') || header.includes('ilo') || header.includes('qty') || header === 'c') {
       quantityCol = index;
