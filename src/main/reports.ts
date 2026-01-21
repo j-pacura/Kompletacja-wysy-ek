@@ -35,7 +35,7 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
     const worksheet = workbook.addWorksheet('Pakowanie');
 
     // Add header info
-    worksheet.mergeCells('A1:K1');
+    worksheet.mergeCells('A1:L1');
     const titleCell = worksheet.getCell('A1');
     titleCell.value = `Raport pakowania - ${shipmentData.shipment_number}`;
     titleCell.font = { size: 16, bold: true };
@@ -69,7 +69,8 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
       'Waga całkowita [kg]',
       'Waga jednostkowa [kg]',
       'Ilość ważona [szt]',
-      'Nr zlecenia'
+      'Nr zlecenia',
+      'Numery seryjne'
     ]);
 
     // Style header row
@@ -84,6 +85,13 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
 
     // Add data rows
     parts.forEach((part) => {
+      // Get serial numbers for this part
+      const serialNumbers = query(
+        'SELECT serial_number FROM serial_numbers WHERE part_id = ? ORDER BY sequence',
+        [part.id]
+      );
+      const snList = serialNumbers.map((sn: any) => sn.serial_number).join(', ') || '-';
+
       const row = worksheet.addRow([
         part.excel_row_number,
         part.sap_index,
@@ -95,7 +103,8 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
         part.weight_total ? part.weight_total.toFixed(3) : '-',
         part.weight_per_unit ? part.weight_per_unit.toFixed(4) : '-',
         part.weight_quantity || '-',
-        part.order_number || '-'
+        part.order_number || '-',
+        snList
       ]);
 
       // Color code by status
@@ -203,6 +212,21 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
         photosByPartId[photo.part_id] = [];
       }
       photosByPartId[photo.part_id].push(photo);
+    });
+
+    // Query all serial numbers for the parts in this shipment
+    const serialNumbers = partIds ? query<any>(
+      `SELECT * FROM serial_numbers WHERE part_id IN (${partIds}) ORDER BY part_id, sequence ASC`,
+      []
+    ) : [];
+
+    // Group serial numbers by part_id
+    const serialNumbersByPartId: { [key: number]: any[] } = {};
+    serialNumbers.forEach(sn => {
+      if (!serialNumbersByPartId[sn.part_id]) {
+        serialNumbersByPartId[sn.part_id] = [];
+      }
+      serialNumbersByPartId[sn.part_id].push(sn);
     });
 
     // Generate HTML content
@@ -468,6 +492,13 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                           }).join('')
                         : '-';
 
+                    const partSerialNumbers = serialNumbersByPartId[part.id] || [];
+                    const serialNumbersList = partSerialNumbers.length > 0
+                        ? partSerialNumbers.map((sn, index) =>
+                            `<div style="font-family: monospace; font-size: 12px; padding: 2px 0;">${index + 1}. ${sn.serial_number}</div>`
+                          ).join('')
+                        : '-';
+
                     return `
                     <tr>
                         <td>${part.excel_row_number}</td>
@@ -484,6 +515,7 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                         <td>${part.weight_total ? part.weight_total.toFixed(3) : '-'}</td>
                         <td>${part.weight_per_unit ? part.weight_per_unit.toFixed(4) : '-'}</td>
                         <td>${part.weight_quantity || '-'}</td>
+                        <td>${serialNumbersList}</td>
                         <td>
                             <div class="photo-thumbnails">
                                 ${photoThumbnails}
@@ -529,6 +561,7 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                     <th>Waga całk. [kg]</th>
                     <th>Waga jedn. [kg]</th>
                     <th>Ilość waż.</th>
+                    <th>Numery seryjne</th>
                     <th>Zdjęcia</th>
                 </tr>
             </thead>
@@ -548,6 +581,13 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                           }).join('')
                         : '-';
 
+                    const partSerialNumbers = serialNumbersByPartId[part.id] || [];
+                    const serialNumbersList = partSerialNumbers.length > 0
+                        ? partSerialNumbers.map((sn: any, index: number) =>
+                            `<div style="font-family: monospace; font-size: 12px; padding: 2px 0;">${index + 1}. ${sn.serial_number}</div>`
+                          ).join('')
+                        : '-';
+
                     return `
                     <tr>
                         <td>${part.excel_row_number}</td>
@@ -564,6 +604,7 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
                         <td>${part.weight_total ? part.weight_total.toFixed(3) : '-'}</td>
                         <td>${part.weight_per_unit ? part.weight_per_unit.toFixed(4) : '-'}</td>
                         <td>${part.weight_quantity || '-'}</td>
+                        <td>${serialNumbersList}</td>
                         <td>
                             <div class="photo-thumbnails">
                                 ${photoThumbnails}
