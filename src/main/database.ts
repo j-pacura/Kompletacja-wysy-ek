@@ -399,6 +399,53 @@ function runMigrations(): void {
     console.error('Migration 16 error:', error);
   }
 
+  // Migration 17: Create serial_numbers table
+  try {
+    const tableExists = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='serial_numbers'");
+
+    if (!tableExists || tableExists.length === 0 || tableExists[0]?.values.length === 0) {
+      console.log('Creating serial_numbers table');
+      db.run(`
+        CREATE TABLE serial_numbers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          part_id INTEGER NOT NULL,
+          serial_number TEXT NOT NULL,
+          photo_path TEXT,
+          sequence INTEGER NOT NULL,
+          ocr_confidence REAL,
+          manually_entered INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (part_id) REFERENCES parts(id) ON DELETE CASCADE
+        )
+      `);
+      db.run('CREATE INDEX idx_serial_numbers_part ON serial_numbers(part_id)');
+      saveDatabase();
+      console.log('Migration completed: created serial_numbers table');
+    } else {
+      console.log('serial_numbers table already exists');
+    }
+  } catch (error) {
+    console.error('Migration 17 error:', error);
+  }
+
+  // Migration 18: Add require_serial_numbers column to shipments table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(shipments)");
+    const columns = tableInfo[0]?.values || [];
+    const hasRequireSerialNumbers = columns.some((col: any) => col[1] === 'require_serial_numbers');
+
+    if (!hasRequireSerialNumbers) {
+      console.log('Adding require_serial_numbers column to shipments table');
+      db.run('ALTER TABLE shipments ADD COLUMN require_serial_numbers INTEGER NOT NULL DEFAULT 0');
+      saveDatabase();
+      console.log('Migration completed: added require_serial_numbers column');
+    } else {
+      console.log('require_serial_numbers column already exists');
+    }
+  } catch (error) {
+    console.error('Migration 18 error:', error);
+  }
+
   console.log('Migrations complete');
 }
 

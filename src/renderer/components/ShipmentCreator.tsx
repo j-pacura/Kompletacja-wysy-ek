@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Hash,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
@@ -33,6 +34,7 @@ const ShipmentCreator: React.FC = () => {
   const [requireWeight, setRequireWeight] = useState(false);
   const [requireCountry, setRequireCountry] = useState(false);
   const [requirePhotos, setRequirePhotos] = useState(false);
+  const [requireSerialNumbers, setRequireSerialNumbers] = useState(false);
   const [hasCountryColumn, setHasCountryColumn] = useState(false);
 
   const handleExcelSelect = async () => {
@@ -89,6 +91,7 @@ const ShipmentCreator: React.FC = () => {
         require_weight: requireWeight,
         require_country: requireCountry,
         require_photos: requirePhotos,
+        require_serial_numbers: requireSerialNumbers,
         excel_file_path: excelFile || undefined,
         user_id: currentUser?.id,
         packed_by: currentUser ? `${currentUser.name} ${currentUser.surname}` : undefined,
@@ -425,6 +428,20 @@ const ShipmentCreator: React.FC = () => {
                     <p className="text-text-secondary text-sm">Wymagaj wykonania zdjęć dla każdej części</p>
                   </div>
                 </label>
+
+                <label className="flex items-center gap-4 bg-bg-tertiary rounded-lg p-6 cursor-pointer hover:bg-opacity-80 transition-all">
+                  <input
+                    type="checkbox"
+                    checked={requireSerialNumbers}
+                    onChange={(e) => setRequireSerialNumbers(e.target.checked)}
+                    className="w-6 h-6 rounded border-2 border-text-tertiary checked:bg-accent-primary checked:border-accent-primary"
+                  />
+                  <Hash className="w-8 h-8 text-blue-400" />
+                  <div className="flex-1">
+                    <p className="text-text-primary font-medium">Numery Seryjne</p>
+                    <p className="text-text-secondary text-sm">Wymagaj skanowania numerów seryjnych (OCR)</p>
+                  </div>
+                </label>
               </div>
 
               <div className="bg-bg-tertiary border-2 border-accent-primary/30 rounded-lg p-6">
@@ -448,7 +465,8 @@ const ShipmentCreator: React.FC = () => {
                       {requireWeight && <span className="text-accent-primary font-medium">⚖️ Waga</span>}
                       {requireCountry && <span className="text-accent-secondary font-medium">🌍 Kraj</span>}
                       {requirePhotos && <span className="text-accent-warning font-medium">📷 Zdjęcia</span>}
-                      {!requireWeight && !requireCountry && !requirePhotos && (
+                      {requireSerialNumbers && <span className="text-blue-400 font-medium">🔢 SN</span>}
+                      {!requireWeight && !requireCountry && !requirePhotos && !requireSerialNumbers && (
                         <span className="text-text-tertiary">Brak</span>
                       )}
                     </div>

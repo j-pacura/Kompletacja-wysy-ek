@@ -134,9 +134,9 @@ function setupIPCHandlers() {
       const result = execute(
         `INSERT INTO shipments (
           shipment_number, destination, notes, created_at, status,
-          require_weight, require_country, require_photos,
+          require_weight, require_country, require_photos, require_serial_numbers,
           packed_by, created_date, password, user_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           shipmentData.shipment_number,
           shipmentData.destination,
@@ -146,6 +146,7 @@ function setupIPCHandlers() {
           shipmentData.require_weight ? 1 : 0,
           shipmentData.require_country ? 1 : 0,
           shipmentData.require_photos ? 1 : 0,
+          shipmentData.require_serial_numbers ? 1 : 0,
           shipmentData.packed_by || null,
           new Date().toISOString().split('T')[0], // YYYY-MM-DD
           shipmentData.password || null,

@@ -10,6 +10,7 @@ export interface Shipment {
   require_weight: boolean;
   require_country: boolean;
   require_photos: boolean;
+  require_serial_numbers: boolean;
 
   packed_by?: string;
   packing_time_seconds?: number;
@@ -27,6 +28,7 @@ export interface CreateShipmentInput {
   require_weight: boolean;
   require_country: boolean;
   require_photos: boolean;
+  require_serial_numbers: boolean;
   excel_file_path?: string;
   packed_by?: string;
   password?: string;

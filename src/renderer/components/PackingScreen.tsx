@@ -52,7 +52,7 @@ const PackingScreen: React.FC = () => {
   const [scanBuffer, setScanBuffer] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
-  const [modalStep, setModalStep] = useState<1 | 2 | 3 | 4>(1); // 1: confirm, 2: weight, 3: photo, 4: country
+  const [modalStep, setModalStep] = useState<1 | 2 | 3 | 4 | 5>(1); // 1: confirm, 2: weight, 3: photo, 4: country, 5: serial numbers
   const scannerInputRef = React.useRef<HTMLInputElement>(null);
 
   // Weight state
@@ -73,6 +73,12 @@ const PackingScreen: React.FC = () => {
   // Country of origin state
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const countryInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Serial number state
+  const [serialNumbers, setSerialNumbers] = useState<Array<{ value: string; photoPath?: string }>>([]);
+  const [currentSN, setCurrentSN] = useState<string>('');
+  const [snPhotoPath, setSnPhotoPath] = useState<string | null>(null);
+  const [processingOCR, setProcessingOCR] = useState<boolean>(false);
 
   // Photo viewer state
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
@@ -557,14 +563,17 @@ const PackingScreen: React.FC = () => {
     const needsCountry = shipment?.require_country;
     const hasCountry = selectedPart.country_of_origin && selectedPart.country_of_origin.trim() !== '';
 
+    // Check if serial numbers required
+    const needsSerialNumbers = shipment?.require_serial_numbers;
+
     // If no special requirements, pack immediately
-    if (!needsWeight && !needsPhotos && (!needsCountry || hasCountry)) {
+    if (!needsWeight && !needsPhotos && (!needsCountry || hasCountry) && !needsSerialNumbers) {
       await packPartDirectly(selectedPart);
       setIsModalOpen(false);
       setSelectedPart(null);
       setModalStep(1);
     } else {
-      // Move to next step (weight, photo, or country)
+      // Move to next step (weight, photo, country, or serial numbers)
       if (needsWeight) {
         // Initialize weight with default quantity from part
         setWeightQuantity(selectedPart.quantity);
@@ -575,6 +584,8 @@ const PackingScreen: React.FC = () => {
         setModalStep(3); // Photo step
       } else if (needsCountry && !hasCountry) {
         setModalStep(4); // Country step
+      } else if (needsSerialNumbers) {
+        setModalStep(5); // Serial number step
       }
     }
   };
@@ -648,11 +659,18 @@ const PackingScreen: React.FC = () => {
       if (needsCountry && !hasCountry) {
         setModalStep(4); // Country step
       } else {
-        // Pack and close
-        await packPartDirectly(selectedPart);
-        setIsModalOpen(false);
-        setSelectedPart(null);
-        setModalStep(1);
+        // Check if serial numbers are required
+        const needsSerialNumbers = shipment?.require_serial_numbers;
+
+        if (needsSerialNumbers) {
+          setModalStep(5); // Serial number step
+        } else {
+          // Pack and close
+          await packPartDirectly(selectedPart);
+          setIsModalOpen(false);
+          setSelectedPart(null);
+          setModalStep(1);
+        }
       }
     }
   };
@@ -696,12 +714,20 @@ const PackingScreen: React.FC = () => {
         )
       );
 
-      // Pack and close
-      await packPartDirectly(selectedPart);
-      setIsModalOpen(false);
-      setSelectedPart(null);
-      setModalStep(1);
-      setSelectedCountry('');
+      // Check if serial numbers are required
+      const needsSerialNumbers = shipment?.require_serial_numbers;
+
+      if (needsSerialNumbers) {
+        setModalStep(5); // Serial number step
+        setSelectedCountry('');
+      } else {
+        // Pack and close
+        await packPartDirectly(selectedPart);
+        setIsModalOpen(false);
+        setSelectedPart(null);
+        setModalStep(1);
+        setSelectedCountry('');
+      }
     } catch (error) {
       console.error('Error saving country:', error);
       toast.error(`❌ Błąd zapisu kraju`, {
@@ -720,6 +746,86 @@ const PackingScreen: React.FC = () => {
     setPhotosSavedCount(0);
     setCapturedPhoto(null);
     setSelectedCountry('');
+    setSerialNumbers([]);
+    setCurrentSN('');
+    setSnPhotoPath(null);
+  };
+
+  // Handle serial number confirmation
+  const handleSerialNumberConfirm = async () => {
+    if (!selectedPart) return;
+
+    // Save all serial numbers to database
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      for (let i = 0; i < serialNumbers.length; i++) {
+        const sn = serialNumbers[i];
+        const result = await ipcRenderer.invoke('db:execute',
+          `INSERT INTO serial_numbers (
+            part_id, serial_number, photo_path, sequence,
+            manually_entered, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            selectedPart.id,
+            sn.value,
+            sn.photoPath || null,
+            i + 1,
+            sn.photoPath ? 0 : 1, // manually_entered = true if no photo
+            Date.now()
+          ]
+        );
+
+        if (!result.success) {
+          toast.error(`❌ Błąd zapisu numeru seryjnego`, {
+            duration: 3000,
+            position: 'top-right',
+          });
+          return;
+        }
+      }
+
+      if (serialNumbers.length > 0) {
+        toast.success(`🔢 Zapisano ${serialNumbers.length} ${serialNumbers.length === 1 ? 'numer seryjny' : 'numerów seryjnych'}`, {
+          duration: 2000,
+          position: 'top-right',
+        });
+      }
+
+      // Pack and close
+      await packPartDirectly(selectedPart);
+      setIsModalOpen(false);
+      setSelectedPart(null);
+      setModalStep(1);
+      setSerialNumbers([]);
+      setCurrentSN('');
+      setSnPhotoPath(null);
+    } catch (error) {
+      console.error('Error saving serial numbers:', error);
+      toast.error(`❌ Błąd zapisu numerów seryjnych`, {
+        duration: 3000,
+        position: 'top-right',
+      });
+    }
+  };
+
+  // Add serial number to list
+  const handleAddSerialNumber = () => {
+    if (!currentSN.trim()) return;
+
+    setSerialNumbers(prev => [...prev, { value: currentSN.trim(), photoPath: snPhotoPath || undefined }]);
+    setCurrentSN('');
+    setSnPhotoPath(null);
+
+    toast.success(`✅ Dodano SN: ${currentSN.trim()}`, {
+      duration: 1500,
+      position: 'top-right',
+    });
+  };
+
+  // Remove serial number from list
+  const handleRemoveSerialNumber = (index: number) => {
+    setSerialNumbers(prev => prev.filter((_, i) => i !== index));
   };
 
   // Camera functions
@@ -823,13 +929,21 @@ const PackingScreen: React.FC = () => {
           // Move to country selection step
           setModalStep(4);
         } else {
-          // Pack part and close modal
-          await packPartDirectly(selectedPart);
-          setIsModalOpen(false);
-          setSelectedPart(null);
-          setModalStep(1);
-          setCapturedPhoto(null);
-          setPhotosSavedCount(0);
+          // Check if we need serial numbers step
+          const needsSerialNumbers = shipment?.require_serial_numbers;
+
+          if (needsSerialNumbers) {
+            // Move to serial number step
+            setModalStep(5);
+          } else {
+            // Pack part and close modal
+            await packPartDirectly(selectedPart);
+            setIsModalOpen(false);
+            setSelectedPart(null);
+            setModalStep(1);
+            setCapturedPhoto(null);
+            setPhotosSavedCount(0);
+          }
         }
       }
     } catch (error) {
@@ -1587,6 +1701,101 @@ const PackingScreen: React.FC = () => {
                       ✓ Potwierdź
                     </button>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Serial Numbers */}
+            {modalStep === 5 && selectedPart && (
+              <div className="text-center">
+                <h2 className="text-text-secondary text-lg mb-4">Numery Seryjne:</h2>
+
+                {/* Part info */}
+                <div className="text-accent-primary font-bold text-4xl mb-8">
+                  {selectedPart.sap_index}
+                </div>
+
+                {/* Serial numbers list */}
+                {serialNumbers.length > 0 && (
+                  <div className="mb-6 bg-bg-tertiary rounded-lg p-4">
+                    <h3 className="text-text-primary text-sm font-semibold mb-3 text-left">
+                      Zapisane numery ({serialNumbers.length}):
+                    </h3>
+                    <div className="space-y-2">
+                      {serialNumbers.map((sn, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between bg-bg-secondary rounded p-3 group"
+                        >
+                          <span className="text-text-primary font-mono">
+                            {index + 1}. {sn.value}
+                            {sn.photoPath && <span className="text-accent-success ml-2">📷</span>}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveSerialNumber(index)}
+                            className="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual input */}
+                <div className="mb-6">
+                  <label className="block text-text-primary text-sm font-medium mb-2 text-left">
+                    Wpisz numer seryjny:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={currentSN}
+                      onChange={(e) => setCurrentSN(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && currentSN.trim()) {
+                          handleAddSerialNumber();
+                        }
+                      }}
+                      placeholder="Numer seryjny..."
+                      className="flex-1 px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors font-mono"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleAddSerialNumber}
+                      disabled={!currentSN.trim()}
+                      className="px-6 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      + Dodaj
+                    </button>
+                  </div>
+                  <p className="text-text-tertiary text-xs mt-2 text-left">
+                    Możesz dodać wiele numerów seryjnych. Naciśnij Enter aby dodać.
+                  </p>
+                </div>
+
+                {/* OCR placeholder info */}
+                <div className="mb-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                  <p className="text-blue-400 text-sm">
+                    💡 <strong>Przyszła funkcja:</strong> OCR automatycznie rozpozna numery ze zdjęć
+                  </p>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCloseModal}
+                    className="flex-1 px-6 py-3 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all font-semibold"
+                  >
+                    ✕ Anuluj
+                  </button>
+                  <button
+                    onClick={handleSerialNumberConfirm}
+                    className="flex-2 px-8 py-3 gradient-success text-white rounded-lg hover:opacity-90 transition-all font-semibold text-lg"
+                  >
+                    ✓ Zakończ ({serialNumbers.length} SN)
+                  </button>
                 </div>
               </div>
             )}
