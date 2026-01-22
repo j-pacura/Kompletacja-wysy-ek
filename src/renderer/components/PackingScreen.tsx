@@ -77,7 +77,6 @@ const PackingScreen: React.FC = () => {
   // Serial number state
   const [serialNumbers, setSerialNumbers] = useState<Array<{ value: string; photoPath?: string }>>([]);
   const [currentSN, setCurrentSN] = useState<string>('');
-  const [snPhotoPath, setSnPhotoPath] = useState<string | null>(null);
   const [snCameraStream, setSnCameraStream] = useState<MediaStream | null>(null);
   const [snCapturedPhoto, setSnCapturedPhoto] = useState<string | null>(null);
   const [processingOCR, setProcessingOCR] = useState<boolean>(false);
@@ -753,7 +752,6 @@ const PackingScreen: React.FC = () => {
     setSelectedCountry('');
     setSerialNumbers([]);
     setCurrentSN('');
-    setSnPhotoPath(null);
     setSnCapturedPhoto(null);
   };
 
@@ -805,7 +803,6 @@ const PackingScreen: React.FC = () => {
       setModalStep(1);
       setSerialNumbers([]);
       setCurrentSN('');
-      setSnPhotoPath(null);
     } catch (error) {
       console.error('Error saving serial numbers:', error);
       toast.error(`❌ Błąd zapisu numerów seryjnych`, {
@@ -850,7 +847,6 @@ const PackingScreen: React.FC = () => {
     setSerialNumbers(prev => [...prev, { value: currentSN.trim(), photoPath }]);
     setCurrentSN('');
     setSnCapturedPhoto(null);
-    setSnPhotoPath(null);
 
     toast.success(`✅ Dodano SN: ${currentSN.trim()}`, {
       duration: 1500,
