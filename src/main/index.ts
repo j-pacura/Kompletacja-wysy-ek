@@ -781,7 +781,7 @@ function setupIPCHandlers() {
       const preprocessingVariants = [
         {
           name: 'high-contrast',
-          process: async (img: sharp.Sharp) =>
+          process: (img: sharp.Sharp) =>
             img
               .resize(1600, 1200, { fit: 'inside', withoutEnlargement: false })
               .grayscale()
@@ -791,7 +791,7 @@ function setupIPCHandlers() {
         },
         {
           name: 'enhanced',
-          process: async (img: sharp.Sharp) =>
+          process: (img: sharp.Sharp) =>
             img
               .resize(2000, 1500, { fit: 'inside', withoutEnlargement: false })
               .grayscale()
@@ -801,7 +801,7 @@ function setupIPCHandlers() {
         },
         {
           name: 'basic',
-          process: async (img: sharp.Sharp) =>
+          process: (img: sharp.Sharp) =>
             img
               .resize(1600, 1200, { fit: 'inside', withoutEnlargement: false })
               .grayscale()
@@ -809,7 +809,7 @@ function setupIPCHandlers() {
         },
         {
           name: 'large',
-          process: async (img: sharp.Sharp) =>
+          process: (img: sharp.Sharp) =>
             img
               .resize(2400, 1800, { fit: 'inside', withoutEnlargement: false })
               .grayscale()
