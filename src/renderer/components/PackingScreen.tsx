@@ -78,6 +78,11 @@ const PackingScreen: React.FC = () => {
   const [serialNumbers, setSerialNumbers] = useState<Array<{ value: string; photoPath?: string }>>([]);
   const [currentSN, setCurrentSN] = useState<string>('');
   const [snPhotoPath, setSnPhotoPath] = useState<string | null>(null);
+  const [snCameraStream, setSnCameraStream] = useState<MediaStream | null>(null);
+  const [snCapturedPhoto, setSnCapturedPhoto] = useState<string | null>(null);
+  const [processingOCR, setProcessingOCR] = useState<boolean>(false);
+  const snVideoRef = React.useRef<HTMLVideoElement>(null);
+  const snCanvasRef = React.useRef<HTMLCanvasElement>(null);
 
   // Photo viewer state
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
@@ -738,6 +743,7 @@ const PackingScreen: React.FC = () => {
 
   // Handle modal close
   const handleCloseModal = () => {
+    stopSnCamera();
     setIsModalOpen(false);
     setSelectedPart(null);
     setModalStep(1);
@@ -748,6 +754,7 @@ const PackingScreen: React.FC = () => {
     setSerialNumbers([]);
     setCurrentSN('');
     setSnPhotoPath(null);
+    setSnCapturedPhoto(null);
   };
 
   // Handle serial number confirmation
@@ -809,11 +816,40 @@ const PackingScreen: React.FC = () => {
   };
 
   // Add serial number to list
-  const handleAddSerialNumber = () => {
-    if (!currentSN.trim()) return;
+  const handleAddSerialNumber = async () => {
+    if (!currentSN.trim() || !selectedPart) return;
 
-    setSerialNumbers(prev => [...prev, { value: currentSN.trim(), photoPath: snPhotoPath || undefined }]);
+    let photoPath: string | undefined = undefined;
+
+    // Save photo if captured
+    if (snCapturedPhoto) {
+      try {
+        const { ipcRenderer } = window.require('electron');
+        const snSequence = serialNumbers.length + 1; // SN1, SN2, SN3...
+
+        const result = await ipcRenderer.invoke('ocr:save-sn-photo', selectedPart.id, snCapturedPhoto, snSequence);
+
+        if (result.success) {
+          photoPath = result.data.path;
+        } else {
+          toast.error(`⚠️ Nie udało się zapisać zdjęcia: ${result.error}`, {
+            duration: 3000,
+            position: 'top-right',
+          });
+        }
+      } catch (error) {
+        console.error('Error saving SN photo:', error);
+        toast.error('⚠️ Błąd zapisu zdjęcia', {
+          duration: 3000,
+          position: 'top-right',
+        });
+      }
+    }
+
+    // Add to list
+    setSerialNumbers(prev => [...prev, { value: currentSN.trim(), photoPath }]);
     setCurrentSN('');
+    setSnCapturedPhoto(null);
     setSnPhotoPath(null);
 
     toast.success(`✅ Dodano SN: ${currentSN.trim()}`, {
@@ -825,6 +861,99 @@ const PackingScreen: React.FC = () => {
   // Remove serial number from list
   const handleRemoveSerialNumber = (index: number) => {
     setSerialNumbers(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Serial Number Camera functions
+  const startSnCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 },
+        audio: false
+      });
+
+      setSnCameraStream(stream);
+
+      if (snVideoRef.current) {
+        snVideoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error starting SN camera:', error);
+      toast.error('❌ Nie można uruchomić kamery', {
+        duration: 3000,
+        position: 'top-right',
+      });
+    }
+  };
+
+  const stopSnCamera = () => {
+    if (snCameraStream) {
+      snCameraStream.getTracks().forEach(track => track.stop());
+      setSnCameraStream(null);
+    }
+  };
+
+  const captureSnPhoto = async () => {
+    if (!snVideoRef.current || !snCanvasRef.current) return;
+
+    const video = snVideoRef.current;
+    const canvas = snCanvasRef.current;
+
+    // Set canvas size to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // Draw video frame to canvas
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Convert to JPEG data URL
+    const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    setSnCapturedPhoto(photoDataUrl);
+
+    // Stop camera
+    stopSnCamera();
+
+    // Process with OCR
+    setProcessingOCR(true);
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('ocr:process-image', photoDataUrl);
+
+      if (result.success && result.data.text) {
+        // Auto-fill serial number from OCR
+        setCurrentSN(result.data.text);
+        toast.success(`🔍 OCR wykrył: ${result.data.text}`, {
+          duration: 3000,
+          position: 'top-right',
+        });
+      } else {
+        toast.error('❌ OCR nie wykrył tekstu. Wpisz ręcznie.', {
+          duration: 3000,
+          position: 'top-right',
+        });
+      }
+    } catch (error) {
+      console.error('OCR error:', error);
+      toast.error('❌ Błąd OCR. Wpisz numer ręcznie.', {
+        duration: 3000,
+        position: 'top-right',
+      });
+    } finally {
+      setProcessingOCR(false);
+    }
+  };
+
+  const handleRetakeSnPhoto = () => {
+    setSnCapturedPhoto(null);
+    setCurrentSN('');
+    startSnCamera();
+  };
+
+  const handleSkipSnPhoto = () => {
+    stopSnCamera();
+    setSnCapturedPhoto(null);
   };
 
   // Camera functions
@@ -1742,44 +1871,141 @@ const PackingScreen: React.FC = () => {
                   </div>
                 )}
 
-                {/* Manual input */}
-                <div className="mb-6">
-                  <label className="block text-text-primary text-sm font-medium mb-2 text-left">
-                    Wpisz numer seryjny:
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={currentSN}
-                      onChange={(e) => setCurrentSN(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && currentSN.trim()) {
-                          handleAddSerialNumber();
-                        }
-                      }}
-                      placeholder="Numer seryjny..."
-                      className="flex-1 px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors font-mono"
-                      autoFocus
-                    />
-                    <button
-                      onClick={handleAddSerialNumber}
-                      disabled={!currentSN.trim()}
-                      className="px-6 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      + Dodaj
-                    </button>
-                  </div>
-                  <p className="text-text-tertiary text-xs mt-2 text-left">
-                    Możesz dodać wiele numerów seryjnych. Naciśnij Enter aby dodać.
-                  </p>
-                </div>
+                {/* Camera / Manual input section */}
+                {!snCapturedPhoto && !snCameraStream && (
+                  <div className="mb-6 space-y-4">
+                    {/* Option buttons */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        onClick={startSnCamera}
+                        className="px-6 py-4 bg-accent-primary/20 hover:bg-accent-primary/30 text-accent-primary rounded-lg transition-all font-semibold text-lg flex items-center justify-center gap-2"
+                      >
+                        📷 Zrób zdjęcie (OCR)
+                      </button>
+                      <button
+                        onClick={() => {
+                          /* Manual mode - już jest poniżej */
+                        }}
+                        className="px-6 py-4 bg-accent-secondary/20 hover:bg-accent-secondary/30 text-accent-secondary rounded-lg transition-all font-semibold text-lg flex items-center justify-center gap-2"
+                      >
+                        ⌨️ Wpisz ręcznie
+                      </button>
+                    </div>
 
-                {/* OCR placeholder info */}
-                <div className="mb-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                  <p className="text-blue-400 text-sm">
-                    💡 <strong>Przyszła funkcja:</strong> OCR automatycznie rozpozna numery ze zdjęć
-                  </p>
-                </div>
+                    {/* Manual input */}
+                    <div>
+                      <label className="block text-text-primary text-sm font-medium mb-2 text-left">
+                        Lub wpisz numer seryjny:
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={currentSN}
+                          onChange={(e) => setCurrentSN(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && currentSN.trim()) {
+                              handleAddSerialNumber();
+                            }
+                          }}
+                          placeholder="Numer seryjny..."
+                          className="flex-1 px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors font-mono"
+                        />
+                        <button
+                          onClick={handleAddSerialNumber}
+                          disabled={!currentSN.trim()}
+                          className="px-6 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          + Dodaj
+                        </button>
+                      </div>
+                      <p className="text-text-tertiary text-xs mt-2 text-left">
+                        Możesz dodać wiele numerów seryjnych. Naciśnij Enter aby dodać.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Camera view */}
+                {snCameraStream && !snCapturedPhoto && (
+                  <div className="mb-6">
+                    <div className="relative bg-black rounded-lg overflow-hidden mb-4">
+                      <video
+                        ref={snVideoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full h-auto"
+                      />
+                      <canvas ref={snCanvasRef} className="hidden" />
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleSkipSnPhoto}
+                        className="flex-1 px-6 py-3 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all font-semibold"
+                      >
+                        ← Wróć
+                      </button>
+                      <button
+                        onClick={captureSnPhoto}
+                        className="flex-2 px-8 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold text-lg"
+                      >
+                        📸 Zrób zdjęcie
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Captured photo with OCR result */}
+                {snCapturedPhoto && (
+                  <div className="mb-6">
+                    <div className="bg-bg-tertiary rounded-lg p-4 mb-4">
+                      <img src={snCapturedPhoto} alt="Serial number" className="w-full rounded" />
+                    </div>
+
+                    {processingOCR && (
+                      <div className="mb-4 text-accent-primary text-center">
+                        <div className="animate-pulse">🔍 Przetwarzanie OCR...</div>
+                      </div>
+                    )}
+
+                    <div className="mb-4">
+                      <label className="block text-text-primary text-sm font-medium mb-2 text-left">
+                        Numer seryjny (edytuj jeśli OCR się pomylił):
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={currentSN}
+                          onChange={(e) => setCurrentSN(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && currentSN.trim()) {
+                              handleAddSerialNumber();
+                            }
+                          }}
+                          placeholder="Numer seryjny..."
+                          className="flex-1 px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors font-mono text-lg"
+                          autoFocus
+                        />
+                        <button
+                          onClick={handleAddSerialNumber}
+                          disabled={!currentSN.trim() || processingOCR}
+                          className="px-6 py-3 gradient-success text-white rounded-lg hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          ✓ Zatwierdź
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleRetakeSnPhoto}
+                        disabled={processingOCR}
+                        className="flex-1 px-6 py-3 bg-accent-warning/20 hover:bg-accent-warning/30 text-accent-warning rounded-lg transition-all font-semibold"
+                      >
+                        🔄 Zrób ponownie
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Action buttons */}
                 <div className="flex gap-3">

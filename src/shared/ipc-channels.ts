@@ -44,6 +44,10 @@ export const IPC_CHANNELS = {
   FILE_EXPORT_ALL: 'file:export-all',
   FILE_OPEN_FOLDER: 'file:open-folder',
 
+  // OCR operations
+  OCR_PROCESS_IMAGE: 'ocr:process-image',
+  OCR_SAVE_SN_PHOTO: 'ocr:save-sn-photo',
+
   // App operations
   APP_GET_PATH: 'app:get-path',
   APP_GET_VERSION: 'app:get-version',

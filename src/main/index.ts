@@ -7,6 +7,7 @@ import { selectExcelFile, parseExcelFile, openFolder } from './fileSystem';
 import * as Scale from './scale';
 import * as Reports from './reports';
 import { hashPassword, verifyPassword } from './auth';
+import { ocr } from 'windows-media-ocr';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -716,6 +717,99 @@ function setupIPCHandlers() {
       };
     } catch (error: any) {
       console.error('Export all error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // OCR operations
+  ipcMain.handle(IPC_CHANNELS.OCR_PROCESS_IMAGE, async (_event, imageData: string) => {
+    try {
+      // Remove data URL prefix (data:image/jpeg;base64,)
+      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      // Save temporary file for OCR processing
+      const tempDir = app.getPath('temp');
+      const tempImagePath = path.join(tempDir, `ocr_temp_${Date.now()}.jpg`);
+      fs.writeFileSync(tempImagePath, buffer);
+
+      // Process with Windows OCR
+      const result = await ocr(tempImagePath);
+
+      // Clean up temp file
+      fs.unlinkSync(tempImagePath);
+
+      // Extract text from result
+      const text = result.Text || '';
+      const lines = result.Lines || [];
+
+      console.log('OCR Result:', { text, lineCount: lines.length });
+
+      return {
+        success: true,
+        data: {
+          text: text.trim(),
+          lines: lines,
+          confidence: 0.9 // Windows OCR doesn't provide confidence, use placeholder
+        }
+      };
+    } catch (error: any) {
+      console.error('OCR processing error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Save serial number photo with _SN suffix
+  ipcMain.handle(IPC_CHANNELS.OCR_SAVE_SN_PHOTO, async (_event, partId: number, imageData: string, snSequence: number) => {
+    try {
+      // Get part data and shipment info
+      const part = queryOne<any>(
+        `SELECT p.sap_index, p.excel_row_number, p.shipment_id,
+                s.shipment_number, s.destination, s.created_date
+         FROM parts p
+         INNER JOIN shipments s ON p.shipment_id = s.id
+         WHERE p.id = ?`,
+        [partId]
+      );
+
+      if (!part) {
+        return { success: false, error: 'Part not found' };
+      }
+
+      // Get shipment folder path
+      const shipmentFolderPath = getShipmentFolderPath(
+        part.shipment_number,
+        part.destination,
+        part.created_date
+      );
+
+      // Create photos subdirectory inside shipment folder
+      const photosDir = path.join(shipmentFolderPath, 'photos');
+      if (!fs.existsSync(photosDir)) {
+        fs.mkdirSync(photosDir, { recursive: true });
+      }
+
+      // Sanitize SAP index for filename
+      const safeSapIndex = part.sap_index
+        .replace(/[<>:"/\\|?*]/g, '_')
+        .replace(/\s+/g, '_')
+        .trim();
+
+      // Generate filename: line_[rowNumber]_SAP_[sapIndex]_SN[sequence].jpg
+      const lineNumber = part.excel_row_number || 0;
+      const filename = `line_${lineNumber}_SAP_${safeSapIndex}_SN${snSequence}.jpg`;
+      const photoPath = path.join(photosDir, filename);
+
+      // Remove data URL prefix
+      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      // Save file
+      fs.writeFileSync(photoPath, buffer);
+
+      return { success: true, data: { path: photoPath } };
+    } catch (error: any) {
+      console.error('Save SN photo error:', error);
       return { success: false, error: error.message };
     }
   });
