@@ -7,7 +7,8 @@ import { selectExcelFile, parseExcelFile, openFolder, selectFolder } from './fil
 import * as Scale from './scale';
 import * as Reports from './reports';
 import { hashPassword, verifyPassword } from './auth';
-import { ocr } from 'windows-media-ocr';
+// TEMPORARILY DISABLED: OCR not working reliably
+// import { ocr } from 'windows-media-ocr';
 import sharp from 'sharp';
 
 let mainWindow: BrowserWindow | null = null;
@@ -867,7 +868,9 @@ function setupIPCHandlers() {
 
           // Process with Windows OCR
           console.log(`[OCR] Calling Windows OCR for variant: ${variant.name}...`);
-          const result = await ocr(tempImagePath);
+          // TEMPORARILY DISABLED: OCR not working - windows-media-ocr removed
+          // const result = await ocr(tempImagePath);
+          const result = { Text: '', Lines: [] }; // Mock result
 
           console.log(`[OCR] Result for ${variant.name}:`, JSON.stringify(result, null, 2));
 
