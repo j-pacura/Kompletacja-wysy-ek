@@ -78,7 +78,6 @@ const PackingScreen: React.FC = () => {
   const [serialNumbers, setSerialNumbers] = useState<Array<{ value: string; photoPath?: string }>>([]);
   const [currentSN, setCurrentSN] = useState<string>('');
   const [snPhotoPath, setSnPhotoPath] = useState<string | null>(null);
-  const [processingOCR, setProcessingOCR] = useState<boolean>(false);
 
   // Photo viewer state
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
