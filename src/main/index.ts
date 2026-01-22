@@ -8,6 +8,7 @@ import * as Scale from './scale';
 import * as Reports from './reports';
 import { hashPassword, verifyPassword } from './auth';
 import { ocr } from 'windows-media-ocr';
+import sharp from 'sharp';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -750,10 +751,10 @@ function setupIPCHandlers() {
 
   // OCR operations
   ipcMain.handle(IPC_CHANNELS.OCR_PROCESS_IMAGE, async (_event, imageData: string) => {
-    let tempImagePath: string | null = null;
+    const tempImagePaths: string[] = [];
 
     try {
-      console.log('[OCR] Starting OCR processing...');
+      console.log('[OCR] Starting OCR processing with image preprocessing...');
 
       // Remove data URL prefix (data:image/jpeg;base64,)
       const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
@@ -761,53 +762,155 @@ function setupIPCHandlers() {
 
       console.log('[OCR] Image buffer size:', buffer.length, 'bytes');
 
-      // Save temporary file for OCR processing (use PNG for better text recognition)
       const tempDir = app.getPath('temp');
-      tempImagePath = path.join(tempDir, `ocr_temp_${Date.now()}.png`);
-      fs.writeFileSync(tempImagePath, buffer);
+      const timestamp = Date.now();
 
-      console.log('[OCR] Temp file saved:', tempImagePath);
-      console.log('[OCR] File exists:', fs.existsSync(tempImagePath));
+      // Define preprocessing variants to try in order
+      const preprocessingVariants = [
+        {
+          name: 'high-contrast',
+          process: async (img: sharp.Sharp) =>
+            img
+              .resize(1600, 1200, { fit: 'inside', withoutEnlargement: false })
+              .grayscale()
+              .normalize()
+              .sharpen()
+              .threshold(128)
+        },
+        {
+          name: 'enhanced',
+          process: async (img: sharp.Sharp) =>
+            img
+              .resize(2000, 1500, { fit: 'inside', withoutEnlargement: false })
+              .grayscale()
+              .normalize()
+              .linear(1.5, -(128 * 0.5)) // Increase contrast
+              .sharpen({ sigma: 2 })
+        },
+        {
+          name: 'basic',
+          process: async (img: sharp.Sharp) =>
+            img
+              .resize(1600, 1200, { fit: 'inside', withoutEnlargement: false })
+              .grayscale()
+              .normalize()
+        },
+        {
+          name: 'large',
+          process: async (img: sharp.Sharp) =>
+            img
+              .resize(2400, 1800, { fit: 'inside', withoutEnlargement: false })
+              .grayscale()
+              .sharpen()
+        }
+      ];
 
-      // Process with Windows OCR
-      console.log('[OCR] Calling Windows OCR...');
-      const result = await ocr(tempImagePath);
+      let bestResult: any = null;
+      let bestText = '';
 
-      console.log('[OCR] Raw result:', JSON.stringify(result, null, 2));
+      // Try each preprocessing variant
+      for (const variant of preprocessingVariants) {
+        try {
+          console.log(`[OCR] Trying preprocessing variant: ${variant.name}...`);
 
-      // Extract text from result
-      const text = result.Text || '';
-      const lines = result.Lines || [];
+          // Preprocess image
+          const processedBuffer = await variant.process(sharp(buffer)).png().toBuffer();
 
-      console.log('[OCR] Extracted text:', text);
-      console.log('[OCR] Line count:', lines.length);
+          // Save preprocessed image
+          const tempImagePath = path.join(tempDir, `ocr_temp_${timestamp}_${variant.name}.png`);
+          fs.writeFileSync(tempImagePath, processedBuffer);
+          tempImagePaths.push(tempImagePath);
 
-      // Clean up temp file
-      if (tempImagePath && fs.existsSync(tempImagePath)) {
-        fs.unlinkSync(tempImagePath);
-        console.log('[OCR] Temp file cleaned up');
+          console.log(`[OCR] Preprocessed image saved (${variant.name}):`, tempImagePath);
+          console.log(`[OCR] Processed file size: ${processedBuffer.length} bytes`);
+
+          // Process with Windows OCR
+          console.log(`[OCR] Calling Windows OCR for variant: ${variant.name}...`);
+          const result = await ocr(tempImagePath);
+
+          console.log(`[OCR] Result for ${variant.name}:`, JSON.stringify(result, null, 2));
+
+          // Extract text from result
+          const text = result.Text || '';
+          const lines = result.Lines || [];
+
+          console.log(`[OCR] Extracted text (${variant.name}):`, text);
+          console.log(`[OCR] Line count (${variant.name}):`, lines.length);
+
+          // If we found text, use this result
+          if (text.trim().length > bestText.length) {
+            bestText = text.trim();
+            bestResult = {
+              text: text.trim(),
+              lines: lines,
+              variant: variant.name,
+              rawResult: result
+            };
+
+            console.log(`[OCR] New best result from variant: ${variant.name} (${text.trim().length} chars)`);
+
+            // If we got good text, stop trying other variants
+            if (text.trim().length > 3) {
+              console.log('[OCR] Good text found, stopping variant search');
+              break;
+            }
+          }
+        } catch (variantError: any) {
+          console.error(`[OCR] Error with variant ${variant.name}:`, variantError.message);
+          // Continue to next variant
+        }
       }
 
-      // Return success even if no text found (not an error)
-      return {
-        success: true,
-        data: {
-          text: text.trim(),
-          lines: lines,
-          confidence: 0.9,
-          rawResult: result // Include raw result for debugging
+      // Clean up temp files
+      for (const tempPath of tempImagePaths) {
+        if (fs.existsSync(tempPath)) {
+          try {
+            fs.unlinkSync(tempPath);
+            console.log('[OCR] Temp file cleaned up:', tempPath);
+          } catch (cleanupError) {
+            console.error('[OCR] Cleanup error for', tempPath, ':', cleanupError);
+          }
         }
-      };
+      }
+
+      // Return best result found
+      if (bestResult) {
+        console.log('[OCR] Final result - text length:', bestText.length);
+        return {
+          success: true,
+          data: {
+            text: bestResult.text,
+            lines: bestResult.lines,
+            confidence: 0.9,
+            variant: bestResult.variant,
+            rawResult: bestResult.rawResult
+          }
+        };
+      } else {
+        console.log('[OCR] No text detected in any variant');
+        return {
+          success: true,
+          data: {
+            text: '',
+            lines: [],
+            confidence: 0,
+            variant: 'none',
+            message: 'No text detected'
+          }
+        };
+      }
     } catch (error: any) {
       console.error('[OCR] Processing error:', error);
       console.error('[OCR] Error stack:', error.stack);
 
-      // Clean up temp file on error
-      if (tempImagePath && fs.existsSync(tempImagePath)) {
-        try {
-          fs.unlinkSync(tempImagePath);
-        } catch (cleanupError) {
-          console.error('[OCR] Cleanup error:', cleanupError);
+      // Clean up temp files on error
+      for (const tempPath of tempImagePaths) {
+        if (fs.existsSync(tempPath)) {
+          try {
+            fs.unlinkSync(tempPath);
+          } catch (cleanupError) {
+            console.error('[OCR] Cleanup error:', cleanupError);
+          }
         }
       }
 
