@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { initDatabase, closeDatabase, query, queryOne, execute, getShipmentFolderPath } from './database';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
-import { selectExcelFile, parseExcelFile, openFolder } from './fileSystem';
+import { selectExcelFile, parseExcelFile, openFolder, selectFolder } from './fileSystem';
 import * as Scale from './scale';
 import * as Reports from './reports';
 import { hashPassword, verifyPassword } from './auth';
@@ -137,8 +137,8 @@ function setupIPCHandlers() {
         `INSERT INTO shipments (
           shipment_number, destination, notes, created_at, status,
           require_weight, require_country, require_photos, require_serial_numbers,
-          packed_by, created_date, password, user_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          packed_by, created_date, password, user_id, custom_folder_path
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           shipmentData.shipment_number,
           shipmentData.destination,
@@ -153,6 +153,7 @@ function setupIPCHandlers() {
           new Date().toISOString().split('T')[0], // YYYY-MM-DD
           shipmentData.password || null,
           shipmentData.user_id || null,
+          shipmentData.custom_folder_path || null,
         ]
       );
       return { success: true, data: { id: result.lastInsertRowid } };
@@ -468,6 +469,16 @@ function setupIPCHandlers() {
     }
   });
 
+  ipcMain.handle(IPC_CHANNELS.FILE_SELECT_FOLDER, async () => {
+    try {
+      const result = await selectFolder();
+      return { success: true, data: result };
+    } catch (error: any) {
+      console.error('Select folder error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   ipcMain.handle(IPC_CHANNELS.FILE_PARSE_EXCEL, async (_event, filePath: string) => {
     try {
       const result = await parseExcelFile(filePath);
@@ -562,7 +573,7 @@ function setupIPCHandlers() {
       // Get part data and shipment info
       const part = queryOne<any>(
         `SELECT p.sap_index, p.excel_row_number, p.shipment_id,
-                s.shipment_number, s.destination, s.created_date
+                s.shipment_number, s.destination, s.created_date, s.custom_folder_path
          FROM parts p
          INNER JOIN shipments s ON p.shipment_id = s.id
          WHERE p.id = ?`,
@@ -587,7 +598,8 @@ function setupIPCHandlers() {
       const shipmentFolderPath = getShipmentFolderPath(
         part.shipment_number,
         part.destination,
-        part.created_date
+        part.created_date,
+        part.custom_folder_path
       );
 
       // Create photos subdirectory inside shipment folder
@@ -932,7 +944,7 @@ function setupIPCHandlers() {
       // Get part data and shipment info
       const part = queryOne<any>(
         `SELECT p.sap_index, p.excel_row_number, p.shipment_id,
-                s.shipment_number, s.destination, s.created_date
+                s.shipment_number, s.destination, s.created_date, s.custom_folder_path
          FROM parts p
          INNER JOIN shipments s ON p.shipment_id = s.id
          WHERE p.id = ?`,
@@ -947,7 +959,8 @@ function setupIPCHandlers() {
       const shipmentFolderPath = getShipmentFolderPath(
         part.shipment_number,
         part.destination,
-        part.created_date
+        part.created_date,
+        part.custom_folder_path
       );
 
       // Create photos subdirectory inside shipment folder

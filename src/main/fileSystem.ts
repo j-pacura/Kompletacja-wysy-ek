@@ -42,6 +42,25 @@ export async function selectExcelFile(): Promise<{ path: string; name: string } 
 }
 
 /**
+ * Show dialog to select folder for shipment files
+ */
+export async function selectFolder(): Promise<{ path: string; name: string } | null> {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory', 'createDirectory'],
+    title: 'Wybierz folder dla plików wysyłki'
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    return null;
+  }
+
+  const folderPath = result.filePaths[0];
+  const folderName = path.basename(folderPath);
+
+  return { path: folderPath, name: folderName };
+}
+
+/**
  * Parse Excel file and extract parts data
  */
 export async function parseExcelFile(filePath: string): Promise<ExcelParseResult> {

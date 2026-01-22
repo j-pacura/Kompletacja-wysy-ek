@@ -166,7 +166,8 @@ export async function exportToExcel(_shipmentId: number, shipmentData: any, part
     const shipmentFolderPath = getShipmentFolderPath(
       shipmentData.shipment_number,
       shipmentData.destination,
-      shipmentData.created_date
+      shipmentData.created_date,
+      shipmentData.custom_folder_path
     );
 
     // Generate filename
@@ -704,7 +705,8 @@ export async function exportToHTML(_shipmentId: number, shipmentData: any, parts
     const shipmentFolderPath = getShipmentFolderPath(
       shipmentData.shipment_number,
       shipmentData.destination,
-      shipmentData.created_date
+      shipmentData.created_date,
+      shipmentData.custom_folder_path
     );
 
     // Generate filename

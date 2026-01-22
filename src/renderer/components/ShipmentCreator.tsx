@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Loader2,
   Hash,
+  Folder,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
@@ -36,6 +37,22 @@ const ShipmentCreator: React.FC = () => {
   const [requirePhotos, setRequirePhotos] = useState(false);
   const [requireSerialNumbers, setRequireSerialNumbers] = useState(false);
   const [hasCountryColumn, setHasCountryColumn] = useState(false);
+  const [customFolderPath, setCustomFolderPath] = useState<string | null>(null);
+  const [customFolderName, setCustomFolderName] = useState<string>('');
+
+  const handleFolderSelect = async () => {
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('file:select-folder');
+
+      if (result.success && result.data) {
+        setCustomFolderPath(result.data.path);
+        setCustomFolderName(result.data.name);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Wystąpił błąd podczas wybierania folderu');
+    }
+  };
 
   const handleExcelSelect = async () => {
     try {
@@ -95,6 +112,7 @@ const ShipmentCreator: React.FC = () => {
         excel_file_path: excelFile || undefined,
         user_id: currentUser?.id,
         packed_by: currentUser ? `${currentUser.name} ${currentUser.surname}` : undefined,
+        custom_folder_path: customFolderPath || undefined,
       };
 
       const createResult = await ipcRenderer.invoke('db:create-shipment', shipmentData);
@@ -273,6 +291,42 @@ const ShipmentCreator: React.FC = () => {
                   rows={4}
                   className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border border-transparent focus:border-accent-primary focus:outline-none transition-colors resize-none"
                 />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-text-primary font-medium mb-2">
+                  <Folder className="w-5 h-5" />
+                  Niestandardowa Lokalizacja (opcjonalne)
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleFolderSelect}
+                    className="px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg hover:bg-opacity-80 transition-all btn-active font-medium flex items-center gap-2"
+                  >
+                    <Folder className="w-5 h-5" />
+                    Wybierz Folder
+                  </button>
+                  {customFolderPath && (
+                    <div className="flex-1 px-4 py-3 bg-bg-tertiary text-text-secondary rounded-lg flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-accent-success flex-shrink-0" />
+                      <span className="truncate" title={customFolderPath}>
+                        {customFolderName}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setCustomFolderPath(null);
+                          setCustomFolderName('');
+                        }}
+                        className="ml-auto text-text-tertiary hover:text-accent-warning transition-colors"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-text-tertiary text-sm mt-2">
+                  Domyślnie pliki będą zapisywane w folderze aplikacji. Możesz wybrać inną lokalizację (np. dysk sieciowy).
+                </p>
               </div>
 
               <div className="flex gap-3 pt-4">

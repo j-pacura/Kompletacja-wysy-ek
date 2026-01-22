@@ -39,6 +39,7 @@ export const IPC_CHANNELS = {
   // File operations
   FILE_SELECT_EXCEL: 'file:select-excel',
   FILE_PARSE_EXCEL: 'file:parse-excel',
+  FILE_SELECT_FOLDER: 'file:select-folder',
   FILE_EXPORT_PDF: 'file:export-pdf',
   FILE_EXPORT_EXCEL: 'file:export-excel',
   FILE_EXPORT_HTML: 'file:export-html',

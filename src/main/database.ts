@@ -25,9 +25,15 @@ export function getUserDataPath(): string {
  * Get the path to a shipment's folder
  * Format: Wysyłka_nr_[shipmentNumber]_[destination]_[date]
  */
-export function getShipmentFolderPath(shipmentNumber: string, destination: string, createdDate: string): string {
+export function getShipmentFolderPath(
+  shipmentNumber: string,
+  destination: string,
+  createdDate: string,
+  customBasePath?: string | null
+): string {
+  // Use custom base path if provided, otherwise use default
   const userDataPath = app.getPath('userData');
-  const shipmentsDir = path.join(userDataPath, 'shipments');
+  const shipmentsDir = customBasePath || path.join(userDataPath, 'shipments');
 
   // Sanitize folder name components
   const safeShipmentNumber = shipmentNumber.replace(/[<>:"/\\|?*]/g, '_').trim();
@@ -444,6 +450,24 @@ function runMigrations(): void {
     }
   } catch (error) {
     console.error('Migration 18 error:', error);
+  }
+
+  // Migration 19: Add custom_folder_path column to shipments table
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(shipments)");
+    const columns = tableInfo[0]?.values || [];
+    const hasCustomFolderPath = columns.some((col: any) => col[1] === 'custom_folder_path');
+
+    if (!hasCustomFolderPath) {
+      console.log('Adding custom_folder_path column to shipments table');
+      db.run('ALTER TABLE shipments ADD COLUMN custom_folder_path TEXT');
+      saveDatabase();
+      console.log('Migration completed: added custom_folder_path column');
+    } else {
+      console.log('custom_folder_path column already exists');
+    }
+  } catch (error) {
+    console.error('Migration 19 error:', error);
   }
 
   console.log('Migrations complete');
