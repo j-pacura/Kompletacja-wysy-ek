@@ -640,6 +640,33 @@ function setupIPCHandlers() {
     }
   });
 
+  ipcMain.handle(IPC_CHANNELS.DB_DELETE_PHOTO, async (_event, photoId: number) => {
+    try {
+      // Get photo path from database
+      const photo = queryOne<any>('SELECT photo_path FROM photos WHERE id = ?', [photoId]);
+
+      if (!photo) {
+        return { success: false, error: 'Photo not found' };
+      }
+
+      // Delete file from disk if it exists
+      if (fs.existsSync(photo.photo_path)) {
+        fs.unlinkSync(photo.photo_path);
+        console.log('Deleted photo file:', photo.photo_path);
+      } else {
+        console.warn('Photo file not found on disk:', photo.photo_path);
+      }
+
+      // Delete from database
+      execute('DELETE FROM photos WHERE id = ?', [photoId]);
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Delete photo error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   // Export operations
   ipcMain.handle(IPC_CHANNELS.FILE_EXPORT_EXCEL, async (_event, shipmentId: number) => {
     try {
@@ -723,39 +750,76 @@ function setupIPCHandlers() {
 
   // OCR operations
   ipcMain.handle(IPC_CHANNELS.OCR_PROCESS_IMAGE, async (_event, imageData: string) => {
+    let tempImagePath: string | null = null;
+
     try {
+      console.log('[OCR] Starting OCR processing...');
+
       // Remove data URL prefix (data:image/jpeg;base64,)
       const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
       const buffer = Buffer.from(base64Data, 'base64');
 
-      // Save temporary file for OCR processing
+      console.log('[OCR] Image buffer size:', buffer.length, 'bytes');
+
+      // Save temporary file for OCR processing (use PNG for better text recognition)
       const tempDir = app.getPath('temp');
-      const tempImagePath = path.join(tempDir, `ocr_temp_${Date.now()}.jpg`);
+      tempImagePath = path.join(tempDir, `ocr_temp_${Date.now()}.png`);
       fs.writeFileSync(tempImagePath, buffer);
 
+      console.log('[OCR] Temp file saved:', tempImagePath);
+      console.log('[OCR] File exists:', fs.existsSync(tempImagePath));
+
       // Process with Windows OCR
+      console.log('[OCR] Calling Windows OCR...');
       const result = await ocr(tempImagePath);
 
-      // Clean up temp file
-      fs.unlinkSync(tempImagePath);
+      console.log('[OCR] Raw result:', JSON.stringify(result, null, 2));
 
       // Extract text from result
       const text = result.Text || '';
       const lines = result.Lines || [];
 
-      console.log('OCR Result:', { text, lineCount: lines.length });
+      console.log('[OCR] Extracted text:', text);
+      console.log('[OCR] Line count:', lines.length);
 
+      // Clean up temp file
+      if (tempImagePath && fs.existsSync(tempImagePath)) {
+        fs.unlinkSync(tempImagePath);
+        console.log('[OCR] Temp file cleaned up');
+      }
+
+      // Return success even if no text found (not an error)
       return {
         success: true,
         data: {
           text: text.trim(),
           lines: lines,
-          confidence: 0.9 // Windows OCR doesn't provide confidence, use placeholder
+          confidence: 0.9,
+          rawResult: result // Include raw result for debugging
         }
       };
     } catch (error: any) {
-      console.error('OCR processing error:', error);
-      return { success: false, error: error.message };
+      console.error('[OCR] Processing error:', error);
+      console.error('[OCR] Error stack:', error.stack);
+
+      // Clean up temp file on error
+      if (tempImagePath && fs.existsSync(tempImagePath)) {
+        try {
+          fs.unlinkSync(tempImagePath);
+        } catch (cleanupError) {
+          console.error('[OCR] Cleanup error:', cleanupError);
+        }
+      }
+
+      return {
+        success: false,
+        error: error.message || 'Unknown OCR error',
+        errorDetails: {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        }
+      };
     }
   });
 

@@ -14,6 +14,7 @@ export const IPC_CHANNELS = {
   DB_UPDATE_PART: 'db:update-part',
   DB_SAVE_PHOTO: 'db:save-photo',
   DB_GET_PHOTOS: 'db:get-photos',
+  DB_DELETE_PHOTO: 'db:delete-photo',
   DB_GET_SETTINGS: 'db:get-settings',
   DB_UPDATE_SETTING: 'db:update-setting',
   DB_GET_STATS: 'db:get-stats',

@@ -913,8 +913,8 @@ const PackingScreen: React.FC = () => {
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert to JPEG data URL
-    const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    // Convert to PNG data URL (better for text recognition)
+    const photoDataUrl = canvas.toDataURL('image/png');
     setSnCapturedPhoto(photoDataUrl);
 
     // Stop camera
@@ -924,23 +924,36 @@ const PackingScreen: React.FC = () => {
     setProcessingOCR(true);
     try {
       const { ipcRenderer } = window.require('electron');
+      console.log('[OCR] Invoking OCR from renderer...');
+
       const result = await ipcRenderer.invoke('ocr:process-image', photoDataUrl);
 
-      if (result.success && result.data.text) {
-        // Auto-fill serial number from OCR
-        setCurrentSN(result.data.text);
-        toast.success(`🔍 OCR wykrył: ${result.data.text}`, {
-          duration: 3000,
-          position: 'top-right',
-        });
+      console.log('[OCR] Result received:', result);
+
+      if (result.success) {
+        if (result.data.text && result.data.text.trim()) {
+          // Auto-fill serial number from OCR
+          setCurrentSN(result.data.text);
+          toast.success(`🔍 OCR wykrył: ${result.data.text}`, {
+            duration: 3000,
+            position: 'top-right',
+          });
+        } else {
+          console.warn('[OCR] No text detected');
+          toast.error('❌ OCR nie wykrył tekstu. Wpisz ręcznie.', {
+            duration: 3000,
+            position: 'top-right',
+          });
+        }
       } else {
-        toast.error('❌ OCR nie wykrył tekstu. Wpisz ręcznie.', {
-          duration: 3000,
+        console.error('[OCR] OCR failed:', result.error, result.errorDetails);
+        toast.error(`❌ Błąd OCR: ${result.error}`, {
+          duration: 4000,
           position: 'top-right',
         });
       }
     } catch (error) {
-      console.error('OCR error:', error);
+      console.error('[OCR] Exception:', error);
       toast.error('❌ Błąd OCR. Wpisz numer ręcznie.', {
         duration: 3000,
         position: 'top-right',
@@ -2168,26 +2181,71 @@ const PackingScreen: React.FC = () => {
             {/* Photos Grid */}
             {viewerPhotos.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {viewerPhotos.map((photo) => (
-                  <div
-                    key={photo.id}
-                    className="bg-bg-tertiary rounded-xl overflow-hidden hover:ring-2 hover:ring-accent-primary transition-all"
-                  >
-                    <img
-                      src={`file://${photo.photo_path}`}
-                      alt={`Photo ${photo.id}`}
-                      className="w-full h-64 object-cover"
-                    />
-                    <div className="p-3">
-                      <p className="text-text-tertiary text-xs">
-                        {new Date(photo.created_at).toLocaleString('pl-PL')}
-                      </p>
-                      <p className="text-text-tertiary text-xs">
-                        {(photo.file_size / 1024).toFixed(0)} KB
-                      </p>
+                {viewerPhotos.map((photo) => {
+                  // Convert Windows path to file:// URL
+                  const photoPath = photo.photo_path.replace(/\\/g, '/');
+                  const photoUrl = `file:///${photoPath}`;
+
+                  return (
+                    <div
+                      key={photo.id}
+                      className="bg-bg-tertiary rounded-xl overflow-hidden hover:ring-2 hover:ring-accent-primary transition-all relative group"
+                    >
+                      <img
+                        src={photoUrl}
+                        alt={`Photo ${photo.id}`}
+                        className="w-full h-64 object-cover"
+                        onError={(e) => {
+                          console.error('Image load error:', photoPath);
+                          e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><text x="50%" y="50%" text-anchor="middle" fill="%23666">Błąd ładowania</text></svg>';
+                        }}
+                      />
+                      {/* Delete button */}
+                      <button
+                        onClick={async () => {
+                          if (window.confirm('Czy na pewno chcesz usunąć to zdjęcie?')) {
+                            try {
+                              const { ipcRenderer } = window.require('electron');
+                              const result = await ipcRenderer.invoke('db:delete-photo', photo.id);
+
+                              if (result.success) {
+                                // Remove from viewer
+                                setViewerPhotos(prev => prev.filter(p => p.id !== photo.id));
+                                toast.success('🗑️ Zdjęcie usunięte', {
+                                  duration: 2000,
+                                  position: 'top-right',
+                                });
+                              } else {
+                                toast.error(`❌ Błąd usuwania: ${result.error}`, {
+                                  duration: 3000,
+                                  position: 'top-right',
+                                });
+                              }
+                            } catch (error) {
+                              console.error('Delete photo error:', error);
+                              toast.error('❌ Błąd usuwania zdjęcia', {
+                                duration: 3000,
+                                position: 'top-right',
+                              });
+                            }
+                          }
+                        }}
+                        className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                        title="Usuń zdjęcie"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </button>
+                      <div className="p-3">
+                        <p className="text-text-tertiary text-xs">
+                          {new Date(photo.created_at).toLocaleString('pl-PL')}
+                        </p>
+                        <p className="text-text-tertiary text-xs">
+                          {(photo.file_size / 1024).toFixed(0)} KB
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">
