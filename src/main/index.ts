@@ -7,9 +7,8 @@ import { selectExcelFile, parseExcelFile, openFolder, selectFolder } from './fil
 import * as Scale from './scale';
 import * as Reports from './reports';
 import { hashPassword, verifyPassword } from './auth';
-// TEMPORARILY DISABLED: OCR not working reliably
-// import { ocr } from 'windows-media-ocr';
 import sharp from 'sharp';
+// Note: windows-media-ocr removed - OCR functionality disabled (not working reliably)
 
 let mainWindow: BrowserWindow | null = null;
 
