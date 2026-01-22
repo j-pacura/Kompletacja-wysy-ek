@@ -346,7 +346,19 @@ const PackingScreen: React.FC = () => {
     }
   };
 
-  const handleUnpackPart = async (part: Part) => {
+  const handleViewPackedPart = (part: Part) => {
+    // Open modal in view-only mode for packed parts
+    setSelectedPart(part);
+    setModalStep(1);
+    setIsModalOpen(true);
+  };
+
+  const handleUnpackPart = async (part: Part, e?: React.MouseEvent) => {
+    // Stop propagation to prevent triggering view modal
+    if (e) {
+      e.stopPropagation();
+    }
+
     // Check permissions
     if (!canModifyShipment()) {
       toast.error('Nie masz uprawnień do edycji tej wysyłki. Tylko właściciel lub administrator może to zrobić.');
@@ -868,10 +880,7 @@ const PackingScreen: React.FC = () => {
       });
 
       setSnCameraStream(stream);
-
-      if (snVideoRef.current) {
-        snVideoRef.current.srcObject = stream;
-      }
+      // srcObject will be set in useEffect
     } catch (error) {
       console.error('Error starting SN camera:', error);
       toast.error('❌ Nie można uruchomić kamery', {
@@ -1095,6 +1104,13 @@ const PackingScreen: React.FC = () => {
       }
     };
   }, [modalStep, isModalOpen]);
+
+  // Handle SN camera stream updates
+  useEffect(() => {
+    if (snCameraStream && snVideoRef.current) {
+      snVideoRef.current.srcObject = snCameraStream;
+    }
+  }, [snCameraStream]);
 
   // Handle keyboard shortcuts for country selection (Step 4)
   useEffect(() => {
@@ -1413,75 +1429,163 @@ const PackingScreen: React.FC = () => {
               )}
             </div>
 
-            {/* Step 1: Confirmation */}
-            {modalStep === 1 && (
+            {/* Step 1: Confirmation or View Details */}
+            {modalStep === 1 && selectedPart && (
               <div className="text-center">
-                <h2 className="text-text-secondary text-lg mb-4">Odnaleziono produkt:</h2>
+                {selectedPart.status === 'packed' ? (
+                  /* Viewing packed part - show details */
+                  <>
+                    <h2 className="text-text-secondary text-lg mb-4">Szczegóły spakowanej części:</h2>
 
-                {/* SAP Index - DUŻY */}
-                <div className="text-accent-primary font-bold text-6xl mb-4 tracking-wide">
-                  {selectedPart.sap_index}
-                </div>
+                    {/* SAP Index */}
+                    <div className="text-accent-success font-bold text-6xl mb-4 tracking-wide">
+                      {selectedPart.sap_index}
+                    </div>
 
-                {/* Description - mały */}
-                <p className="text-text-secondary text-xl mb-4">
-                  {selectedPart.description}
-                </p>
-
-                {/* Order information - if available */}
-                {selectedPart.order_number && (
-                  <div className="bg-bg-tertiary rounded-lg p-4 mb-6">
-                    <p className="text-text-tertiary text-sm mb-1">Zlecenie:</p>
-                    <p className="text-accent-primary text-lg font-semibold">
-                      {selectedPart.order_number}
-                      {selectedPart.order_description && (
-                        <span className="text-text-secondary text-base font-normal ml-2">
-                          ({selectedPart.order_description})
-                        </span>
-                      )}
+                    {/* Description */}
+                    <p className="text-text-secondary text-xl mb-4">
+                      {selectedPart.description}
                     </p>
-                  </div>
+
+                    {/* Order information */}
+                    {selectedPart.order_number && (
+                      <div className="bg-bg-tertiary rounded-lg p-4 mb-4">
+                        <p className="text-text-tertiary text-sm mb-1">Zlecenie:</p>
+                        <p className="text-accent-primary text-lg font-semibold">
+                          {selectedPart.order_number}
+                          {selectedPart.order_description && (
+                            <span className="text-text-secondary text-base font-normal ml-2">
+                              ({selectedPart.order_description})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Quantity */}
+                    <div className="flex items-center justify-center gap-3 mb-6">
+                      <span className="text-text-primary font-bold text-5xl">
+                        {selectedPart.quantity}
+                      </span>
+                      <span className="text-text-secondary text-3xl">
+                        {selectedPart.unit}
+                      </span>
+                    </div>
+
+                    {/* Additional details */}
+                    <div className="space-y-3 mb-6">
+                      {selectedPart.weight_total && (
+                        <div className="bg-bg-tertiary rounded-lg p-3">
+                          <p className="text-text-tertiary text-sm">Waga całkowita:</p>
+                          <p className="text-text-primary text-xl font-semibold">
+                            {selectedPart.weight_total.toFixed(3)} kg
+                          </p>
+                          {selectedPart.weight_per_unit && (
+                            <p className="text-text-tertiary text-xs mt-1">
+                              ({selectedPart.weight_per_unit.toFixed(4)} kg/szt)
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedPart.country_of_origin && (
+                        <div className="bg-bg-tertiary rounded-lg p-3">
+                          <p className="text-text-tertiary text-sm">Kraj pochodzenia:</p>
+                          <p className="text-text-primary text-xl font-semibold">
+                            {selectedPart.country_of_origin}
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedPart.packed_at && (
+                        <div className="bg-bg-tertiary rounded-lg p-3">
+                          <p className="text-text-tertiary text-sm">Spakowano:</p>
+                          <p className="text-text-primary text-base">
+                            {new Date(selectedPart.packed_at).toLocaleString('pl-PL')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Close button */}
+                    <button
+                      onClick={handleCloseModal}
+                      className="w-full px-6 py-4 gradient-primary text-white rounded-lg hover:opacity-90 transition-all text-lg font-semibold"
+                    >
+                      Zamknij
+                    </button>
+                  </>
+                ) : (
+                  /* Normal confirmation for pending parts */
+                  <>
+                    <h2 className="text-text-secondary text-lg mb-4">Odnaleziono produkt:</h2>
+
+                    {/* SAP Index - DUŻY */}
+                    <div className="text-accent-primary font-bold text-6xl mb-4 tracking-wide">
+                      {selectedPart.sap_index}
+                    </div>
+
+                    {/* Description - mały */}
+                    <p className="text-text-secondary text-xl mb-4">
+                      {selectedPart.description}
+                    </p>
+
+                    {/* Order information - if available */}
+                    {selectedPart.order_number && (
+                      <div className="bg-bg-tertiary rounded-lg p-4 mb-6">
+                        <p className="text-text-tertiary text-sm mb-1">Zlecenie:</p>
+                        <p className="text-accent-primary text-lg font-semibold">
+                          {selectedPart.order_number}
+                          {selectedPart.order_description && (
+                            <span className="text-text-secondary text-base font-normal ml-2">
+                              ({selectedPart.order_description})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Quantity - DUŻY */}
+                    <div className="flex items-center justify-center gap-3 mb-8">
+                      <span className="text-text-primary font-bold text-5xl">
+                        {selectedPart.quantity}
+                      </span>
+                      <span className="text-text-secondary text-3xl">
+                        {selectedPart.unit}
+                      </span>
+                    </div>
+
+                    {/* Confirmation instructions */}
+                    <div className="bg-bg-tertiary rounded-lg p-6 mb-6">
+                      <p className="text-text-secondary text-lg mb-4">Potwierdź ilość:</p>
+                      <div className="flex items-center justify-center gap-6 text-sm text-text-tertiary">
+                        <span>📱 Zeskanuj ponownie</span>
+                        <span>•</span>
+                        <span>⌨️ Naciśnij Enter</span>
+                        <span>•</span>
+                        <span>🖱️ Kliknij przycisk</span>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex gap-4">
+                      <button
+                        onClick={handleCloseModal}
+                        className="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
+                      >
+                        Anuluj
+                      </button>
+                      <button
+                        onClick={handleConfirmPart}
+                        onKeyPress={(e) => e.key === 'Enter' && handleConfirmPart()}
+                        className="flex-1 px-6 py-4 gradient-primary text-white rounded-lg hover:opacity-90 transition-all text-lg font-semibold"
+                        autoFocus
+                      >
+                        ✓ Potwierdź
+                      </button>
+                    </div>
+                  </>
                 )}
-
-                {/* Quantity - DUŻY */}
-                <div className="flex items-center justify-center gap-3 mb-8">
-                  <span className="text-text-primary font-bold text-5xl">
-                    {selectedPart.quantity}
-                  </span>
-                  <span className="text-text-secondary text-3xl">
-                    {selectedPart.unit}
-                  </span>
-                </div>
-
-                {/* Confirmation instructions */}
-                <div className="bg-bg-tertiary rounded-lg p-6 mb-6">
-                  <p className="text-text-secondary text-lg mb-4">Potwierdź ilość:</p>
-                  <div className="flex items-center justify-center gap-6 text-sm text-text-tertiary">
-                    <span>📱 Zeskanuj ponownie</span>
-                    <span>•</span>
-                    <span>⌨️ Naciśnij Enter</span>
-                    <span>•</span>
-                    <span>🖱️ Kliknij przycisk</span>
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="flex gap-4">
-                  <button
-                    onClick={handleCloseModal}
-                    className="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
-                  >
-                    Anuluj
-                  </button>
-                  <button
-                    onClick={handleConfirmPart}
-                    onKeyPress={(e) => e.key === 'Enter' && handleConfirmPart()}
-                    className="flex-1 px-6 py-4 gradient-primary text-white rounded-lg hover:opacity-90 transition-all text-lg font-semibold"
-                    autoFocus
-                  >
-                    ✓ Potwierdź
-                  </button>
-                </div>
               </div>
             )}
 
@@ -2332,9 +2436,9 @@ const PackingScreen: React.FC = () => {
                 {filteredPackedParts.map((part) => (
                   <div
                     key={part.id}
-                    onClick={() => handleUnpackPart(part)}
-                    className="bg-bg-tertiary bg-opacity-60 rounded-lg p-4 hover:bg-opacity-80 hover:scale-[1.02] hover:border-2 hover:border-accent-warning transition-all cursor-pointer active:scale-[0.98] border-2 border-transparent"
-                    title="Kliknij aby cofnąć pakowanie"
+                    onClick={() => handleViewPackedPart(part)}
+                    className="bg-bg-tertiary bg-opacity-60 rounded-lg p-4 hover:bg-opacity-80 hover:scale-[1.02] hover:border-2 hover:border-accent-primary transition-all cursor-pointer active:scale-[0.98] border-2 border-transparent"
+                    title="Kliknij aby zobaczyć szczegóły"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -2361,7 +2465,13 @@ const PackingScreen: React.FC = () => {
                             <Camera className="w-6 h-6 text-accent-primary" />
                           </button>
                         )}
-                        <CheckCircle2 className="w-8 h-8 text-accent-success group-hover:text-accent-warning transition-colors" />
+                        <button
+                          onClick={(e) => handleUnpackPart(part, e)}
+                          className="p-2 hover:bg-accent-warning hover:bg-opacity-20 rounded-lg transition-all"
+                          title="Kliknij aby cofnąć pakowanie"
+                        >
+                          <CheckCircle2 className="w-8 h-8 text-accent-success hover:text-accent-warning transition-colors" />
+                        </button>
                       </div>
                     </div>
                   </div>
