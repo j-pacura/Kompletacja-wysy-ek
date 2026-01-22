@@ -680,6 +680,35 @@ function setupIPCHandlers() {
     }
   });
 
+  ipcMain.handle(IPC_CHANNELS.DB_READ_PHOTO_AS_BASE64, async (_event, photoPath: string) => {
+    try {
+      if (!fs.existsSync(photoPath)) {
+        return { success: false, error: 'Photo file not found' };
+      }
+
+      // Read file as buffer
+      const buffer = fs.readFileSync(photoPath);
+
+      // Convert to base64
+      const base64 = buffer.toString('base64');
+
+      // Determine mime type (assuming jpg/jpeg for now, could be enhanced)
+      const ext = path.extname(photoPath).toLowerCase();
+      let mimeType = 'image/jpeg';
+      if (ext === '.png') mimeType = 'image/png';
+      else if (ext === '.gif') mimeType = 'image/gif';
+      else if (ext === '.webp') mimeType = 'image/webp';
+
+      // Return as data URL
+      const dataUrl = `data:${mimeType};base64,${base64}`;
+
+      return { success: true, data: dataUrl };
+    } catch (error: any) {
+      console.error('Read photo error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   // Export operations
   ipcMain.handle(IPC_CHANNELS.FILE_EXPORT_EXCEL, async (_event, shipmentId: number) => {
     try {

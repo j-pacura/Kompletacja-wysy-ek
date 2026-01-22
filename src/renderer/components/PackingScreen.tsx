@@ -87,6 +87,9 @@ const PackingScreen: React.FC = () => {
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
   const [viewerPhotos, setViewerPhotos] = useState<any[]>([]);
   const [viewingPart, setViewingPart] = useState<Part | null>(null);
+  const [viewerCameraStream, setViewerCameraStream] = useState<MediaStream | null>(null);
+  const viewerVideoRef = React.useRef<HTMLVideoElement>(null);
+  const viewerCanvasRef = React.useRef<HTMLCanvasElement>(null);
 
   // Export menu state
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -826,7 +829,16 @@ const PackingScreen: React.FC = () => {
 
   // Add serial number to list
   const handleAddSerialNumber = async () => {
-    if (!currentSN.trim() || !selectedPart) return;
+    if (!selectedPart) return;
+
+    // Check if we have at least photo or SN
+    if (!currentSN.trim() && !snCapturedPhoto) {
+      toast.error('⚠️ Wprowadź numer seryjny lub zrób zdjęcie', {
+        duration: 2000,
+        position: 'top-right',
+      });
+      return;
+    }
 
     let photoPath: string | undefined = undefined;
 
@@ -855,15 +867,29 @@ const PackingScreen: React.FC = () => {
       }
     }
 
-    // Add to list
-    setSerialNumbers(prev => [...prev, { value: currentSN.trim(), photoPath }]);
+    // Add to list (allow empty SN if photo exists)
+    const snValue = currentSN.trim() || '(tylko zdjęcie)';
+    setSerialNumbers(prev => [...prev, { value: snValue, photoPath }]);
     setCurrentSN('');
     setSnCapturedPhoto(null);
 
-    toast.success(`✅ Dodano SN: ${currentSN.trim()}`, {
-      duration: 1500,
-      position: 'top-right',
-    });
+    // Show appropriate toast
+    if (currentSN.trim() && photoPath) {
+      toast.success(`✅ Dodano SN: ${currentSN.trim()} + 📷`, {
+        duration: 1500,
+        position: 'top-right',
+      });
+    } else if (currentSN.trim()) {
+      toast.success(`✅ Dodano SN: ${currentSN.trim()}`, {
+        duration: 1500,
+        position: 'top-right',
+      });
+    } else {
+      toast.success(`✅ Zapisano zdjęcie 📷`, {
+        duration: 1500,
+        position: 'top-right',
+      });
+    }
   };
 
   // Remove serial number from list
@@ -1205,7 +1231,23 @@ const PackingScreen: React.FC = () => {
       const result = await ipcRenderer.invoke('db:get-photos', part.id);
 
       if (result.success) {
-        setViewerPhotos(result.data);
+        // Load photos as base64 data URLs
+        const photosWithData = await Promise.all(
+          result.data.map(async (photo: any) => {
+            try {
+              const dataResult = await ipcRenderer.invoke('db:read-photo-as-base64', photo.photo_path);
+              return {
+                ...photo,
+                dataUrl: dataResult.success ? dataResult.data : null
+              };
+            } catch (err) {
+              console.error('Error loading photo data:', err);
+              return { ...photo, dataUrl: null };
+            }
+          })
+        );
+
+        setViewerPhotos(photosWithData);
         setViewingPart(part);
         setPhotoViewerOpen(true);
 
@@ -1223,10 +1265,110 @@ const PackingScreen: React.FC = () => {
   };
 
   const handleClosePhotoViewer = () => {
+    // Stop camera if running
+    if (viewerCameraStream) {
+      viewerCameraStream.getTracks().forEach(track => track.stop());
+      setViewerCameraStream(null);
+    }
     setPhotoViewerOpen(false);
     setViewerPhotos([]);
     setViewingPart(null);
   };
+
+  const handleOpenViewerCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 },
+        audio: false
+      });
+      setViewerCameraStream(stream);
+    } catch (error) {
+      console.error('Camera error:', error);
+      toast.error('❌ Nie można uruchomić kamery', {
+        duration: 2000,
+        position: 'top-right',
+      });
+    }
+  };
+
+  const handleCaptureViewerPhoto = async () => {
+    if (!viewingPart || !viewerVideoRef.current || !viewerCanvasRef.current) return;
+
+    const video = viewerVideoRef.current;
+    const canvas = viewerCanvasRef.current;
+
+    // Set canvas dimensions
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // Draw video frame to canvas
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+    }
+
+    // Convert to data URL
+    const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+    // Stop camera
+    if (viewerCameraStream) {
+      viewerCameraStream.getTracks().forEach(track => track.stop());
+      setViewerCameraStream(null);
+    }
+
+    // Save photo
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('db:save-photo', viewingPart.id, photoDataUrl);
+
+      if (result.success) {
+        // Load photo data as base64
+        const dataResult = await ipcRenderer.invoke('db:read-photo-as-base64', result.data.path);
+
+        // Add to viewer
+        const newPhoto = {
+          id: result.data.id,
+          part_id: viewingPart.id,
+          photo_path: result.data.path,
+          created_at: Date.now(),
+          file_size: photoDataUrl.length,
+          dataUrl: dataResult.success ? dataResult.data : photoDataUrl
+        };
+
+        setViewerPhotos(prev => [...prev, newPhoto]);
+
+        toast.success('✅ Zdjęcie dodane', {
+          duration: 1500,
+          position: 'top-right',
+        });
+      } else {
+        toast.error(`❌ Błąd zapisu: ${result.error}`, {
+          duration: 3000,
+          position: 'top-right',
+        });
+      }
+    } catch (error) {
+      console.error('Save photo error:', error);
+      toast.error('❌ Błąd zapisu zdjęcia', {
+        duration: 3000,
+        position: 'top-right',
+      });
+    }
+  };
+
+  const handleCancelViewerCamera = () => {
+    if (viewerCameraStream) {
+      viewerCameraStream.getTracks().forEach(track => track.stop());
+      setViewerCameraStream(null);
+    }
+  };
+
+  // Handle viewer camera stream
+  useEffect(() => {
+    if (viewerCameraStream && viewerVideoRef.current) {
+      viewerVideoRef.current.srcObject = viewerCameraStream;
+    }
+  }, [viewerCameraStream]);
 
   // Export functions
   const handleExportExcel = async () => {
@@ -2082,7 +2224,7 @@ const PackingScreen: React.FC = () => {
 
                     <div className="mb-4">
                       <label className="block text-text-primary text-sm font-medium mb-2 text-left">
-                        Numer seryjny (edytuj jeśli OCR się pomylił):
+                        Numer seryjny (opcjonalny - możesz zapisać tylko zdjęcie):
                       </label>
                       <div className="flex gap-2">
                         <input
@@ -2090,22 +2232,25 @@ const PackingScreen: React.FC = () => {
                           value={currentSN}
                           onChange={(e) => setCurrentSN(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && currentSN.trim()) {
+                            if (e.key === 'Enter') {
                               handleAddSerialNumber();
                             }
                           }}
-                          placeholder="Numer seryjny..."
+                          placeholder="Numer seryjny (opcjonalnie)..."
                           className="flex-1 px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors font-mono text-lg"
                           autoFocus
                         />
                         <button
                           onClick={handleAddSerialNumber}
-                          disabled={!currentSN.trim() || processingOCR}
+                          disabled={processingOCR}
                           className="px-6 py-3 gradient-success text-white rounded-lg hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          ✓ Zatwierdź
+                          ✓ Zapisz
                         </button>
                       </div>
+                      <p className="text-text-tertiary text-xs mt-2 text-left">
+                        Jeśli OCR nie rozpoznał tekstu, możesz zapisać samo zdjęcie i uzupełnić SN później.
+                      </p>
                     </div>
 
                     <div className="flex gap-3">
@@ -2164,39 +2309,75 @@ const PackingScreen: React.FC = () => {
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <div>
+              <div className="flex-1">
                 <h2 className="text-text-primary text-2xl font-bold mb-2">
                   📸 Zdjęcia: {viewingPart.sap_index}
                 </h2>
                 <p className="text-text-secondary text-sm">{viewingPart.description}</p>
               </div>
-              <button
-                onClick={handleClosePhotoViewer}
-                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-text-primary" />
-              </button>
+              <div className="flex gap-2">
+                {!viewerCameraStream && (
+                  <button
+                    onClick={handleOpenViewerCamera}
+                    className="px-4 py-2 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold flex items-center gap-2"
+                  >
+                    <Camera className="w-5 h-5" />
+                    Dodaj zdjęcie
+                  </button>
+                )}
+                <button
+                  onClick={handleClosePhotoViewer}
+                  className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6 text-text-primary" />
+                </button>
+              </div>
             </div>
+
+            {/* Camera view */}
+            {viewerCameraStream && (
+              <div className="mb-6">
+                <div className="relative bg-black rounded-lg overflow-hidden mb-4">
+                  <video
+                    ref={viewerVideoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-auto"
+                  />
+                  <canvas ref={viewerCanvasRef} className="hidden" />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCancelViewerCamera}
+                    className="flex-1 px-6 py-3 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all font-semibold"
+                  >
+                    ← Anuluj
+                  </button>
+                  <button
+                    onClick={handleCaptureViewerPhoto}
+                    className="flex-2 px-8 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold text-lg"
+                  >
+                    📸 Zrób zdjęcie
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Photos Grid */}
             {viewerPhotos.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {viewerPhotos.map((photo) => {
-                  // Convert Windows path to file:// URL
-                  const photoPath = photo.photo_path.replace(/\\/g, '/');
-                  const photoUrl = `file:///${photoPath}`;
-
                   return (
                     <div
                       key={photo.id}
                       className="bg-bg-tertiary rounded-xl overflow-hidden hover:ring-2 hover:ring-accent-primary transition-all relative group"
                     >
                       <img
-                        src={photoUrl}
+                        src={photo.dataUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><text x="50%" y="50%" text-anchor="middle" fill="%23666">Ładowanie...</text></svg>'}
                         alt={`Photo ${photo.id}`}
                         className="w-full h-64 object-cover"
                         onError={(e) => {
-                          console.error('Image load error:', photoPath);
+                          console.error('Image load error:', photo.photo_path);
                           e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><text x="50%" y="50%" text-anchor="middle" fill="%23666">Błąd ładowania</text></svg>';
                         }}
                       />
