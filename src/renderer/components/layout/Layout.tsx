@@ -17,7 +17,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', path: '/' },
   { id: 'archive', label: 'Archiwum', icon: 'archive', path: '/archive' },
-  { id: 'stats', label: 'Statystyki', icon: 'bar_chart', path: '/stats' },
   { id: 'settings', label: 'Ustawienia', icon: 'settings', path: '/settings' },
   { id: 'admin', label: 'Panel Admin', icon: 'admin_panel_settings', path: '/admin', adminOnly: true },
 ];
@@ -56,21 +55,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   });
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar Navigation */}
-      <aside className="fixed left-0 top-0 h-full flex flex-col bg-surface-container-low w-64 z-50 border-r border-outline-variant/20">
-        {/* Logo & Title */}
-        <div className="p-8 border-b border-outline-variant/20">
-          <h1 className="text-lg font-headline font-bold text-on-surface">
+    <div className="flex min-h-screen bg-surface">
+      {/* Sidebar Navigation - surface-container-low (sectional layer, NO BORDERS) */}
+      <aside className="fixed left-0 top-0 h-full flex flex-col bg-surface-container-low w-64 z-50">
+        {/* Logo & Title - Extreme whitespace (p-8) */}
+        <div className="px-8 py-8">
+          <h1 className="text-lg font-headline font-extrabold text-on-surface tracking-tight">
             Asystent Pakowania
           </h1>
-          <p className="text-xs text-on-surface-variant font-label mt-1 tracking-wider uppercase">
+          <p className="text-xs text-on-surface-variant font-label mt-1.5 tracking-wider uppercase">
             Terminal Pakowacza
           </p>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+        {/* Navigation Items - extreme whitespace between items (space-y-2 = 8px) */}
+        <nav className="flex-1 px-4 py-2 space-y-2 overflow-y-auto">
           {visibleNavItems.map(item => {
             const isActive = isActivePath(item.path);
             return (
@@ -78,21 +77,35 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 key={item.id}
                 onClick={() => handleNavigation(item.path)}
                 className={`
-                  w-full px-4 py-3 flex items-center gap-3 rounded-lg
-                  transition-all duration-200
+                  w-full px-4 py-3.5 flex items-center gap-3
+                  rounded-lg transition-all duration-200
+                  relative overflow-hidden
                   ${isActive
-                    ? 'bg-surface-bright text-primary border-l-4 border-primary ml-0 pl-[12px]'
+                    ? 'bg-surface-bright text-primary'
                     : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
                   }
                 `}
               >
+                {/* 2px vertical pill for active state - "The Ghost Border" at left edge */}
+                {isActive && (
+                  <div
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-primary rounded-full"
+                    style={{ width: '2px' }}
+                  />
+                )}
+
+                {/* Material Symbol icon with FILL variation for active state */}
                 <span
-                  className="material-symbols-outlined"
-                  style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
+                  className="material-symbols-outlined text-2xl"
+                  style={{
+                    fontVariationSettings: isActive
+                      ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24"
+                      : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24"
+                  }}
                 >
                   {item.icon}
                 </span>
-                <span className={`font-medium ${isActive ? 'font-semibold' : ''}`}>
+                <span className={`font-body font-medium ${isActive ? 'font-semibold' : ''}`}>
                   {item.label}
                 </span>
               </button>
@@ -100,22 +113,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           })}
         </nav>
 
-        {/* Bottom Section */}
-        <div className="p-4 mt-auto border-t border-outline-variant/20">
-          {/* User Info */}
+        {/* Bottom Section - User Card + Actions (NO BORDER-T) */}
+        <div className="p-4 mt-auto space-y-4">
+          {/* User Info Card - surface-container (tonal layering, NO BORDER) */}
           {currentUser && (
-            <div className="mb-4 px-4 py-3 bg-surface-container rounded-lg">
+            <div className="bg-surface-container rounded-xl p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary text-lg">
-                    person
-                  </span>
+                {/* Avatar with primary-container background */}
+                <div className="relative">
+                  <div className="w-11 h-11 rounded-full bg-primary-container flex items-center justify-center ring-2 ring-primary/10">
+                    <span className="text-on-primary-container font-headline font-bold text-base tracking-tight">
+                      {currentUser.name[0]}{currentUser.surname[0]}
+                    </span>
+                  </div>
                 </div>
+
+                {/* User Info - Display type for name (numbers are data!) */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-on-surface truncate">
+                  <p className="text-sm font-semibold text-on-surface truncate font-body">
                     {currentUser.name} {currentUser.surname}
                   </p>
-                  <p className="text-xs text-on-surface-variant truncate">
+                  <p className="text-xs text-on-surface-variant truncate font-label mt-0.5">
                     {currentUser.role === 'admin' ? 'Administrator' : 'Pakujący'}
                   </p>
                 </div>
@@ -123,33 +141,43 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           )}
 
-          {/* New Shipment Button */}
+          {/* Primary Action Button - Gradient (primary to primary-container) */}
           <button
             onClick={handleNewShipment}
-            className="w-full primary-gradient text-on-primary font-bold py-3 rounded-full
-                     flex items-center justify-center gap-2 active:scale-95 transition-transform
-                     shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30"
+            className="
+              w-full primary-gradient text-on-primary font-bold py-3.5 px-4
+              rounded-full flex items-center justify-center gap-2
+              active:scale-95 transition-all duration-150
+              shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35
+              font-headline tracking-tight
+            "
           >
-            <span className="material-symbols-outlined">add</span>
-            Nowa Przesyłka
+            <span className="material-symbols-outlined text-xl">add</span>
+            <span>Nowa Przesyłka</span>
           </button>
 
-          {/* Logout Button */}
+          {/* Logout Button - Ghost style (secondary button, no background) */}
           <button
             onClick={handleLogout}
-            className="w-full mt-3 text-on-surface-variant hover:text-on-surface
-                     px-4 py-3 flex items-center gap-3 rounded-lg
-                     hover:bg-surface-container transition-all"
+            className="
+              w-full px-4 py-3 flex items-center justify-center gap-3
+              text-on-surface-variant hover:text-on-surface
+              hover:bg-surface-container rounded-lg
+              transition-all duration-200
+              font-body font-medium
+            "
           >
             <span className="material-symbols-outlined">logout</span>
-            <span className="font-medium">Wyloguj</span>
+            <span>Wyloguj</span>
           </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 ml-64 min-h-screen">
-        {children}
+      {/* Main Content Area - surface-container (interactive layer), extreme whitespace (p-8) */}
+      <main className="flex-1 ml-64 min-h-screen bg-surface-container">
+        <div className="p-8">
+          {children}
+        </div>
       </main>
     </div>
   );
