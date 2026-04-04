@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, UserPlus, Trash2, Shield, User, Search, Loader2, AlertCircle, Key } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { PublicUser } from '../types/user';
 
@@ -19,24 +18,19 @@ const AdminPanel: React.FC = () => {
   const [newUserSurname, setNewUserSurname] = useState('');
   const [newUserLogin, setNewUserLogin] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserReportLanguage, setNewUserReportLanguage] = useState<'pl' | 'en'>('pl');
   const [newUserRole, setNewUserRole] = useState<'user' | 'admin'>('user');
   const [creatingUser, setCreatingUser] = useState(false);
 
-  // Delete confirmation state
+  // Modals
   const [deleteConfirmUser, setDeleteConfirmUser] = useState<PublicUser | null>(null);
-
-  // Reset password confirmation state
   const [resetPasswordUser, setResetPasswordUser] = useState<PublicUser | null>(null);
 
   useEffect(() => {
-    // Check if user is admin
     if (!isAdmin()) {
       toast.error('Brak uprawnień administratora');
       navigate('/');
       return;
     }
-
     loadUsers();
   }, []);
 
@@ -61,7 +55,6 @@ const AdminPanel: React.FC = () => {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
     if (!newUserName || !newUserSurname || !newUserLogin || !newUserPassword) {
       toast.error('Wypełnij wszystkie pola');
       return;
@@ -85,26 +78,23 @@ const AdminPanel: React.FC = () => {
         surname: newUserSurname,
         login: newUserLogin,
         password: newUserPassword,
-        report_language: newUserReportLanguage,
+        report_language: 'pl',
         role: newUserRole,
       });
 
       if (result.success) {
         toast.success(`✅ Utworzono użytkownika: ${newUserLogin}`);
-        // Reset form
         setNewUserName('');
         setNewUserSurname('');
         setNewUserLogin('');
         setNewUserPassword('');
-        setNewUserReportLanguage('pl');
         setNewUserRole('user');
         setShowAddUserForm(false);
-        // Reload users
         loadUsers();
       } else {
         toast.error(result.error || 'Błąd tworzenia użytkownika');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating user:', error);
       toast.error('Wystąpił błąd podczas tworzenia użytkownika');
     } finally {
@@ -123,9 +113,8 @@ const AdminPanel: React.FC = () => {
       const result = await ipcRenderer.invoke('db:delete-user', user.id);
 
       if (result.success) {
-        toast.success(`✅ Usunięto użytkownika: ${user.login}`);
+        toast.success(`🗑️ Usunięto użytkownika: ${user.login}`);
         setDeleteConfirmUser(null);
-        // Reload users
         loadUsers();
       } else {
         toast.error('Błąd usuwania użytkownika');
@@ -147,11 +136,10 @@ const AdminPanel: React.FC = () => {
       const result = await ipcRenderer.invoke('db:reset-user-password', user.id);
 
       if (result.success) {
-        toast.success(`🔑 Hasło użytkownika ${user.login} zostało zresetowane do "Start.123". Użytkownik będzie musiał zmienić hasło przy następnym logowaniu.`, {
-          duration: 6000
+        toast.success(`🔑 Hasło zresetowane do "Start.123" dla użytkownika ${user.login}. Użytkownik będzie musiał zmienić hasło przy następnym logowaniu.`, {
+          duration: 8000,
         });
         setResetPasswordUser(null);
-        loadUsers();
       } else {
         toast.error('Błąd resetowania hasła');
       }
@@ -161,325 +149,303 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      user.name.toLowerCase().includes(searchLower) ||
-      user.surname.toLowerCase().includes(searchLower) ||
-      user.login.toLowerCase().includes(searchLower)
-    );
-  });
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.surname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.login.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-bg-primary">
-        <Loader2 className="w-8 h-8 text-accent-primary animate-spin" />
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-on-surface-variant font-body">Ładowanie użytkowników...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg-primary">
-      {/* Header */}
-      <div className="bg-bg-secondary border-b border-bg-tertiary px-8 py-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all btn-active"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Powrót
-            </button>
+    <div className="w-full space-y-8 max-w-5xl">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-headline font-extrabold text-on-surface tracking-tight mb-2">
+            Panel Administratora
+          </h1>
+          <p className="text-on-surface-variant font-body">
+            Zarządzanie użytkownikami systemu
+          </p>
+        </div>
+
+        {/* Add User Button */}
+        <button
+          onClick={() => setShowAddUserForm(!showAddUserForm)}
+          className="
+            primary-gradient text-on-primary font-bold py-3 px-6
+            rounded-full flex items-center gap-2
+            active:scale-95 transition-all shadow-lg shadow-primary/20
+            font-headline
+          "
+        >
+          <span className="material-symbols-outlined">
+            {showAddUserForm ? 'close' : 'person_add'}
+          </span>
+          <span>{showAddUserForm ? 'Anuluj' : 'Nowy użytkownik'}</span>
+        </button>
+      </div>
+
+      {/* Add User Form */}
+      {showAddUserForm && (
+        <form onSubmit={handleCreateUser} className="bg-surface-container-high rounded-xl p-6 space-y-4">
+          <h3 className="text-xl font-headline font-bold text-on-surface mb-4">
+            Dodaj nowego użytkownika
+          </h3>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-text-primary mb-1">
-                👥 Panel Administratora
-              </h1>
-              <p className="text-text-secondary">
-                Zarządzaj użytkownikami systemu
-              </p>
+              <label className="text-on-surface font-label font-semibold text-xs uppercase tracking-wider mb-2 block">
+                Imię
+              </label>
+              <input
+                type="text"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+                className="
+                  w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                  font-body outline-none focus:ring-2 focus:ring-primary
+                "
+                placeholder="Jan"
+              />
+            </div>
+
+            <div>
+              <label className="text-on-surface font-label font-semibold text-xs uppercase tracking-wider mb-2 block">
+                Nazwisko
+              </label>
+              <input
+                type="text"
+                value={newUserSurname}
+                onChange={(e) => setNewUserSurname(e.target.value)}
+                className="
+                  w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                  font-body outline-none focus:ring-2 focus:ring-primary
+                "
+                placeholder="Kowalski"
+              />
             </div>
           </div>
 
-          <button
-            onClick={() => setShowAddUserForm(!showAddUserForm)}
-            className="flex items-center gap-2 px-6 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all btn-active font-semibold"
-          >
-            <UserPlus className="w-5 h-5" />
-            Dodaj użytkownika
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="p-8">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Add User Form */}
-          {showAddUserForm && (
-            <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary animate-scale-in">
-              <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-                <UserPlus className="w-6 h-6" />
-                Nowy użytkownik
-              </h2>
-
-              <form onSubmit={handleCreateUser} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-text-secondary text-sm mb-2">Imię</label>
-                    <input
-                      type="text"
-                      value={newUserName}
-                      onChange={(e) => setNewUserName(e.target.value)}
-                      placeholder="Jan"
-                      className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-text-secondary text-sm mb-2">Nazwisko</label>
-                    <input
-                      type="text"
-                      value={newUserSurname}
-                      onChange={(e) => setNewUserSurname(e.target.value)}
-                      placeholder="Kowalski"
-                      className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-text-secondary text-sm mb-2">Login</label>
-                    <input
-                      type="text"
-                      value={newUserLogin}
-                      onChange={(e) => setNewUserLogin(e.target.value)}
-                      placeholder="jan.kowalski"
-                      className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-text-secondary text-sm mb-2">Hasło</label>
-                    <input
-                      type="password"
-                      value={newUserPassword}
-                      onChange={(e) => setNewUserPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-text-secondary text-sm mb-2">Język raportu</label>
-                    <select
-                      value={newUserReportLanguage}
-                      onChange={(e) => setNewUserReportLanguage(e.target.value as 'pl' | 'en')}
-                      className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                    >
-                      <option value="pl">Polski</option>
-                      <option value="en">English</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-text-secondary text-sm mb-2">Rola</label>
-                    <select
-                      value={newUserRole}
-                      onChange={(e) => setNewUserRole(e.target.value as 'user' | 'admin')}
-                      className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                    >
-                      <option value="user">Użytkownik</option>
-                      <option value="admin">Administrator</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddUserForm(false);
-                      setNewUserName('');
-                      setNewUserSurname('');
-                      setNewUserLogin('');
-                      setNewUserPassword('');
-                    }}
-                    className="flex-1 px-6 py-3 bg-bg-tertiary text-text-primary rounded-lg hover:bg-opacity-80 transition-all btn-active font-medium"
-                  >
-                    Anuluj
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={creatingUser}
-                    className="flex-1 px-6 py-3 bg-accent-success hover:bg-accent-success/90 text-white rounded-lg transition-all btn-active font-semibold disabled:opacity-50"
-                  >
-                    {creatingUser ? 'Tworzenie...' : 'Utwórz użytkownika'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <div>
+            <label className="text-on-surface font-label font-semibold text-xs uppercase tracking-wider mb-2 block">
+              Login
+            </label>
             <input
               type="text"
-              placeholder="Szukaj użytkownika po imieniu, nazwisku lub loginie..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-bg-secondary text-text-primary rounded-lg border-2 border-bg-tertiary focus:border-accent-primary focus:outline-none transition-colors"
+              value={newUserLogin}
+              onChange={(e) => setNewUserLogin(e.target.value)}
+              className="
+                w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                font-body outline-none focus:ring-2 focus:ring-primary
+              "
+              placeholder="jkowalski"
             />
           </div>
 
-          {/* Users List */}
-          <div className="bg-bg-secondary rounded-xl border border-bg-tertiary overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-bg-tertiary border-b border-bg-tertiary">
-                    <th className="px-6 py-4 text-left text-text-secondary text-sm font-semibold">Użytkownik</th>
-                    <th className="px-6 py-4 text-left text-text-secondary text-sm font-semibold">Login</th>
-                    <th className="px-6 py-4 text-left text-text-secondary text-sm font-semibold">Rola</th>
-                    <th className="px-6 py-4 text-left text-text-secondary text-sm font-semibold">Język</th>
-                    <th className="px-6 py-4 text-left text-text-secondary text-sm font-semibold">Ostatnie logowanie</th>
-                    <th className="px-6 py-4 text-right text-text-secondary text-sm font-semibold">Akcje</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-bg-tertiary hover:bg-bg-tertiary/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            user.role === 'admin' ? 'bg-accent-primary/20' : 'bg-bg-tertiary'
-                          }`}>
-                            {user.role === 'admin' ? (
-                              <Shield className="w-5 h-5 text-accent-primary" />
-                            ) : (
-                              <User className="w-5 h-5 text-text-secondary" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-text-primary font-semibold">{user.name} {user.surname}</p>
-                            {user.id === currentUser?.id && (
-                              <span className="text-xs text-accent-primary">(Ty)</span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-text-secondary">{user.login}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          user.role === 'admin'
-                            ? 'bg-accent-primary/20 text-accent-primary'
-                            : 'bg-bg-tertiary text-text-secondary'
-                        }`}>
-                          {user.role === 'admin' ? 'Administrator' : 'Użytkownik'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-text-secondary uppercase">{user.report_language}</td>
-                      <td className="px-6 py-4 text-text-secondary">
-                        {user.last_login
-                          ? new Date(user.last_login).toLocaleDateString('pl-PL', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })
-                          : 'Nigdy'
-                        }
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setResetPasswordUser(user)}
-                            disabled={user.id === currentUser?.id}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-accent-warning/20 hover:bg-accent-warning/30 text-accent-warning rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="Resetuj hasło do Start.123"
-                          >
-                            <Key className="w-4 h-4" />
-                            Reset hasła
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirmUser(user)}
-                            disabled={user.id === currentUser?.id}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Usuń
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {filteredUsers.length === 0 && (
-                <div className="py-12 text-center">
-                  <p className="text-text-tertiary">Nie znaleziono użytkowników</p>
-                </div>
-              )}
-            </div>
+          <div>
+            <label className="text-on-surface font-label font-semibold text-xs uppercase tracking-wider mb-2 block">
+              Hasło
+            </label>
+            <input
+              type="password"
+              value={newUserPassword}
+              onChange={(e) => setNewUserPassword(e.target.value)}
+              className="
+                w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                font-body outline-none focus:ring-2 focus:ring-primary
+              "
+              placeholder="••••••••"
+            />
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
-              <p className="text-text-tertiary text-sm mb-1">Wszyscy użytkownicy</p>
-              <p className="text-3xl font-bold text-text-primary">{users.length}</p>
-            </div>
-            <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
-              <p className="text-text-tertiary text-sm mb-1">Administratorzy</p>
-              <p className="text-3xl font-bold text-accent-primary">
-                {users.filter(u => u.role === 'admin').length}
-              </p>
-            </div>
-            <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
-              <p className="text-text-tertiary text-sm mb-1">Aktywni użytkownicy</p>
-              <p className="text-3xl font-bold text-accent-success">
-                {users.filter(u => u.active).length}
-              </p>
-            </div>
+          <div>
+            <label className="text-on-surface font-label font-semibold text-xs uppercase tracking-wider mb-2 block">
+              Rola
+            </label>
+            <select
+              value={newUserRole}
+              onChange={(e) => setNewUserRole(e.target.value as 'user' | 'admin')}
+              className="
+                w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                font-body outline-none focus:ring-2 focus:ring-primary
+              "
+            >
+              <option value="user">Użytkownik</option>
+              <option value="admin">Administrator</option>
+            </select>
           </div>
+
+          <button
+            type="submit"
+            disabled={creatingUser}
+            className="
+              w-full primary-gradient text-on-primary font-bold py-3
+              rounded-lg flex items-center justify-center gap-2
+              disabled:opacity-50
+              active:scale-95 transition-all shadow-lg shadow-primary/20
+              font-headline
+            "
+          >
+            <span className="material-symbols-outlined">
+              {creatingUser ? 'progress_activity' : 'check'}
+            </span>
+            <span>{creatingUser ? 'Tworzenie...' : 'Utwórz użytkownika'}</span>
+          </button>
+        </form>
+      )}
+
+      {/* Search */}
+      <div className="bg-surface-container-high rounded-xl p-4">
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-on-surface-variant text-2xl">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Szukaj użytkownika..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="
+              flex-1 bg-transparent text-on-surface font-body
+              placeholder:text-on-surface-variant outline-none
+            "
+          />
         </div>
+      </div>
+
+      {/* Users List - NO DIVIDERS, 16px spacing */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-headline font-bold text-on-surface">
+          Użytkownicy ({filteredUsers.length})
+        </h2>
+
+        {filteredUsers.map((user) => (
+          <div
+            key={user.id}
+            className="bg-surface-container-highest rounded-xl p-6 hover:bg-surface-bright transition-all"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {/* Avatar */}
+                <div className={`
+                  w-14 h-14 rounded-full flex items-center justify-center
+                  ${user.role === 'admin' ? 'bg-primary/20 text-primary' : 'bg-secondary/20 text-secondary'}
+                `}>
+                  <span className="material-symbols-outlined text-2xl">
+                    {user.role === 'admin' ? 'admin_panel_settings' : 'person'}
+                  </span>
+                </div>
+
+                {/* User Info */}
+                <div>
+                  <h3 className="text-lg font-headline font-bold text-on-surface">
+                    {user.name} {user.surname}
+                  </h3>
+                  <p className="text-on-surface-variant font-body text-sm">
+                    @{user.login}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`
+                      px-3 py-1 rounded-full text-xs font-label font-semibold
+                      ${user.role === 'admin'
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-secondary/20 text-secondary'
+                      }
+                    `}>
+                      {user.role === 'admin' ? 'Administrator' : 'Użytkownik'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setResetPasswordUser(user)}
+                  disabled={user.id === currentUser?.id}
+                  className="
+                    px-4 py-2 rounded-lg flex items-center gap-2
+                    text-tertiary hover:bg-tertiary/10
+                    disabled:opacity-30 disabled:cursor-not-allowed
+                    transition-all font-label font-semibold text-sm
+                  "
+                >
+                  <span className="material-symbols-outlined text-base">lock_reset</span>
+                  <span>Reset hasła</span>
+                </button>
+
+                <button
+                  onClick={() => setDeleteConfirmUser(user)}
+                  disabled={user.id === currentUser?.id}
+                  className="
+                    px-4 py-2 rounded-lg flex items-center gap-2
+                    text-error hover:bg-error/10
+                    disabled:opacity-30 disabled:cursor-not-allowed
+                    transition-all font-label font-semibold text-sm
+                  "
+                >
+                  <span className="material-symbols-outlined text-base">delete</span>
+                  <span>Usuń</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmUser && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-bg-secondary rounded-2xl p-6 max-w-md w-full border border-bg-tertiary">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-red-400" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-text-primary">Potwierdź usunięcie</h3>
-                <p className="text-text-secondary text-sm">Ta operacja jest nieodwracalna</p>
-              </div>
-            </div>
-
-            <div className="bg-bg-tertiary rounded-lg p-4 mb-6">
-              <p className="text-text-secondary text-sm mb-2">Czy na pewno chcesz usunąć użytkownika:</p>
-              <p className="text-text-primary font-semibold">
-                {deleteConfirmUser.name} {deleteConfirmUser.surname} ({deleteConfirmUser.login})
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-surface-container-highest rounded-2xl p-8 max-w-md w-full shadow-glass">
+            <div className="text-center mb-6">
+              <span className="material-symbols-outlined text-error text-6xl mb-4 block">
+                warning
+              </span>
+              <h3 className="text-2xl font-headline font-bold text-on-surface mb-2">
+                Usuń użytkownika
+              </h3>
+              <p className="text-on-surface-variant font-body">
+                Czy na pewno chcesz usunąć użytkownika{' '}
+                <strong className="text-on-surface">{deleteConfirmUser.name} {deleteConfirmUser.surname}</strong>?
+              </p>
+              <p className="text-error font-label text-sm mt-2">
+                Ta operacja jest nieodwracalna!
               </p>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirmUser(null)}
-                className="flex-1 px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg hover:bg-opacity-80 transition-all font-medium"
+                className="
+                  flex-1 px-6 py-3 rounded-lg
+                  bg-surface-container text-on-surface
+                  hover:bg-surface-bright
+                  transition-all font-body font-semibold
+                "
               >
                 Anuluj
               </button>
               <button
                 onClick={() => handleDeleteUser(deleteConfirmUser)}
-                className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all font-semibold"
+                className="
+                  flex-1 px-6 py-3 rounded-lg
+                  bg-error text-on-error
+                  hover:bg-error-dim
+                  transition-all font-body font-bold
+                "
               >
-                Usuń użytkownika
+                Usuń
               </button>
             </div>
           </div>
@@ -488,41 +454,48 @@ const AdminPanel: React.FC = () => {
 
       {/* Reset Password Confirmation Modal */}
       {resetPasswordUser && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-bg-secondary rounded-2xl p-6 max-w-md w-full border border-bg-tertiary">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-accent-warning/20 flex items-center justify-center">
-                <Key className="w-6 h-6 text-accent-warning" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-text-primary">Potwierdź reset hasła</h3>
-                <p className="text-text-secondary text-sm">Ustaw hasło na domyślne</p>
-              </div>
-            </div>
-
-            <div className="bg-bg-tertiary rounded-lg p-4 mb-6">
-              <p className="text-text-secondary text-sm mb-3">Czy na pewno chcesz zresetować hasło użytkownika:</p>
-              <p className="text-text-primary font-semibold mb-4">
-                {resetPasswordUser.name} {resetPasswordUser.surname} ({resetPasswordUser.login})
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-surface-container-highest rounded-2xl p-8 max-w-md w-full shadow-glass">
+            <div className="text-center mb-6">
+              <span className="material-symbols-outlined text-tertiary text-6xl mb-4 block">
+                lock_reset
+              </span>
+              <h3 className="text-2xl font-headline font-bold text-on-surface mb-2">
+                Resetuj hasło
+              </h3>
+              <p className="text-on-surface-variant font-body">
+                Resetować hasło użytkownika{' '}
+                <strong className="text-on-surface">{resetPasswordUser.name} {resetPasswordUser.surname}</strong>?
               </p>
-              <div className="bg-accent-warning/10 border border-accent-warning/30 rounded-lg p-3">
-                <p className="text-accent-warning text-sm font-medium mb-1">Nowe hasło: <span className="font-bold">Start.123</span></p>
-                <p className="text-text-tertiary text-xs">Użytkownik będzie musiał zmienić hasło przy następnym logowaniu</p>
-              </div>
+              <p className="text-tertiary font-label text-sm mt-4 bg-tertiary/10 rounded-lg p-3">
+                Nowe hasło: <strong>Start.123</strong>
+                <br />
+                Użytkownik będzie musiał zmienić hasło przy następnym logowaniu.
+              </p>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setResetPasswordUser(null)}
-                className="flex-1 px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg hover:bg-opacity-80 transition-all font-medium"
+                className="
+                  flex-1 px-6 py-3 rounded-lg
+                  bg-surface-container text-on-surface
+                  hover:bg-surface-bright
+                  transition-all font-body font-semibold
+                "
               >
                 Anuluj
               </button>
               <button
                 onClick={() => handleResetPassword(resetPasswordUser)}
-                className="flex-1 px-4 py-3 bg-accent-warning hover:opacity-90 text-white rounded-lg transition-all font-semibold"
+                className="
+                  flex-1 px-6 py-3 rounded-lg
+                  bg-tertiary text-white
+                  hover:bg-tertiary-dim
+                  transition-all font-body font-bold
+                "
               >
-                Resetuj hasło
+                Resetuj
               </button>
             </div>
           </div>
