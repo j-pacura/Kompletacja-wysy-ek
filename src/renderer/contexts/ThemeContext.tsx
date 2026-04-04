@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 // Theme types
 export type ThemeMode = 'dark' | 'light';
-export type ColorScheme = 'default' | 'blue' | 'purple' | 'green';
+export type ColorScheme = 'green' | 'blue' | 'purple' | 'orange' | 'red';
 
 interface ThemeContextType {
   mode: ThemeMode;
@@ -11,118 +11,6 @@ interface ThemeContextType {
   setColorScheme: (scheme: ColorScheme) => void;
   toggleMode: () => void;
 }
-
-// Color definitions for each scheme
-const COLOR_SCHEMES = {
-  dark: {
-    default: {
-      'bg-primary': '#0a0e27',
-      'bg-secondary': '#1a1f3a',
-      'bg-tertiary': '#2a3150',
-      'accent-primary': '#3b82f6',
-      'accent-secondary': '#8b5cf6',
-      'accent-success': '#10b981',
-      'accent-warning': '#f59e0b',
-      'accent-error': '#ef4444',
-      'text-primary': '#ffffff',
-      'text-secondary': '#94a3b8',
-      'text-tertiary': '#64748b',
-    },
-    blue: {
-      'bg-primary': '#0c1222',
-      'bg-secondary': '#1a2332',
-      'bg-tertiary': '#2a3444',
-      'accent-primary': '#0ea5e9',
-      'accent-secondary': '#06b6d4',
-      'accent-success': '#10b981',
-      'accent-warning': '#f59e0b',
-      'accent-error': '#ef4444',
-      'text-primary': '#ffffff',
-      'text-secondary': '#94a3b8',
-      'text-tertiary': '#64748b',
-    },
-    purple: {
-      'bg-primary': '#130f1a',
-      'bg-secondary': '#1e1829',
-      'bg-tertiary': '#2a2338',
-      'accent-primary': '#a855f7',
-      'accent-secondary': '#ec4899',
-      'accent-success': '#10b981',
-      'accent-warning': '#f59e0b',
-      'accent-error': '#ef4444',
-      'text-primary': '#ffffff',
-      'text-secondary': '#94a3b8',
-      'text-tertiary': '#64748b',
-    },
-    green: {
-      'bg-primary': '#0a1612',
-      'bg-secondary': '#14241f',
-      'bg-tertiary': '#1e332c',
-      'accent-primary': '#1db954',
-      'accent-secondary': '#14a44d',
-      'accent-success': '#10b981',
-      'accent-warning': '#f59e0b',
-      'accent-error': '#ef4444',
-      'text-primary': '#ffffff',
-      'text-secondary': '#94a3b8',
-      'text-tertiary': '#64748b',
-    },
-  },
-  light: {
-    default: {
-      'bg-primary': '#f8fafc',
-      'bg-secondary': '#ffffff',
-      'bg-tertiary': '#e2e8f0',
-      'accent-primary': '#3b82f6',
-      'accent-secondary': '#8b5cf6',
-      'accent-success': '#10b981',
-      'accent-warning': '#f59e0b',
-      'accent-error': '#ef4444',
-      'text-primary': '#0f172a',
-      'text-secondary': '#475569',
-      'text-tertiary': '#94a3b8',
-    },
-    blue: {
-      'bg-primary': '#f0f9ff',
-      'bg-secondary': '#ffffff',
-      'bg-tertiary': '#e0f2fe',
-      'accent-primary': '#0ea5e9',
-      'accent-secondary': '#06b6d4',
-      'accent-success': '#10b981',
-      'accent-warning': '#f59e0b',
-      'accent-error': '#ef4444',
-      'text-primary': '#0c4a6e',
-      'text-secondary': '#075985',
-      'text-tertiary': '#0369a1',
-    },
-    purple: {
-      'bg-primary': '#faf5ff',
-      'bg-secondary': '#ffffff',
-      'bg-tertiary': '#f3e8ff',
-      'accent-primary': '#a855f7',
-      'accent-secondary': '#ec4899',
-      'accent-success': '#10b981',
-      'accent-warning': '#f59e0b',
-      'accent-error': '#ef4444',
-      'text-primary': '#581c87',
-      'text-secondary': '#6b21a8',
-      'text-tertiary': '#7e22ce',
-    },
-    green: {
-      'bg-primary': '#f0fdf4',
-      'bg-secondary': '#ffffff',
-      'bg-tertiary': '#dcfce7',
-      'accent-primary': '#1db954',
-      'accent-secondary': '#14a44d',
-      'accent-success': '#10b981',
-      'accent-warning': '#f59e0b',
-      'accent-error': '#ef4444',
-      'text-primary': '#14532d',
-      'text-secondary': '#166534',
-      'text-tertiary': '#15803d',
-    },
-  },
-};
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
@@ -140,7 +28,7 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [mode, setModeState] = useState<ThemeMode>('dark');
-  const [colorScheme, setColorSchemeState] = useState<ColorScheme>('default');
+  const [colorScheme, setColorSchemeState] = useState<ColorScheme>('green');
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load theme from database on mount
@@ -153,7 +41,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         if (result.success) {
           const settings = result.data;
           const savedMode = (settings.theme || 'dark') as ThemeMode;
-          const savedScheme = (settings.color_scheme || 'default') as ColorScheme;
+          const savedScheme = (settings.color_scheme || 'green') as ColorScheme;
 
           setModeState(savedMode);
           setColorSchemeState(savedScheme);
@@ -161,6 +49,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('Error loading theme:', error);
+        // Apply default theme if loading fails
+        applyTheme('dark', 'green');
       } finally {
         setIsLoaded(true);
       }
@@ -169,18 +59,22 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     loadTheme();
   }, []);
 
-  // Apply theme colors to CSS variables
+  // Apply theme to HTML element
   const applyTheme = (themeMode: ThemeMode, scheme: ColorScheme) => {
-    const colors = COLOR_SCHEMES[themeMode][scheme];
     const root = document.documentElement;
+    const themeString = `${themeMode}-${scheme}`;
 
-    Object.entries(colors).forEach(([key, value]) => {
-      root.style.setProperty(`--color-${key}`, value);
-    });
+    // Update class for dark mode
+    if (themeMode === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
 
-    // Update data-theme attribute for Tailwind
-    root.setAttribute('data-theme', themeMode);
-    root.setAttribute('data-color-scheme', scheme);
+    // Update data-theme attribute (e.g., "dark-green", "light-blue")
+    root.setAttribute('data-theme', themeString);
   };
 
   const setMode = async (newMode: ThemeMode) => {
@@ -216,14 +110,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   // Don't render children until theme is loaded
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center w-screen h-screen bg-bg-primary">
+      <div className="flex items-center justify-center w-screen h-screen bg-surface">
         <div className="text-center">
-          <div className="spinner mx-auto mb-4"></div>
-          <p className="text-text-secondary text-lg">Ładowanie motywu...</p>
+          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-on-surface-variant text-lg font-body">Ładowanie motywu...</p>
         </div>
       </div>
     );
-  }
+  };
 
   return (
     <ThemeContext.Provider
