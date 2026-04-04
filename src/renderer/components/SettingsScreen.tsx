@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toast, { Toaster } from 'react-hot-toast';
-import { ArrowLeft, Save, RefreshCw, FolderOpen, Sun, Moon, Palette, Volume2, VolumeX, User, Lock, Key } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
+import type { ColorScheme, ThemeMode } from '../contexts/ThemeContext';
 
 const SettingsScreen: React.FC = () => {
-  const navigate = useNavigate();
   const { mode, colorScheme, setMode, setColorScheme } = useTheme();
   const { currentUser } = useUser();
 
@@ -16,16 +14,6 @@ const SettingsScreen: React.FC = () => {
   const [baudRate, setBaudRate] = useState<string>('9600');
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
-
-  // Audio settings
-  const [soundEffectsEnabled, setSoundEffectsEnabled] = useState(true);
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [soundVolume, setSoundVolume] = useState(70);
-  const [voiceVolume, setVoiceVolume] = useState(80);
-
-  // Personalization settings
-  const [userName, setUserName] = useState('');
-  const [userSurname, setUserSurname] = useState('');
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -47,26 +35,6 @@ const SettingsScreen: React.FC = () => {
         const settings = result.data;
         setSelectedPort(settings.scale_com_port || '');
         setBaudRate(settings.scale_baud_rate || '9600');
-        setSoundEffectsEnabled(settings.sound_effects_enabled === 'true');
-        setVoiceEnabled(settings.enable_voice === 'true');
-        setSoundVolume(parseInt(settings.sound_volume || '70'));
-        setVoiceVolume(parseInt(settings.voice_volume || '80'));
-
-        // Auto-fill user data from logged-in user
-        if (currentUser) {
-          setUserName(currentUser.name);
-          setUserSurname(currentUser.surname);
-          // Update settings if not already set
-          if (!settings.user_name || settings.user_name !== currentUser.name) {
-            await ipcRenderer.invoke('db:update-setting', 'user_name', currentUser.name);
-          }
-          if (!settings.user_surname || settings.user_surname !== currentUser.surname) {
-            await ipcRenderer.invoke('db:update-setting', 'user_surname', currentUser.surname);
-          }
-        } else {
-          setUserName(settings.user_name || '');
-          setUserSurname(settings.user_surname || '');
-        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -98,8 +66,6 @@ const SettingsScreen: React.FC = () => {
     setTesting(true);
     try {
       const { ipcRenderer } = window.require('electron');
-
-      // Try to connect
       const connectResult = await ipcRenderer.invoke('scale:connect', selectedPort, parseInt(baudRate));
 
       if (!connectResult.success) {
@@ -108,7 +74,6 @@ const SettingsScreen: React.FC = () => {
         return;
       }
 
-      // Try to read weight
       const readResult = await ipcRenderer.invoke('scale:get-weight', true);
 
       if (readResult.success) {
@@ -120,7 +85,6 @@ const SettingsScreen: React.FC = () => {
         toast.error('Połączono, ale nie można odczytać wagi');
       }
 
-      // Disconnect after test
       await ipcRenderer.invoke('scale:disconnect');
     } catch (error) {
       console.error('Error testing connection:', error);
@@ -130,17 +94,13 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveScaleSettings = async () => {
     try {
       const { ipcRenderer } = window.require('electron');
-
-      // Save settings
       await ipcRenderer.invoke('db:update-setting', 'scale_com_port', selectedPort);
       await ipcRenderer.invoke('db:update-setting', 'scale_baud_rate', baudRate);
+      toast.success('✅ Ustawienia wagi zapisane');
 
-      toast.success('✅ Ustawienia zapisane');
-
-      // Try to reconnect if port is set
       if (selectedPort) {
         const connectResult = await ipcRenderer.invoke('scale:connect', selectedPort, parseInt(baudRate));
         if (connectResult.success) {
@@ -149,23 +109,11 @@ const SettingsScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast.error('❌ Błąd zapisu ustawień');
-    }
-  };
-
-  const handleAudioSettingChange = async (key: string, value: string) => {
-    try {
-      const { ipcRenderer } = window.require('electron');
-      await ipcRenderer.invoke('db:update-setting', key, value);
-      toast.success('Ustawienie zapisane', { duration: 1500 });
-    } catch (error) {
-      console.error('Error saving audio setting:', error);
-      toast.error('Błąd zapisu ustawienia');
+      toast.error('Błąd zapisu ustawień');
     }
   };
 
   const handleChangePassword = async () => {
-    // Validation
     if (!currentPassword || !newPassword || !confirmNewPassword) {
       toast.error('Wypełnij wszystkie pola');
       return;
@@ -176,615 +124,323 @@ const SettingsScreen: React.FC = () => {
       return;
     }
 
-    if (newPassword.length < 4) {
-      toast.error('Nowe hasło musi mieć minimum 4 znaki');
-      return;
-    }
-
-    if (!currentUser) {
-      toast.error('Użytkownik nie zalogowany');
+    if (newPassword.length < 6) {
+      toast.error('Hasło musi mieć minimum 6 znaków');
       return;
     }
 
     setChangingPassword(true);
     try {
       const { ipcRenderer } = window.require('electron');
-      const result = await ipcRenderer.invoke('db:change-password', {
-        userId: currentUser.id,
-        currentPassword,
-        newPassword,
-      });
+      const result = await ipcRenderer.invoke('db:change-password', currentUser?.id, currentPassword, newPassword);
 
       if (result.success) {
-        toast.success('✅ Hasło zostało zmienione pomyślnie');
-        // Clear form
+        toast.success('✅ Hasło zmienione pomyślnie');
         setCurrentPassword('');
         setNewPassword('');
         setConfirmNewPassword('');
       } else {
         toast.error(result.error || 'Błąd zmiany hasła');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error changing password:', error);
-      toast.error('Wystąpił błąd podczas zmiany hasła');
+      toast.error('Błąd zmiany hasła');
     } finally {
       setChangingPassword(false);
     }
   };
 
-  const handleOpenPhotosFolder = async () => {
-    try {
-      const { ipcRenderer } = window.require('electron');
-
-      // Get userData path
-      const userDataResult = await ipcRenderer.invoke('app:get-path', 'userData');
-      if (!userDataResult.success) {
-        toast.error('❌ Nie można znaleźć folderu');
-        return;
-      }
-
-      const path = window.require('path');
-      const photosPath = path.join(userDataResult.data, 'photos');
-
-      // Open folder
-      const result = await ipcRenderer.invoke('file:open-folder', photosPath);
-      if (result.success) {
-        toast.success('📁 Folder otwarty');
-      } else {
-        toast.error('❌ Nie można otworzyć folderu');
-      }
-    } catch (error) {
-      console.error('Error opening photos folder:', error);
-      toast.error('❌ Błąd otwierania folderu');
-    }
-  };
+  const colorSchemes: { value: ColorScheme; label: string; preview: string[] }[] = [
+    { value: 'green', label: 'Zielony', preview: ['#72fe8f', '#1cb853', '#7cfbb5'] },
+    { value: 'blue', label: 'Niebieski', preview: ['#64b5f6', '#1976d2', '#81c784'] },
+    { value: 'purple', label: 'Fioletowy', preview: ['#ba68c8', '#7b1fa2', '#ce93d8'] },
+    { value: 'orange', label: 'Pomarańczowy', preview: ['#ff9800', '#e65100', '#ffb74d'] },
+    { value: 'red', label: 'Czerwony', preview: ['#ef5350', '#c62828', '#ef5350'] },
+  ];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center w-screen h-screen bg-bg-primary">
+      <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="spinner mx-auto mb-4"></div>
-          <p className="text-text-secondary text-lg">Ładowanie ustawień...</p>
+          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-on-surface-variant font-body">Ładowanie ustawień...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col w-screen h-screen bg-bg-primary">
-      {/* Toast notifications */}
-      <Toaster
-        toastOptions={{
-          style: {
-            background: '#1e1e1e',
-            color: '#fff',
-            border: '1px solid #333',
-          },
-          success: {
-            iconTheme: {
-              primary: '#1db954',
-              secondary: '#fff',
-            },
-          },
-        }}
-      />
+    <div className="w-full space-y-8 max-w-4xl">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-4xl font-headline font-extrabold text-on-surface tracking-tight mb-2">
+          Ustawienia
+        </h1>
+        <p className="text-on-surface-variant font-body">
+          Personalizacja i konfiguracja aplikacji
+        </p>
+      </div>
 
-      {/* Header */}
-      <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      {/* Theme Settings - MOST IMPORTANT */}
+      <section className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-headline font-bold text-on-surface mb-2">
+            Motyw
+          </h2>
+          <p className="text-on-surface-variant font-body text-sm">
+            Wybierz tryb i schemat kolorystyczny
+          </p>
+        </div>
+
+        {/* Dark/Light Mode Toggle */}
+        <div className="bg-surface-container-high rounded-xl p-6">
+          <label className="text-on-surface font-label font-semibold text-sm uppercase tracking-wider mb-4 block">
+            Tryb wyświetlania
+          </label>
+          <div className="flex gap-3">
             <button
-              onClick={() => navigate('/')}
-              className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+              onClick={() => setMode('dark')}
+              className={`
+                flex-1 px-6 py-4 rounded-lg flex items-center justify-center gap-3
+                transition-all duration-200
+                ${mode === 'dark'
+                  ? 'bg-primary text-on-primary'
+                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-bright'
+                }
+              `}
             >
-              <ArrowLeft className="w-6 h-6 text-text-primary" />
+              <span className="material-symbols-outlined">dark_mode</span>
+              <span className="font-body font-semibold">Ciemny</span>
             </button>
-            <h1 className="text-2xl font-bold text-text-primary">⚙️ Ustawienia</h1>
+            <button
+              onClick={() => setMode('light')}
+              className={`
+                flex-1 px-6 py-4 rounded-lg flex items-center justify-center gap-3
+                transition-all duration-200
+                ${mode === 'light'
+                  ? 'bg-primary text-on-primary'
+                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-bright'
+                }
+              `}
+            >
+              <span className="material-symbols-outlined">light_mode</span>
+              <span className="font-body font-semibold">Jasny</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Color Scheme Selector */}
+        <div className="bg-surface-container-high rounded-xl p-6">
+          <label className="text-on-surface font-label font-semibold text-sm uppercase tracking-wider mb-4 block">
+            Schemat kolorów
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {colorSchemes.map((scheme) => (
+              <button
+                key={scheme.value}
+                onClick={() => setColorScheme(scheme.value)}
+                className={`
+                  px-6 py-5 rounded-xl flex flex-col items-center gap-3
+                  transition-all duration-200
+                  ${colorScheme === scheme.value
+                    ? 'bg-primary/20 ring-2 ring-primary'
+                    : 'bg-surface-container hover:bg-surface-bright'
+                  }
+                `}
+              >
+                {/* Color Preview Circles */}
+                <div className="flex gap-1.5">
+                  {scheme.preview.map((color, idx) => (
+                    <div
+                      key={idx}
+                      className="w-6 h-6 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+                <span className={`
+                  font-body font-semibold text-sm
+                  ${colorScheme === scheme.value ? 'text-primary' : 'text-on-surface'}
+                `}>
+                  {scheme.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Scale Settings */}
+      <section className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-headline font-bold text-on-surface mb-2">
+            Waga
+          </h2>
+          <p className="text-on-surface-variant font-body text-sm">
+            Konfiguracja połączenia z wagą Radwag
+          </p>
+        </div>
+
+        <div className="bg-surface-container-high rounded-xl p-6 space-y-6">
+          {/* COM Port */}
+          <div>
+            <label className="text-on-surface font-label font-semibold text-sm uppercase tracking-wider mb-3 block">
+              Port COM
+            </label>
+            <select
+              value={selectedPort}
+              onChange={(e) => setSelectedPort(e.target.value)}
+              className="
+                w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                font-body outline-none
+                focus:ring-2 focus:ring-primary
+              "
+            >
+              <option value="">Wybierz port...</option>
+              {availablePorts.map((port) => (
+                <option key={port} value={port}>
+                  {port}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Baud Rate */}
+          <div>
+            <label className="text-on-surface font-label font-semibold text-sm uppercase tracking-wider mb-3 block">
+              Prędkość (Baud Rate)
+            </label>
+            <select
+              value={baudRate}
+              onChange={(e) => setBaudRate(e.target.value)}
+              className="
+                w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                font-body outline-none
+                focus:ring-2 focus:ring-primary
+              "
+            >
+              <option value="9600">9600</option>
+              <option value="19200">19200</option>
+              <option value="38400">38400</option>
+              <option value="57600">57600</option>
+              <option value="115200">115200</option>
+            </select>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleTestConnection}
+              disabled={!selectedPort || testing}
+              className="
+                flex-1 px-6 py-3 rounded-lg flex items-center justify-center gap-2
+                bg-tertiary/20 text-tertiary hover:bg-tertiary/30
+                disabled:opacity-50 disabled:cursor-not-allowed
+                transition-all font-body font-semibold
+              "
+            >
+              <span className="material-symbols-outlined">
+                {testing ? 'progress_activity' : 'science'}
+              </span>
+              <span>{testing ? 'Testowanie...' : 'Testuj połączenie'}</span>
+            </button>
+            <button
+              onClick={handleSaveScaleSettings}
+              disabled={!selectedPort}
+              className="
+                flex-1 primary-gradient text-on-primary font-bold py-3 px-6
+                rounded-lg flex items-center justify-center gap-2
+                disabled:opacity-50 disabled:cursor-not-allowed
+                active:scale-95 transition-all shadow-lg shadow-primary/20
+                font-headline
+              "
+            >
+              <span className="material-symbols-outlined">save</span>
+              <span>Zapisz</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Password Change */}
+      <section className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-headline font-bold text-on-surface mb-2">
+            Bezpieczeństwo
+          </h2>
+          <p className="text-on-surface-variant font-body text-sm">
+            Zmiana hasła do konta
+          </p>
+        </div>
+
+        <div className="bg-surface-container-high rounded-xl p-6 space-y-4">
+          <div>
+            <label className="text-on-surface font-label font-semibold text-sm uppercase tracking-wider mb-2 block">
+              Obecne hasło
+            </label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="
+                w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                font-body outline-none
+                focus:ring-2 focus:ring-primary
+              "
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div>
+            <label className="text-on-surface font-label font-semibold text-sm uppercase tracking-wider mb-2 block">
+              Nowe hasło
+            </label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="
+                w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                font-body outline-none
+                focus:ring-2 focus:ring-primary
+              "
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div>
+            <label className="text-on-surface font-label font-semibold text-sm uppercase tracking-wider mb-2 block">
+              Potwierdź nowe hasło
+            </label>
+            <input
+              type="password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              className="
+                w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                font-body outline-none
+                focus:ring-2 focus:ring-primary
+              "
+              placeholder="••••••••"
+            />
           </div>
 
           <button
-            onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold"
+            onClick={handleChangePassword}
+            disabled={changingPassword || !currentPassword || !newPassword || !confirmNewPassword}
+            className="
+              w-full primary-gradient text-on-primary font-bold py-3 px-6
+              rounded-lg flex items-center justify-center gap-2
+              disabled:opacity-50 disabled:cursor-not-allowed
+              active:scale-95 transition-all shadow-lg shadow-primary/20
+              font-headline
+            "
           >
-            <Save className="w-5 h-5" />
-            Zapisz
+            <span className="material-symbols-outlined">lock_reset</span>
+            <span>{changingPassword ? 'Zmiana...' : 'Zmień hasło'}</span>
           </button>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-auto px-8 py-6">
-        <div className="max-w-3xl mx-auto space-y-6">
-          {/* Theme Settings */}
-          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
-            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Palette className="w-6 h-6" />
-              Motyw aplikacji
-            </h2>
-
-            <div className="space-y-4">
-              {/* Theme Mode Toggle */}
-              <div>
-                <label className="block text-text-secondary text-sm mb-2">
-                  Tryb wyświetlania
-                </label>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setMode('dark')}
-                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-lg border-2 transition-all ${
-                      mode === 'dark'
-                        ? 'border-accent-primary bg-accent-primary bg-opacity-10 text-text-primary'
-                        : 'border-bg-tertiary bg-bg-tertiary text-text-secondary hover:border-accent-primary hover:border-opacity-50'
-                    }`}
-                  >
-                    <Moon className="w-5 h-5" />
-                    <span className="font-semibold">Ciemny</span>
-                  </button>
-                  <button
-                    onClick={() => setMode('light')}
-                    className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-lg border-2 transition-all ${
-                      mode === 'light'
-                        ? 'border-accent-primary bg-accent-primary bg-opacity-10 text-text-primary'
-                        : 'border-bg-tertiary bg-bg-tertiary text-text-secondary hover:border-accent-primary hover:border-opacity-50'
-                    }`}
-                  >
-                    <Sun className="w-5 h-5" />
-                    <span className="font-semibold">Jasny</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Color Scheme Selector */}
-              <div>
-                <label className="block text-text-secondary text-sm mb-2">
-                  Schemat kolorów
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setColorScheme('green')}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
-                      colorScheme === 'green'
-                        ? 'border-accent-primary bg-accent-primary bg-opacity-10'
-                        : 'border-bg-tertiary bg-bg-tertiary hover:border-accent-primary hover:border-opacity-50'
-                    }`}
-                  >
-                    <div className="flex gap-1">
-                      <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                      <div className="w-4 h-4 rounded-full bg-green-400"></div>
-                    </div>
-                    <span className={`font-semibold ${colorScheme === 'green' ? 'text-text-primary' : 'text-text-secondary'}`}>
-                      Zielony
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => setColorScheme('blue')}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
-                      colorScheme === 'blue'
-                        ? 'border-accent-primary bg-accent-primary bg-opacity-10'
-                        : 'border-bg-tertiary bg-bg-tertiary hover:border-accent-primary hover:border-opacity-50'
-                    }`}
-                  >
-                    <div className="flex gap-1">
-                      <div className="w-4 h-4 rounded-full bg-sky-500"></div>
-                      <div className="w-4 h-4 rounded-full bg-cyan-500"></div>
-                    </div>
-                    <span className={`font-semibold ${colorScheme === 'blue' ? 'text-text-primary' : 'text-text-secondary'}`}>
-                      Niebieski
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => setColorScheme('purple')}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
-                      colorScheme === 'purple'
-                        ? 'border-accent-primary bg-accent-primary bg-opacity-10'
-                        : 'border-bg-tertiary bg-bg-tertiary hover:border-accent-primary hover:border-opacity-50'
-                    }`}
-                  >
-                    <div className="flex gap-1">
-                      <div className="w-4 h-4 rounded-full bg-purple-500"></div>
-                      <div className="w-4 h-4 rounded-full bg-pink-500"></div>
-                    </div>
-                    <span className={`font-semibold ${colorScheme === 'purple' ? 'text-text-primary' : 'text-text-secondary'}`}>
-                      Fioletowy
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => setColorScheme('green')}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
-                      colorScheme === 'green'
-                        ? 'border-accent-primary bg-accent-primary bg-opacity-10'
-                        : 'border-bg-tertiary bg-bg-tertiary hover:border-accent-primary hover:border-opacity-50'
-                    }`}
-                  >
-                    <div className="flex gap-1">
-                      <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                      <div className="w-4 h-4 rounded-full bg-emerald-500"></div>
-                    </div>
-                    <span className={`font-semibold ${colorScheme === 'green' ? 'text-text-primary' : 'text-text-secondary'}`}>
-                      Zielony (Spotify)
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Info */}
-              <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4">
-                <p className="text-text-secondary text-sm">
-                  💡 Zmiany motywu są zapisywane automatycznie i obowiązują natychmiast
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Personalization Settings */}
-          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
-            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-              <User className="w-6 h-6" />
-              Personalizacja
-            </h2>
-
-            <div className="space-y-4">
-              {/* Name Input */}
-              <div>
-                <label className="block text-text-secondary text-sm mb-2">
-                  Imię
-                </label>
-                <input
-                  type="text"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  onBlur={() => handleAudioSettingChange('user_name', userName)}
-                  placeholder="Np. Jan"
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                />
-              </div>
-
-              {/* Surname Input */}
-              <div>
-                <label className="block text-text-secondary text-sm mb-2">
-                  Nazwisko
-                </label>
-                <input
-                  type="text"
-                  value={userSurname}
-                  onChange={(e) => setUserSurname(e.target.value)}
-                  onBlur={() => handleAudioSettingChange('user_surname', userSurname)}
-                  placeholder="Np. Kowalski"
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                />
-              </div>
-
-              {/* Preview */}
-              {(userName || userSurname) && (
-                <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4">
-                  <p className="text-text-secondary text-sm">
-                    👤 <strong>Podgląd:</strong> {userName} {userSurname}
-                  </p>
-                  <p className="text-text-tertiary text-xs mt-1">
-                    Dane będą wyświetlane w raportach i nagłówku aplikacji
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Change Password */}
-          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
-            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Key className="w-6 h-6" />
-              Zmiana hasła
-            </h2>
-
-            <div className="space-y-4">
-              {/* Current Password */}
-              <div>
-                <label className="block text-text-secondary text-sm mb-2">
-                  Obecne hasło
-                </label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Wprowadź obecne hasło"
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                />
-              </div>
-
-              {/* New Password */}
-              <div>
-                <label className="block text-text-secondary text-sm mb-2">
-                  Nowe hasło
-                </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Wprowadź nowe hasło (min. 4 znaki)"
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                />
-              </div>
-
-              {/* Confirm New Password */}
-              <div>
-                <label className="block text-text-secondary text-sm mb-2">
-                  Potwierdź nowe hasło
-                </label>
-                <input
-                  type="password"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  placeholder="Wprowadź ponownie nowe hasło"
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                />
-              </div>
-
-              {/* Change Password Button */}
-              <button
-                onClick={handleChangePassword}
-                disabled={changingPassword || !currentPassword || !newPassword || !confirmNewPassword}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent-primary hover:bg-accent-primary/90 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Lock className="w-5 h-5" />
-                {changingPassword ? 'Zmieniam hasło...' : 'Zmień hasło'}
-              </button>
-
-              {/* Info */}
-              <div className="bg-accent-warning/10 border border-accent-warning/30 rounded-lg p-4">
-                <p className="text-text-secondary text-sm">
-                  🔒 <strong>Ważne:</strong> Po zmianie hasła użyj nowego hasła przy następnym logowaniu
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Audio Settings */}
-          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
-            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Volume2 className="w-6 h-6" />
-              Dźwięk i głos
-            </h2>
-
-            <div className="space-y-6">
-              {/* Sound Effects Toggle */}
-              <div>
-                <label className="flex items-center justify-between mb-2">
-                  <span className="text-text-secondary text-sm">Efekty dźwiękowe (beep, sukces, błąd)</span>
-                  <button
-                    onClick={() => {
-                      const newValue = !soundEffectsEnabled;
-                      setSoundEffectsEnabled(newValue);
-                      handleAudioSettingChange('sound_effects_enabled', newValue.toString());
-                    }}
-                    className={`relative w-14 h-7 rounded-full transition-colors ${
-                      soundEffectsEnabled ? 'bg-accent-primary' : 'bg-bg-tertiary'
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${
-                        soundEffectsEnabled ? 'transform translate-x-7' : ''
-                      }`}
-                    />
-                  </button>
-                </label>
-
-                {/* Sound Volume Slider */}
-                {soundEffectsEnabled && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-4">
-                      <VolumeX className="w-5 h-5 text-text-tertiary" />
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={soundVolume}
-                        onChange={(e) => {
-                          const newVolume = parseInt(e.target.value);
-                          setSoundVolume(newVolume);
-                          handleAudioSettingChange('sound_volume', newVolume.toString());
-                        }}
-                        className="flex-1 h-2 bg-bg-tertiary rounded-lg appearance-none cursor-pointer
-                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                          [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-primary
-                          [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                          [&::-moz-range-thumb]:bg-accent-primary [&::-moz-range-thumb]:border-0"
-                      />
-                      <Volume2 className="w-5 h-5 text-text-secondary" />
-                      <span className="text-text-secondary font-semibold w-12 text-right">{soundVolume}%</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Voice Toggle */}
-              <div>
-                <label className="flex items-center justify-between mb-2">
-                  <span className="text-text-secondary text-sm">Potwierdzenia głosowe (synteza mowy)</span>
-                  <button
-                    onClick={() => {
-                      const newValue = !voiceEnabled;
-                      setVoiceEnabled(newValue);
-                      handleAudioSettingChange('enable_voice', newValue.toString());
-                    }}
-                    className={`relative w-14 h-7 rounded-full transition-colors ${
-                      voiceEnabled ? 'bg-accent-primary' : 'bg-bg-tertiary'
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${
-                        voiceEnabled ? 'transform translate-x-7' : ''
-                      }`}
-                    />
-                  </button>
-                </label>
-
-                {/* Voice Volume Slider */}
-                {voiceEnabled && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-4">
-                      <VolumeX className="w-5 h-5 text-text-tertiary" />
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={voiceVolume}
-                        onChange={(e) => {
-                          const newVolume = parseInt(e.target.value);
-                          setVoiceVolume(newVolume);
-                          handleAudioSettingChange('voice_volume', newVolume.toString());
-                        }}
-                        className="flex-1 h-2 bg-bg-tertiary rounded-lg appearance-none cursor-pointer
-                          [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                          [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-primary
-                          [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                          [&::-moz-range-thumb]:bg-accent-primary [&::-moz-range-thumb]:border-0"
-                      />
-                      <Volume2 className="w-5 h-5 text-text-secondary" />
-                      <span className="text-text-secondary font-semibold w-12 text-right">{voiceVolume}%</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4">
-                <p className="text-text-secondary text-sm">
-                  🔊 <strong>Efekty dźwiękowe:</strong> Beep przy skanowaniu, dźwięki sukcesu/błędu<br/>
-                  🗣️ <strong>Głos:</strong> "Spakowano część ABC123", "Pozostało X części" (co 5 pozycji)
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Scale Settings */}
-          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
-            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-              ⚖️ Ustawienia wagi Radwag
-            </h2>
-
-            <div className="space-y-4">
-              {/* COM Port */}
-              <div>
-                <label className="block text-text-secondary text-sm mb-2">
-                  Port COM
-                </label>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedPort}
-                    onChange={(e) => setSelectedPort(e.target.value)}
-                    className="flex-1 px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none"
-                  >
-                    <option value="">Wybierz port...</option>
-                    {availablePorts.map((port) => (
-                      <option key={port} value={port}>
-                        {port}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={loadAvailablePorts}
-                    className="px-4 py-3 bg-bg-tertiary text-text-secondary rounded-lg hover:bg-opacity-80 transition-all"
-                    title="Odśwież listę portów"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                  </button>
-                </div>
-                {availablePorts.length === 0 && (
-                  <p className="text-text-tertiary text-xs mt-2">
-                    ⚠️ Nie znaleziono dostępnych portów COM
-                  </p>
-                )}
-              </div>
-
-              {/* Baud Rate */}
-              <div>
-                <label className="block text-text-secondary text-sm mb-2">
-                  Prędkość transmisji (Baud Rate)
-                </label>
-                <select
-                  value={baudRate}
-                  onChange={(e) => setBaudRate(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none"
-                >
-                  <option value="4800">4800</option>
-                  <option value="9600">9600</option>
-                  <option value="19200">19200</option>
-                  <option value="38400">38400</option>
-                  <option value="57600">57600</option>
-                  <option value="115200">115200</option>
-                </select>
-                <p className="text-text-tertiary text-xs mt-2">
-                  💡 Standardowo: 9600 (sprawdź ustawienia wagi)
-                </p>
-              </div>
-
-              {/* Test Connection */}
-              <div>
-                <button
-                  onClick={handleTestConnection}
-                  disabled={testing || !selectedPort}
-                  className={`w-full px-6 py-3 rounded-lg font-semibold transition-all ${
-                    testing || !selectedPort
-                      ? 'bg-bg-tertiary text-text-tertiary cursor-not-allowed'
-                      : 'bg-accent-primary text-white hover:opacity-90'
-                  }`}
-                >
-                  {testing ? '⏳ Testowanie...' : '🔍 Testuj połączenie'}
-                </button>
-              </div>
-
-              {/* Info */}
-              <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4">
-                <h3 className="text-text-primary font-semibold mb-2">
-                  📋 Specyfikacja połączenia
-                </h3>
-                <ul className="text-text-secondary text-sm space-y-1">
-                  <li>• Baud Rate: 9600 (domyślnie)</li>
-                  <li>• Data Bits: 8</li>
-                  <li>• Parity: None</li>
-                  <li>• Stop Bits: 1</li>
-                  <li>• Kabel: NULL-MODEM (skrzyżowany TX/RX)</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Photos Settings */}
-          <div className="bg-bg-secondary rounded-xl p-6 border border-bg-tertiary">
-            <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-              📸 Zdjęcia
-            </h2>
-
-            <div className="space-y-4">
-              <p className="text-text-secondary text-sm mb-4">
-                Zdjęcia są zapisywane w folderze aplikacji i powiązane z produktami.
-              </p>
-
-              <button
-                onClick={handleOpenPhotosFolder}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-accent-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold"
-              >
-                <FolderOpen className="w-5 h-5" />
-                📁 Otwórz folder ze zdjęciami
-              </button>
-
-              <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4">
-                <h3 className="text-text-primary font-semibold mb-2">
-                  📋 Informacje
-                </h3>
-                <ul className="text-text-secondary text-sm space-y-1">
-                  <li>• Format: JPEG (jakość 90%)</li>
-                  <li>• Rozdzielczość: 1280x720</li>
-                  <li>• Nazwa pliku: SAP_[indeks]_[timestamp].jpg</li>
-                  <li>• Można przeglądać zdjęcia klikając ikonę 📷 przy spakowanych produktach</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 };
