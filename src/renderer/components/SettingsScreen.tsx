@@ -341,19 +341,19 @@ const SettingsScreen: React.FC = () => {
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => setColorScheme('default')}
+                    onClick={() => setColorScheme('green')}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
-                      colorScheme === 'default'
+                      colorScheme === 'green'
                         ? 'border-accent-primary bg-accent-primary bg-opacity-10'
                         : 'border-bg-tertiary bg-bg-tertiary hover:border-accent-primary hover:border-opacity-50'
                     }`}
                   >
                     <div className="flex gap-1">
-                      <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                      <div className="w-4 h-4 rounded-full bg-purple-500"></div>
+                      <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                      <div className="w-4 h-4 rounded-full bg-green-400"></div>
                     </div>
-                    <span className={`font-semibold ${colorScheme === 'default' ? 'text-text-primary' : 'text-text-secondary'}`}>
-                      Domyślny
+                    <span className={`font-semibold ${colorScheme === 'green' ? 'text-text-primary' : 'text-text-secondary'}`}>
+                      Zielony
                     </span>
                   </button>
 
