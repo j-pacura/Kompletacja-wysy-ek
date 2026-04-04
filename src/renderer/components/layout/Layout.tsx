@@ -176,7 +176,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </aside>
 
       {/* Main Content Area - surface-container (interactive layer), extreme whitespace (p-8) */}
-      <main className="flex-1 ml-64 min-h-screen bg-surface-container">
+      <main className="flex-1 ml-64 min-h-screen bg-surface-container overflow-y-auto">
         <div className="p-8">
           {children}
         </div>
