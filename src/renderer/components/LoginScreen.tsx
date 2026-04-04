@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { LogIn, UserPlus, Package, AlertCircle, Loader2, Key } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { PublicUser } from '../types/user';
 import toast from 'react-hot-toast';
@@ -262,17 +261,19 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-tertiary p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-surface via-surface-dim to-surface-container-low p-4">
       <div className="w-full max-w-md">
         {/* Logo / Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent-primary rounded-2xl mb-4">
-            <Package className="w-8 h-8 text-white" />
+        <div className="text-center mb-8 animate-fade-in">
+          <div className="inline-flex items-center justify-center w-20 h-20 primary-gradient rounded-2xl mb-4 shadow-glow">
+            <span className="material-symbols-outlined text-5xl text-on-primary">
+              inventory_2
+            </span>
           </div>
-          <h1 className="text-3xl font-bold text-text-primary mb-2">
-            {isFirstLaunch ? 'Konfiguracja Administratora' : 'Asystent Pakowania'}
+          <h1 className="text-4xl font-headline font-extrabold text-on-surface mb-2">
+            {isFirstLaunch ? 'Konfiguracja' : 'Asystent Pakowania'}
           </h1>
-          <p className="text-text-secondary">
+          <p className="text-on-surface-variant font-body">
             {isFirstLaunch
               ? 'Witaj! Utwórz konto administratora aby rozpocząć'
               : mode === 'login'
@@ -282,19 +283,19 @@ const LoginScreen: React.FC = () => {
         </div>
 
         {/* Main Card */}
-        <div className="bg-bg-secondary/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-bg-tertiary">
+        <div className="glass-panel rounded-2xl shadow-glass p-8 border border-outline-variant/20 animate-scale-in">
           {isFirstLaunch ? (
             // Admin Setup Form
             <form onSubmit={handleAdminSetup} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Imię
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="Jakub"
                   disabled={loading}
                   autoFocus
@@ -302,69 +303,69 @@ const LoginScreen: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Nazwisko
                 </label>
                 <input
                   type="text"
                   value={surname}
                   onChange={(e) => setSurname(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="Pacura"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Login
                 </label>
                 <input
                   type="text"
                   value={userLogin}
                   onChange={(e) => setUserLogin(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="admin"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Hasło
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Potwierdź Hasło
                 </label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Język Raportu
                 </label>
                 <select
                   value={reportLanguage}
                   onChange={(e) => setReportLanguage(e.target.value as 'pl' | 'en')}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   disabled={loading}
                 >
                   <option value="pl">Polski</option>
@@ -375,24 +376,28 @@ const LoginScreen: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent-primary hover:bg-accent-primary/90 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 primary-gradient text-on-primary font-bold rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="material-symbols-outlined animate-spin">
+                      progress_activity
+                    </span>
                     Tworzenie konta...
                   </>
                 ) : (
                   <>
-                    <UserPlus className="w-5 h-5" />
+                    <span className="material-symbols-outlined">person_add</span>
                     Utwórz Konto Administratora
                   </>
                 )}
               </button>
 
-              <div className="flex items-start gap-2 p-3 bg-accent-warning/10 border border-accent-warning/30 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-accent-warning flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-text-secondary">
+              <div className="flex items-start gap-3 p-4 bg-error-container/20 border border-error-container/40 rounded-lg">
+                <span className="material-symbols-outlined text-error flex-shrink-0 mt-0.5">
+                  info
+                </span>
+                <p className="text-sm text-on-surface-variant">
                   To konto będzie miało pełne uprawnienia administratora
                 </p>
               </div>
@@ -401,14 +406,14 @@ const LoginScreen: React.FC = () => {
             // Login Form
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Login
                 </label>
                 <input
                   type="text"
                   value={userLogin}
                   onChange={(e) => setUserLogin(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="Twój login"
                   disabled={loading}
                   autoFocus
@@ -416,14 +421,14 @@ const LoginScreen: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Hasło
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                   disabled={loading}
                 />
@@ -432,16 +437,18 @@ const LoginScreen: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent-primary hover:bg-accent-primary/90 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 primary-gradient text-on-primary font-bold rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="material-symbols-outlined animate-spin">
+                      progress_activity
+                    </span>
                     Logowanie...
                   </>
                 ) : (
                   <>
-                    <LogIn className="w-5 h-5" />
+                    <span className="material-symbols-outlined">login</span>
                     Zaloguj się
                   </>
                 )}
@@ -449,10 +456,10 @@ const LoginScreen: React.FC = () => {
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-bg-tertiary"></div>
+                  <div className="w-full border-t border-outline-variant"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-bg-secondary text-text-tertiary">lub</span>
+                  <span className="px-2 bg-surface-container text-on-surface-variant">lub</span>
                 </div>
               </div>
 
@@ -460,9 +467,9 @@ const LoginScreen: React.FC = () => {
                 type="button"
                 onClick={() => setMode('register')}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-bg-tertiary hover:bg-bg-tertiary/80 text-text-primary font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-high hover:bg-surface-bright text-on-surface font-semibold rounded-lg border border-outline-variant/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <UserPlus className="w-5 h-5" />
+                <span className="material-symbols-outlined">person_add</span>
                 Utwórz nowe konto
               </button>
             </form>
@@ -470,14 +477,14 @@ const LoginScreen: React.FC = () => {
             // Register Form
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Imię
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="Jan"
                   disabled={loading}
                   autoFocus
@@ -485,69 +492,69 @@ const LoginScreen: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Nazwisko
                 </label>
                 <input
                   type="text"
                   value={surname}
                   onChange={(e) => setSurname(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="Kowalski"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Login
                 </label>
                 <input
                   type="text"
                   value={userLogin}
                   onChange={(e) => setUserLogin(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="jan.kowalski"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Hasło
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Potwierdź Hasło
                 </label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Język Raportu
                 </label>
                 <select
                   value={reportLanguage}
                   onChange={(e) => setReportLanguage(e.target.value as 'pl' | 'en')}
-                  className="w-full px-4 py-3 bg-bg-tertiary border border-bg-tertiary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary transition-all"
+                  className="w-full px-4 py-3 bg-surface-container border border-outline-variant/30 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   disabled={loading}
                 >
                   <option value="pl">Polski</option>
@@ -558,16 +565,18 @@ const LoginScreen: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent-success hover:bg-accent-success/90 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-secondary hover:bg-secondary-dim text-on-secondary font-bold rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="material-symbols-outlined animate-spin">
+                      progress_activity
+                    </span>
                     Tworzenie konta...
                   </>
                 ) : (
                   <>
-                    <UserPlus className="w-5 h-5" />
+                    <span className="material-symbols-outlined">person_add</span>
                     Utwórz Konto
                   </>
                 )}
@@ -577,9 +586,9 @@ const LoginScreen: React.FC = () => {
                 type="button"
                 onClick={() => setMode('login')}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-bg-tertiary hover:bg-bg-tertiary/80 text-text-primary font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-high hover:bg-surface-bright text-on-surface font-semibold rounded-lg border border-outline-variant/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <LogIn className="w-5 h-5" />
+                <span className="material-symbols-outlined">login</span>
                 Mam już konto - Zaloguj
               </button>
             </form>
@@ -587,55 +596,59 @@ const LoginScreen: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6 text-sm text-text-tertiary">
+        <div className="text-center mt-6 text-sm text-on-surface-variant font-body">
           Asystent Pakowania 1.0
         </div>
       </div>
 
       {/* Forced Password Change Modal */}
       {showPasswordChangeModal && userPendingPasswordChange && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-bg-secondary rounded-2xl p-8 max-w-md w-full border border-bg-tertiary">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-full bg-accent-warning/20 flex items-center justify-center">
-                <Key className="w-6 h-6 text-accent-warning" />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="glass-panel rounded-2xl p-8 max-w-md w-full border border-outline-variant/20 animate-scale-in">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-full bg-error/20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-3xl text-error">
+                  key
+                </span>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-text-primary">Zmiana hasła wymagana</h2>
-                <p className="text-text-secondary text-sm">Musisz ustawić nowe hasło</p>
+                <h2 className="text-2xl font-headline font-bold text-on-surface">
+                  Zmiana hasła wymagana
+                </h2>
+                <p className="text-on-surface-variant text-sm">Musisz ustawić nowe hasło</p>
               </div>
             </div>
 
-            <div className="bg-accent-warning/10 border border-accent-warning/30 rounded-lg p-4 mb-6">
-              <p className="text-accent-warning text-sm font-medium">
+            <div className="bg-error-container/20 border border-error-container/40 rounded-lg p-4 mb-6">
+              <p className="text-on-surface-variant text-sm font-medium">
                 Twoje hasło zostało zresetowane przez administratora. Ze względów bezpieczeństwa musisz ustawić nowe hasło przed kontynuowaniem.
               </p>
             </div>
 
             <form onSubmit={handleForcedPasswordChange} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Nowe hasło
                 </label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg border-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors"
                   placeholder="Wprowadź nowe hasło"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-2">
+                <label className="block text-sm font-semibold text-on-surface mb-2">
                   Potwierdź nowe hasło
                 </label>
                 <input
                   type="password"
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg border-2 border-outline-variant/30 focus:border-primary focus:outline-none transition-colors"
                   placeholder="Potwierdź nowe hasło"
                 />
               </div>
@@ -643,22 +656,24 @@ const LoginScreen: React.FC = () => {
               <button
                 type="submit"
                 disabled={changingPassword}
-                className="w-full py-4 bg-accent-primary hover:bg-opacity-90 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 primary-gradient text-on-primary rounded-full font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {changingPassword ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="material-symbols-outlined animate-spin">
+                      progress_activity
+                    </span>
                     Zmieniam hasło...
                   </>
                 ) : (
                   <>
-                    <Key className="w-5 h-5" />
+                    <span className="material-symbols-outlined">key</span>
                     Ustaw nowe hasło
                   </>
                 )}
               </button>
 
-              <p className="text-text-tertiary text-xs text-center">
+              <p className="text-on-surface-variant text-xs text-center">
                 Hasło musi mieć minimum 4 znaki
               </p>
             </form>
