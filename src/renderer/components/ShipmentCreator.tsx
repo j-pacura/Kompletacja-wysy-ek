@@ -1,27 +1,16 @@
 import React, { useState } from 'react';
-import {
-  ArrowLeft,
-  Upload,
-  Package,
-  MapPin,
-  FileText,
-  Scale,
-  Globe,
-  Camera,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { PartFromExcel } from '../types/part';
+import toast from 'react-hot-toast';
+
+type Step = 'info' | 'excel' | 'config';
 
 const ShipmentCreator: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useUser();
-  const [step, setStep] = useState<'info' | 'excel' | 'config'>('info');
+  const [step, setStep] = useState<Step>('info');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Form state
   const [shipmentNumber, setShipmentNumber] = useState('');
@@ -44,31 +33,27 @@ const ShipmentCreator: React.FC = () => {
         setExcelFile(result.data.path);
         setExcelFileName(result.data.name);
 
-        // Parse Excel file
         setLoading(true);
-        setError(null);
-
         const parseResult = await ipcRenderer.invoke('file:parse-excel', result.data.path);
 
         if (parseResult.success) {
           setParts(parseResult.data.parts);
 
-          // Save whether country column exists
           const hasCountry = parseResult.data.hasCountryColumn || false;
           setHasCountryColumn(hasCountry);
 
-          // Auto-enable country requirement if column exists
           if (hasCountry) {
             setRequireCountry(true);
           }
 
+          toast.success(`✅ Wczytano ${parseResult.data.parts.length} pozycji`);
           setStep('config');
         } else {
-          setError(parseResult.error || 'Nie udało się odczytać pliku Excel');
+          toast.error(parseResult.error || 'Nie udało się odczytać pliku Excel');
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Wystąpił błąd podczas wybierania pliku');
+      toast.error(err.message || 'Wystąpił błąd podczas wybierania pliku');
     } finally {
       setLoading(false);
     }
@@ -77,11 +62,8 @@ const ShipmentCreator: React.FC = () => {
   const handleCreateShipment = async () => {
     try {
       setLoading(true);
-      setError(null);
-
       const { ipcRenderer } = window.require('electron');
 
-      // Create shipment
       const shipmentData: any = {
         shipment_number: shipmentNumber,
         destination,
@@ -102,386 +84,404 @@ const ShipmentCreator: React.FC = () => {
 
       const shipmentId = createResult.data.id;
 
-      // Add parts to database
-      for (const part of parts) {
-        await ipcRenderer.invoke('db:execute',
-          `INSERT INTO parts (
-            shipment_id, sap_index, description, quantity, unit,
-            country_of_origin, excel_row_number, status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
-          [
-            shipmentId,
-            part.sap_index,
-            part.description,
-            part.quantity,
-            part.unit,
-            part.country_of_origin || null,
-            part.excel_row_number,
-          ]
-        );
+      // Add parts
+      if (parts.length > 0) {
+        for (const part of parts) {
+          await ipcRenderer.invoke('db:add-part', shipmentId, part);
+        }
       }
 
-      // Navigate to packing screen
-      navigate(`/packing/${shipmentId}`);
+      toast.success('🎉 Wysyłka utworzona pomyślnie!');
+      navigate(`/shipment/${shipmentId}`);
     } catch (err: any) {
-      setError(err.message || 'Wystąpił błąd podczas tworzenia wysyłki');
+      toast.error(err.message || 'Wystąpił błąd podczas tworzenia wysyłki');
     } finally {
       setLoading(false);
     }
   };
 
   const canProceedFromInfo = shipmentNumber.trim() !== '' && destination.trim() !== '';
-  const canProceedFromExcel = parts.length > 0;
+  const canProceedFromExcel = excelFile !== null && parts.length > 0;
+
+  const steps = [
+    { id: 'info' as Step, label: 'Podstawowe informacje', icon: 'info' },
+    { id: 'excel' as Step, label: 'Import danych', icon: 'upload_file' },
+    { id: 'config' as Step, label: 'Konfiguracja', icon: 'settings' },
+  ];
+
+  const currentStepIndex = steps.findIndex(s => s.id === step);
 
   return (
-    <div className="flex flex-col w-full h-full bg-bg-primary">
+    <div className="w-full max-w-4xl mx-auto space-y-8">
       {/* Header */}
-      <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-6">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/')}
-            className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6 text-text-primary" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-text-primary">
-              Nowa Wysyłka
-            </h1>
-            <p className="text-text-secondary mt-1">
-              Krok {step === 'info' ? '1' : step === 'excel' ? '2' : '3'} z 3
-            </p>
-          </div>
+      <div>
+        <h1 className="text-4xl font-headline font-extrabold text-on-surface tracking-tight mb-2">
+          Nowa Wysyłka
+        </h1>
+        <p className="text-on-surface-variant font-body">
+          Kreator tworzenia nowej wysyłki
+        </p>
+      </div>
+
+      {/* Progress Stepper - NO BORDERS */}
+      <div className="bg-surface-container-high rounded-xl p-6">
+        <div className="flex items-center justify-between">
+          {steps.map((s, idx) => (
+            <React.Fragment key={s.id}>
+              <div className="flex flex-col items-center flex-1">
+                <div className={`
+                  w-12 h-12 rounded-full flex items-center justify-center
+                  transition-all duration-300
+                  ${idx <= currentStepIndex
+                    ? 'bg-primary text-on-primary'
+                    : 'bg-surface-container text-on-surface-variant'
+                  }
+                `}>
+                  <span className="material-symbols-outlined">
+                    {idx < currentStepIndex ? 'check' : s.icon}
+                  </span>
+                </div>
+                <span className={`
+                  mt-2 font-label text-sm font-semibold
+                  ${idx <= currentStepIndex ? 'text-primary' : 'text-on-surface-variant'}
+                `}>
+                  {s.label}
+                </span>
+              </div>
+              {idx < steps.length - 1 && (
+                <div className={`
+                  flex-1 h-1 mx-4 rounded-full transition-all duration-300
+                  ${idx < currentStepIndex ? 'bg-primary' : 'bg-surface-container'}
+                `} />
+              )}
+            </React.Fragment>
+          ))}
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
-        <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 ${step === 'info' ? 'text-accent-primary' : 'text-accent-success'}`}>
-            {step === 'info' ? (
-              <div className="w-8 h-8 rounded-full bg-accent-primary flex items-center justify-center text-white font-bold">1</div>
-            ) : (
-              <CheckCircle2 className="w-8 h-8" />
-            )}
-            <span className="font-medium">Informacje</span>
-          </div>
-          <div className="flex-1 h-1 bg-bg-tertiary rounded">
-            <div
-              className={`h-full bg-accent-primary rounded transition-all duration-500 ${
-                step !== 'info' ? 'w-full' : 'w-0'
-              }`}
-            />
-          </div>
-          <div className={`flex items-center gap-2 ${
-            step === 'info' ? 'text-text-tertiary' :
-            step === 'excel' ? 'text-accent-primary' : 'text-accent-success'
-          }`}>
-            {step === 'info' ? (
-              <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center text-text-tertiary font-bold">2</div>
-            ) : step === 'excel' ? (
-              <div className="w-8 h-8 rounded-full bg-accent-primary flex items-center justify-center text-white font-bold">2</div>
-            ) : (
-              <CheckCircle2 className="w-8 h-8" />
-            )}
-            <span className="font-medium">Excel</span>
-          </div>
-          <div className="flex-1 h-1 bg-bg-tertiary rounded">
-            <div
-              className={`h-full bg-accent-primary rounded transition-all duration-500 ${
-                step === 'config' ? 'w-full' : 'w-0'
-              }`}
-            />
-          </div>
-          <div className={`flex items-center gap-2 ${
-            step === 'config' ? 'text-accent-primary' : 'text-text-tertiary'
-          }`}>
-            <div className={`w-8 h-8 rounded-full ${
-              step === 'config' ? 'bg-accent-primary text-white' : 'bg-bg-tertiary text-text-tertiary'
-            } flex items-center justify-center font-bold`}>3</div>
-            <span className="font-medium">Konfiguracja</span>
-          </div>
-        </div>
-      </div>
+      {/* Step Content */}
+      <div className="bg-surface-container-high rounded-xl p-8 min-h-[400px]">
+        {/* STEP 1: Basic Info */}
+        {step === 'info' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-headline font-bold text-on-surface mb-6">
+              Podstawowe informacje
+            </h2>
 
-      {/* Error display */}
-      {error && (
-        <div className="mx-8 mt-4 p-4 bg-red-500 bg-opacity-10 border border-red-500 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-red-500 font-medium">Błąd</p>
-            <p className="text-red-400 text-sm mt-1">{error}</p>
-          </div>
-          <button
-            onClick={() => setError(null)}
-            className="text-red-400 hover:text-red-300"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="flex-1 overflow-auto px-8 py-8">
-        <div className="max-w-3xl mx-auto">
-          {/* Step 1: Basic Info */}
-          {step === 'info' && (
-            <div className="space-y-6 animate-scale-in">
-              <div>
-                <label className="flex items-center gap-2 text-text-primary font-medium mb-2">
-                  <Package className="w-5 h-5" />
-                  Numer Wysyłki *
-                </label>
-                <input
-                  type="text"
-                  value={shipmentNumber}
-                  onChange={(e) => setShipmentNumber(e.target.value)}
-                  placeholder="np. WYS-001"
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center gap-2 text-text-primary font-medium mb-2">
-                  <MapPin className="w-5 h-5" />
-                  Miejsce Docelowe *
-                </label>
-                <input
-                  type="text"
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  placeholder="np. Magazyn Warszawa"
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border border-transparent focus:border-accent-primary focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center gap-2 text-text-primary font-medium mb-2">
-                  <FileText className="w-5 h-5" />
-                  Notatki (opcjonalne)
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Dodatkowe informacje o wysyłce..."
-                  rows={4}
-                  className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border border-transparent focus:border-accent-primary focus:outline-none transition-colors resize-none"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => navigate('/')}
-                  className="flex-1 px-6 py-3 bg-bg-tertiary text-text-primary rounded-lg hover:bg-opacity-80 transition-all btn-active font-medium"
-                >
-                  Anuluj
-                </button>
-                <button
-                  onClick={() => setStep('excel')}
-                  disabled={!canProceedFromInfo}
-                  className="flex-1 px-6 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all btn-active font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Dalej →
-                </button>
-              </div>
+            <div>
+              <label className="text-on-surface font-label font-semibold text-sm uppercase tracking-wider mb-3 block">
+                Numer wysyłki *
+              </label>
+              <input
+                type="text"
+                value={shipmentNumber}
+                onChange={(e) => setShipmentNumber(e.target.value)}
+                className="
+                  w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                  font-body outline-none focus:ring-2 focus:ring-primary
+                "
+                placeholder="np. WYS-2024-001"
+              />
             </div>
-          )}
 
-          {/* Step 2: Excel Upload */}
-          {step === 'excel' && (
-            <div className="space-y-6 animate-scale-in">
-              <div className="text-center py-12">
-                <Upload className="w-16 h-16 text-accent-primary mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-text-primary mb-2">
-                  Importuj Listę Części
-                </h2>
-                <p className="text-text-secondary mb-8">
-                  Wybierz plik Excel z listą części do spakowania
+            <div>
+              <label className="text-on-surface font-label font-semibold text-sm uppercase tracking-wider mb-3 block">
+                Miejsce docelowe *
+              </label>
+              <input
+                type="text"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                className="
+                  w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                  font-body outline-none focus:ring-2 focus:ring-primary
+                "
+                placeholder="np. Warszawa, Polska"
+              />
+            </div>
+
+            <div>
+              <label className="text-on-surface font-label font-semibold text-sm uppercase tracking-wider mb-3 block">
+                Notatki (opcjonalnie)
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                className="
+                  w-full px-4 py-3 bg-surface-container text-on-surface rounded-lg
+                  font-body outline-none focus:ring-2 focus:ring-primary resize-none
+                "
+                placeholder="Dodatkowe informacje o wysyłce..."
+              />
+            </div>
+
+            <button
+              onClick={() => setStep('excel')}
+              disabled={!canProceedFromInfo}
+              className="
+                w-full primary-gradient text-on-primary font-bold py-4
+                rounded-lg flex items-center justify-center gap-2
+                disabled:opacity-50 disabled:cursor-not-allowed
+                active:scale-95 transition-all shadow-lg shadow-primary/20
+                font-headline
+              "
+            >
+              <span>Dalej</span>
+              <span className="material-symbols-outlined">arrow_forward</span>
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2: Excel Import */}
+        {step === 'excel' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-headline font-bold text-on-surface mb-6">
+              Import danych z Excel
+            </h2>
+
+            {!excelFile ? (
+              <div
+                onClick={handleExcelSelect}
+                className="
+                  border-2 border-dashed border-outline-variant rounded-xl p-12
+                  hover:border-primary hover:bg-primary/5
+                  cursor-pointer transition-all text-center
+                "
+              >
+                <span className="material-symbols-outlined text-on-surface-variant text-6xl mb-4 block">
+                  upload_file
+                </span>
+                <p className="text-on-surface font-body text-lg font-semibold mb-2">
+                  Kliknij aby wybrać plik Excel
                 </p>
-
-                {!excelFile ? (
+                <p className="text-on-surface-variant font-label text-sm">
+                  Obsługiwane formaty: .xlsx, .xls
+                </p>
+              </div>
+            ) : (
+              <div className="bg-surface-container rounded-xl p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-secondary text-2xl">
+                        description
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-on-surface font-body font-semibold">
+                        {excelFileName}
+                      </p>
+                      <p className="text-on-surface-variant font-label text-sm">
+                        {parts.length} pozycji wczytanych
+                      </p>
+                    </div>
+                  </div>
                   <button
                     onClick={handleExcelSelect}
-                    disabled={loading}
-                    className="px-8 py-4 gradient-primary text-white rounded-lg hover:opacity-90 transition-all btn-active font-medium inline-flex items-center gap-2 disabled:opacity-50"
+                    className="
+                      px-4 py-2 rounded-lg flex items-center gap-2
+                      text-tertiary hover:bg-tertiary/10
+                      transition-all font-label font-semibold text-sm
+                    "
                   >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Wczytuję plik...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-5 h-5" />
-                        Wybierz Plik Excel
-                      </>
-                    )}
+                    <span className="material-symbols-outlined text-base">sync</span>
+                    <span>Zmień plik</span>
                   </button>
-                ) : (
-                  <div className="bg-bg-tertiary rounded-lg p-6 max-w-md mx-auto">
-                    <CheckCircle2 className="w-12 h-12 text-accent-success mx-auto mb-3" />
-                    <p className="text-text-primary font-medium mb-2">{excelFileName}</p>
-                    <p className="text-text-secondary text-sm mb-4">
-                      {parts.length} {parts.length === 1 ? 'część' : 'części'} wczytano
-                    </p>
-                    <button
-                      onClick={handleExcelSelect}
-                      className="text-accent-primary hover:text-accent-secondary transition-colors text-sm"
-                    >
-                      Wybierz inny plik
-                    </button>
-                  </div>
-                )}
+                </div>
+              </div>
+            )}
 
-                <div className="mt-8 bg-bg-tertiary rounded-lg p-6 text-left max-w-md mx-auto">
-                  <p className="text-text-primary font-medium mb-3">
-                    Wymagany format Excel:
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep('info')}
+                className="
+                  flex-1 px-6 py-3 rounded-lg
+                  bg-surface-container text-on-surface
+                  hover:bg-surface-bright
+                  transition-all font-body font-semibold
+                  flex items-center justify-center gap-2
+                "
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+                <span>Wstecz</span>
+              </button>
+              <button
+                onClick={() => setStep('config')}
+                disabled={!canProceedFromExcel}
+                className="
+                  flex-1 primary-gradient text-on-primary font-bold py-3
+                  rounded-lg flex items-center justify-center gap-2
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  active:scale-95 transition-all shadow-lg shadow-primary/20
+                  font-headline
+                "
+              >
+                <span>Dalej</span>
+                <span className="material-symbols-outlined">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Configuration */}
+        {step === 'config' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-headline font-bold text-on-surface mb-6">
+              Konfiguracja wymagań
+            </h2>
+
+            <div className="space-y-4">
+              {/* Require Weight */}
+              <label className="
+                flex items-center gap-4 p-6 rounded-xl cursor-pointer
+                bg-surface-container hover:bg-surface-bright transition-all
+              ">
+                <input
+                  type="checkbox"
+                  checked={requireWeight}
+                  onChange={(e) => setRequireWeight(e.target.checked)}
+                  className="w-6 h-6 rounded accent-primary cursor-pointer"
+                />
+                <span className="material-symbols-outlined text-primary text-3xl">scale</span>
+                <div className="flex-1">
+                  <p className="text-on-surface font-body font-semibold">Pomiar wagi</p>
+                  <p className="text-on-surface-variant font-label text-sm">
+                    Wymagaj ważenia każdej części przed spakowaniem
                   </p>
-                  <ul className="text-text-secondary text-sm space-y-2">
-                    <li>✓ Kolumna A: SAP Index</li>
-                    <li>✓ Kolumna B: Opis</li>
-                    <li>✓ Kolumna C: Ilość</li>
-                    <li>✓ Kolumna D: Jednostka</li>
-                    <li className="text-text-tertiary">○ Kolumna E: Kraj pochodzenia (opcjonalna)</li>
-                  </ul>
                 </div>
-              </div>
+              </label>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setStep('info')}
-                  className="flex-1 px-6 py-3 bg-bg-tertiary text-text-primary rounded-lg hover:bg-opacity-80 transition-all btn-active font-medium"
-                >
-                  ← Wstecz
-                </button>
-                <button
-                  onClick={() => setStep('config')}
-                  disabled={!canProceedFromExcel}
-                  className="flex-1 px-6 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all btn-active font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Dalej →
-                </button>
-              </div>
-            </div>
-          )}
+              {/* Require Photos */}
+              <label className="
+                flex items-center gap-4 p-6 rounded-xl cursor-pointer
+                bg-surface-container hover:bg-surface-bright transition-all
+              ">
+                <input
+                  type="checkbox"
+                  checked={requirePhotos}
+                  onChange={(e) => setRequirePhotos(e.target.checked)}
+                  className="w-6 h-6 rounded accent-primary cursor-pointer"
+                />
+                <span className="material-symbols-outlined text-primary text-3xl">photo_camera</span>
+                <div className="flex-1">
+                  <p className="text-on-surface font-body font-semibold">Zdjęcia</p>
+                  <p className="text-on-surface-variant font-label text-sm">
+                    Wymagaj zrobienia zdjęć przed spakowaniem
+                  </p>
+                </div>
+              </label>
 
-          {/* Step 3: Configuration */}
-          {step === 'config' && (
-            <div className="space-y-6 animate-scale-in">
-              <div>
-                <h2 className="text-2xl font-bold text-text-primary mb-2">
-                  Konfiguracja Wymagań
-                </h2>
-                <p className="text-text-secondary">
-                  Wybierz, jakie dane są wymagane podczas pakowania
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <label className="flex items-center gap-4 bg-bg-tertiary rounded-lg p-6 cursor-pointer hover:bg-opacity-80 transition-all">
+              {/* Require Country (only if Excel has country column) */}
+              {hasCountryColumn && (
+                <label className="
+                  flex items-center gap-4 p-6 rounded-xl cursor-pointer
+                  bg-surface-container hover:bg-surface-bright transition-all
+                ">
                   <input
                     type="checkbox"
-                    checked={requireWeight}
-                    onChange={(e) => setRequireWeight(e.target.checked)}
-                    className="w-6 h-6 rounded border-2 border-text-tertiary checked:bg-accent-primary checked:border-accent-primary"
+                    checked={requireCountry}
+                    onChange={(e) => setRequireCountry(e.target.checked)}
+                    className="w-6 h-6 rounded accent-primary cursor-pointer"
                   />
-                  <Scale className="w-8 h-8 text-accent-primary" />
+                  <span className="material-symbols-outlined text-primary text-3xl">public</span>
                   <div className="flex-1">
-                    <p className="text-text-primary font-medium">Pomiar Wagi</p>
-                    <p className="text-text-secondary text-sm">Wymagaj ważenia każdej części na wadze Radwag</p>
+                    <p className="text-on-surface font-body font-semibold">Kraj pochodzenia</p>
+                    <p className="text-on-surface-variant font-label text-sm">
+                      Wymagaj podania kraju pochodzenia dla części bez kraju
+                    </p>
                   </div>
                 </label>
+              )}
+            </div>
 
-                {/* Only show country checkbox if Excel had country column */}
-                {hasCountryColumn && (
-                  <label className="flex items-center gap-4 bg-bg-tertiary rounded-lg p-6 cursor-pointer hover:bg-opacity-80 transition-all">
-                    <input
-                      type="checkbox"
-                      checked={requireCountry}
-                      onChange={(e) => setRequireCountry(e.target.checked)}
-                      className="w-6 h-6 rounded border-2 border-text-tertiary checked:bg-accent-primary checked:border-accent-primary"
-                    />
-                    <Globe className="w-8 h-8 text-accent-secondary" />
-                    <div className="flex-1">
-                      <p className="text-text-primary font-medium">Kraj Pochodzenia</p>
-                      <p className="text-text-secondary text-sm">Wymagaj podania kraju pochodzenia dla części bez kraju</p>
-                    </div>
-                  </label>
+            {/* Summary */}
+            <div className="bg-surface-container rounded-xl p-6 mt-8">
+              <h3 className="text-on-surface font-headline font-bold mb-4">
+                📋 Podsumowanie
+              </h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-on-surface-variant font-label text-xs uppercase tracking-wider mb-1">
+                    Numer wysyłki
+                  </p>
+                  <p className="text-on-surface font-headline font-bold text-base">
+                    {shipmentNumber}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-on-surface-variant font-label text-xs uppercase tracking-wider mb-1">
+                    Miejsce docelowe
+                  </p>
+                  <p className="text-on-surface font-body font-semibold">
+                    {destination}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-on-surface-variant font-label text-xs uppercase tracking-wider mb-1">
+                    Liczba pozycji
+                  </p>
+                  <p className="text-on-surface font-headline font-bold text-base">
+                    {parts.length}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-on-surface-variant font-label text-xs uppercase tracking-wider mb-1">
+                    Wymagania
+                  </p>
+                  <div className="flex gap-2">
+                    {requireWeight && <span className="text-xs">⚖️</span>}
+                    {requirePhotos && <span className="text-xs">📷</span>}
+                    {requireCountry && <span className="text-xs">🌍</span>}
+                    {!requireWeight && !requirePhotos && !requireCountry && (
+                      <span className="text-on-surface-variant text-xs">Brak</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setStep('excel')}
+                className="
+                  flex-1 px-6 py-3 rounded-lg
+                  bg-surface-container text-on-surface
+                  hover:bg-surface-bright
+                  transition-all font-body font-semibold
+                  flex items-center justify-center gap-2
+                "
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+                <span>Wstecz</span>
+              </button>
+              <button
+                onClick={handleCreateShipment}
+                disabled={loading}
+                className="
+                  flex-1 primary-gradient text-on-primary font-bold py-3
+                  rounded-lg flex items-center justify-center gap-2
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  active:scale-95 transition-all shadow-lg shadow-primary/20
+                  font-headline
+                "
+              >
+                {loading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                    <span>Tworzenie...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined">check</span>
+                    <span>Utwórz wysyłkę</span>
+                  </>
                 )}
-
-                <label className="flex items-center gap-4 bg-bg-tertiary rounded-lg p-6 cursor-pointer hover:bg-opacity-80 transition-all">
-                  <input
-                    type="checkbox"
-                    checked={requirePhotos}
-                    onChange={(e) => setRequirePhotos(e.target.checked)}
-                    className="w-6 h-6 rounded border-2 border-text-tertiary checked:bg-accent-primary checked:border-accent-primary"
-                  />
-                  <Camera className="w-8 h-8 text-accent-warning" />
-                  <div className="flex-1">
-                    <p className="text-text-primary font-medium">Zdjęcia</p>
-                    <p className="text-text-secondary text-sm">Wymagaj wykonania zdjęć dla każdej części</p>
-                  </div>
-                </label>
-              </div>
-
-              <div className="bg-bg-tertiary border-2 border-accent-primary/30 rounded-lg p-6">
-                <h3 className="text-accent-primary font-semibold mb-4 text-lg">📋 Podsumowanie</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-text-tertiary text-xs mb-1">Numer wysyłki:</p>
-                    <p className="text-text-primary font-semibold text-base">{shipmentNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-text-tertiary text-xs mb-1">Miejsce docelowe:</p>
-                    <p className="text-text-primary font-semibold text-base">{destination}</p>
-                  </div>
-                  <div>
-                    <p className="text-text-tertiary text-xs mb-1">Liczba części:</p>
-                    <p className="text-text-primary font-semibold text-base">{parts.length}</p>
-                  </div>
-                  <div>
-                    <p className="text-text-tertiary text-xs mb-1">Wymagania:</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {requireWeight && <span className="text-accent-primary font-medium">⚖️ Waga</span>}
-                      {requireCountry && <span className="text-accent-secondary font-medium">🌍 Kraj</span>}
-                      {requirePhotos && <span className="text-accent-warning font-medium">📷 Zdjęcia</span>}
-                      {!requireWeight && !requireCountry && !requirePhotos && (
-                        <span className="text-text-tertiary">Brak</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => setStep('excel')}
-                  className="flex-1 px-6 py-3 bg-bg-tertiary text-text-primary rounded-lg hover:bg-opacity-80 transition-all btn-active font-medium"
-                >
-                  ← Wstecz
-                </button>
-                <button
-                  onClick={handleCreateShipment}
-                  disabled={loading}
-                  className="flex-1 px-6 py-3 gradient-success text-white rounded-lg hover:opacity-90 transition-all btn-active font-medium disabled:opacity-50 inline-flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Tworzenie...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-5 h-5" />
-                      Rozpocznij Pakowanie
-                    </>
-                  )}
-                </button>
-              </div>
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
