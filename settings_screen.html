@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-dim": "#63ef82",
+                    "surface-dim": "#0e0e0e",
+                    "primary-fixed-dim": "#63ef82",
+                    "surface-container-high": "#20201f",
+                    "inverse-primary": "#006e2d",
+                    "on-tertiary-fixed-variant": "#005763",
+                    "surface": "#0e0e0e",
+                    "on-primary-fixed": "#004a1c",
+                    "on-primary-container": "#002a0c",
+                    "on-secondary-fixed-variant": "#006940",
+                    "inverse-on-surface": "#565555",
+                    "tertiary-container": "#0fe3ff",
+                    "error": "#ff7351",
+                    "on-secondary-container": "#e2ffe9",
+                    "surface-container-highest": "#262626",
+                    "outline-variant": "#484847",
+                    "on-background": "#ffffff",
+                    "surface-bright": "#2c2c2c",
+                    "secondary-container": "#006d42",
+                    "surface-container-lowest": "#000000",
+                    "error-dim": "#d53d18",
+                    "tertiary-fixed-dim": "#00d4ee",
+                    "on-secondary-fixed": "#00492b",
+                    "on-error": "#450900",
+                    "on-primary-fixed-variant": "#006a2b",
+                    "on-tertiary-fixed": "#003840",
+                    "secondary-fixed-dim": "#6deca8",
+                    "inverse-surface": "#fcf9f8",
+                    "error-container": "#b92902",
+                    "on-surface-variant": "#adaaaa",
+                    "on-secondary": "#005e39",
+                    "secondary-fixed": "#7cfbb5",
+                    "secondary-dim": "#6deca8",
+                    "tertiary-dim": "#00d4ee",
+                    "primary": "#72fe8f",
+                    "surface-tint": "#72fe8f",
+                    "on-error-container": "#ffd2c8",
+                    "on-surface": "#ffffff",
+                    "secondary": "#7cfbb5",
+                    "primary-fixed": "#72fe8f",
+                    "on-tertiary-container": "#004d58",
+                    "outline": "#767575",
+                    "surface-container": "#1a1a1a",
+                    "on-tertiary": "#005762",
+                    "surface-container-low": "#131313",
+                    "tertiary-fixed": "#0fe3ff",
+                    "surface-variant": "#262626",
+                    "tertiary": "#88ebff",
+                    "on-primary": "#005f26",
+                    "primary-container": "#1cb853",
+                    "background": "#0e0e0e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3 {
+            font-family: 'Manrope', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(38, 38, 38, 0.6);
+            backdrop-filter: blur(24px);
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #72fe8f 0%, #1cb853 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-20 md:pb-0">
+<!-- Top Navigation Shell -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-8 h-20 bg-[#131313]">
+<div class="flex items-center gap-6">
+<button class="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-surface-container transition-all active:scale-95">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<h1 class="text-xl font-extrabold tracking-tight text-white">Ustawienia</h1>
+</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-gray-400 hover:text-white transition-colors" href="#">Archiwum</a>
+<a class="text-gray-400 hover:text-white transition-colors" href="#">Statystyki</a>
+<a class="text-[#72fe8f] border-b-2 border-[#72fe8f] pb-2" href="#">Ustawienia</a>
+<a class="text-gray-400 hover:text-white transition-colors" href="#">Panel Admin</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="primary-gradient text-on-primary font-bold px-6 py-2.5 rounded-full active:scale-95 transition-all shadow-lg shadow-primary/10">
+                Zapisz zmiany
+            </button>
+<button class="flex items-center justify-center w-10 h-10 rounded-lg text-gray-400 hover:text-white hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">logout</span>
+</button>
+</div>
+</header>
+<main class="pt-28 pb-12 px-4 md:px-8 max-w-6xl mx-auto flex flex-col md:flex-row gap-8">
+<!-- Sidebar Navigation (Desktop) -->
+<aside class="hidden md:flex flex-col w-64 gap-2 h-fit sticky top-28">
+<div class="mb-6 px-4">
+<p class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Kategorie</p>
+</div>
+<a class="bg-[#2c2c2c] text-[#72fe8f] border-l-4 border-[#72fe8f] px-4 py-3 flex items-center gap-3 rounded-r-lg group transition-all" href="#personalization">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-semibold">Personalizacja</span>
+</a>
+<a class="text-gray-500 px-4 py-3 hover:text-white hover:bg-[#1a1a1a] flex items-center gap-3 rounded-lg transition-all" href="#appearance">
+<span class="material-symbols-outlined">palette</span>
+<span>Wygląd</span>
+</a>
+<a class="text-gray-500 px-4 py-3 hover:text-white hover:bg-[#1a1a1a] flex items-center gap-3 rounded-lg transition-all" href="#security">
+<span class="material-symbols-outlined">lock</span>
+<span>Bezpieczeństwo</span>
+</a>
+<a class="text-gray-500 px-4 py-3 hover:text-white hover:bg-[#1a1a1a] flex items-center gap-3 rounded-lg transition-all" href="#audio">
+<span class="material-symbols-outlined">volume_up</span>
+<span>Dźwięk</span>
+</a>
+<a class="text-gray-500 px-4 py-3 hover:text-white hover:bg-[#1a1a1a] flex items-center gap-3 rounded-lg transition-all" href="#hardware">
+<span class="material-symbols-outlined">settings_input_component</span>
+<span>Waga i Terminal</span>
+</a>
+</aside>
+<!-- Settings Content Canvas -->
+<div class="flex-1 space-y-12">
+<!-- Section: Personalization -->
+<section class="space-y-6" id="personalization">
+<div>
+<h2 class="text-2xl font-bold text-on-surface">Personalizacja</h2>
+<p class="text-on-surface-variant text-sm mt-1">Dostosuj swój profil operatora</p>
+</div>
+<div class="bg-surface-container-low p-8 rounded-xl space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Imię</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-transparent focus:border-primary transition-all p-4 rounded-t-lg text-on-surface outline-none" type="text" value="Marek"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Nazwisko</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-transparent focus:border-primary transition-all p-4 rounded-t-lg text-on-surface outline-none" type="text" value="Kowalski"/>
+</div>
+</div>
+<div class="space-y-4">
+<label class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Podgląd nagłówka</label>
+<div class="relative h-32 rounded-xl overflow-hidden group">
+<img class="w-full h-full object-cover" data-alt="abstract tech geometric background with dark metallic textures and subtle green neon accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvEOMu2vLiESR4KXqYbe1oQVzg0TtpjmuGHYL3jJn6sbTVbeQ0uUGRmXQVLHxjmw5W_IXlfVcEbJn5BroK7A9jXMHi5s627YPTHRu8kp4zhzh1D7_tP6QBupFQFlh9Pg9GX9oRsDdpdT1LuanUTwMsOPCVk0gZDvN9DcYNyrNBmxy0qcXhNCsJJgoGOxow3NQDsrai_zzrLQ-QsXCiOHD4T_TTFOod9hvxFqeqbf8ogx2NF6TbqB-qubPDOXUMjNTNuCdPvRsV1ug"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-xl">MK</div>
+<div>
+<p class="font-bold text-white leading-none">Marek Kowalski</p>
+<p class="text-primary text-xs font-medium">Terminal A-12 • Stanowisko 04</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: App Theme -->
+<section class="space-y-6" id="appearance">
+<div>
+<h2 class="text-2xl font-bold text-on-surface">Motyw aplikacji</h2>
+<p class="text-on-surface-variant text-sm mt-1">Ustawienia wizualne interfejsu</p>
+</div>
+<div class="bg-surface-container-low p-8 rounded-xl space-y-8">
+<div class="flex items-center justify-between">
+<div class="space-y-1">
+<p class="font-medium">Tryb ciemny</p>
+<p class="text-xs text-on-surface-variant">Zalecany dla redukcji zmęczenia wzroku w magazynie</p>
+</div>
+<button class="w-14 h-8 bg-primary rounded-full relative p-1 transition-all">
+<div class="absolute right-1 top-1 w-6 h-6 bg-on-primary rounded-full shadow-md"></div>
+</button>
+</div>
+<div class="space-y-4">
+<label class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Kolor akcentu</label>
+<div class="flex gap-4">
+<button class="w-10 h-10 rounded-full bg-[#72fe8f] ring-4 ring-[#72fe8f]/20 border-2 border-white"></button>
+<button class="w-10 h-10 rounded-full bg-[#0fe3ff] hover:scale-110 transition-transform"></button>
+<button class="w-10 h-10 rounded-full bg-[#ff7351] hover:scale-110 transition-transform"></button>
+<button class="w-10 h-10 rounded-full bg-[#88ebff] hover:scale-110 transition-transform"></button>
+<button class="w-10 h-10 rounded-full bg-[#6deca8] hover:scale-110 transition-transform"></button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Change Password -->
+<section class="space-y-6" id="security">
+<div>
+<h2 class="text-2xl font-bold text-on-surface">Zmiana hasła</h2>
+<p class="text-on-surface-variant text-sm mt-1">Zadbaj o bezpieczeństwo swojego konta</p>
+</div>
+<div class="bg-surface-container-low p-8 rounded-xl space-y-6">
+<div class="space-y-2">
+<label class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Aktualne hasło</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-transparent focus:border-primary transition-all p-4 rounded-t-lg text-on-surface outline-none" placeholder="••••••••••••" type="password"/>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Nowe hasło</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-transparent focus:border-primary transition-all p-4 rounded-t-lg text-on-surface outline-none" type="password"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Powtórz nowe hasło</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-transparent focus:border-primary transition-all p-4 rounded-t-lg text-on-surface outline-none" type="password"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Sound Settings -->
+<section class="space-y-6" id="audio">
+<div>
+<h2 class="text-2xl font-bold text-on-surface">Dźwięk</h2>
+<p class="text-on-surface-variant text-sm mt-1">Powiadomienia dźwiękowe o skanowaniu i błędach</p>
+</div>
+<div class="bg-surface-container-low p-8 rounded-xl space-y-8">
+<div class="flex items-center justify-between">
+<div class="space-y-1">
+<p class="font-medium">Efekty dźwiękowe</p>
+<p class="text-xs text-on-surface-variant">Sygnalizacja poprawnego spakowania paczki</p>
+</div>
+<button class="w-14 h-8 bg-primary rounded-full relative p-1 transition-all">
+<div class="absolute right-1 top-1 w-6 h-6 bg-on-primary rounded-full shadow-md"></div>
+</button>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<label class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Głośność powiadomień</label>
+<span class="text-primary font-mono font-bold">75%</span>
+</div>
+<div class="relative w-full h-3 bg-surface-container-highest rounded-full">
+<div class="absolute left-0 top-0 h-full w-3/4 primary-gradient rounded-full shadow-[0_0_8px_rgba(114,254,143,0.3)]"></div>
+<div class="absolute left-3/4 top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-white rounded-full shadow-lg cursor-pointer"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Scale Settings -->
+<section class="space-y-6" id="hardware">
+<div>
+<h2 class="text-2xl font-bold text-on-surface">Konfiguracja wagi</h2>
+<p class="text-on-surface-variant text-sm mt-1">Parametry połączenia z urządzeniem pomiarowym</p>
+</div>
+<div class="bg-surface-container-low p-8 rounded-xl space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Port COM</label>
+<div class="relative">
+<select class="w-full bg-surface-container-high border-0 border-b-2 border-transparent focus:border-primary transition-all p-4 rounded-t-lg text-on-surface outline-none appearance-none">
+<option>COM1</option>
+<option selected="">COM3 (USB-Serial)</option>
+<option>COM4</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-4 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs tracking-wider uppercase text-on-surface-variant font-bold">Baud Rate</label>
+<div class="relative">
+<select class="w-full bg-surface-container-high border-0 border-b-2 border-transparent focus:border-primary transition-all p-4 rounded-t-lg text-on-surface outline-none appearance-none">
+<option>4800</option>
+<option selected="">9600</option>
+<option>19200</option>
+<option>115200</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-4 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container rounded-lg border border-outline-variant/10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+<span class="text-sm font-medium">Status: Połączono z RADWAG WPY 2</span>
+</div>
+<button class="text-primary font-bold text-sm hover:underline transition-all">
+                            Testuj połączenie
+                        </button>
+</div>
+</div>
+</section>
+<div class="flex justify-end pt-8">
+<button class="primary-gradient text-on-primary font-bold px-12 py-4 rounded-full active:scale-95 transition-all shadow-xl shadow-primary/20 text-lg">
+                    Zapisz wszystkie zmiany
+                </button>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-low flex justify-around items-center h-16 z-50">
+<button class="flex flex-col items-center text-gray-500">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] uppercase tracking-tighter">Panel</span>
+</button>
+<button class="flex flex-col items-center text-gray-500">
+<span class="material-symbols-outlined">archive</span>
+<span class="text-[10px] uppercase tracking-tighter">Archiwum</span>
+</button>
+<button class="flex flex-col items-center text-[#72fe8f]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="text-[10px] uppercase tracking-tighter">Opcje</span>
+</button>
+<button class="flex flex-col items-center text-gray-500">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+<span class="text-[10px] uppercase tracking-tighter">Admin</span>
+</button>
+</nav>
+</body></html>

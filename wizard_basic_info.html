@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-dim": "#63ef82",
+                    "surface-dim": "#0e0e0e",
+                    "primary-fixed-dim": "#63ef82",
+                    "surface-container-high": "#20201f",
+                    "inverse-primary": "#006e2d",
+                    "on-tertiary-fixed-variant": "#005763",
+                    "surface": "#0e0e0e",
+                    "on-primary-fixed": "#004a1c",
+                    "on-primary-container": "#002a0c",
+                    "on-secondary-fixed-variant": "#006940",
+                    "inverse-on-surface": "#565555",
+                    "tertiary-container": "#0fe3ff",
+                    "error": "#ff7351",
+                    "on-secondary-container": "#e2ffe9",
+                    "surface-container-highest": "#262626",
+                    "outline-variant": "#484847",
+                    "on-background": "#ffffff",
+                    "surface-bright": "#2c2c2c",
+                    "secondary-container": "#006d42",
+                    "surface-container-lowest": "#000000",
+                    "error-dim": "#d53d18",
+                    "tertiary-fixed-dim": "#00d4ee",
+                    "on-secondary-fixed": "#00492b",
+                    "on-error": "#450900",
+                    "on-primary-fixed-variant": "#006a2b",
+                    "on-tertiary-fixed": "#003840",
+                    "secondary-fixed-dim": "#6deca8",
+                    "inverse-surface": "#fcf9f8",
+                    "error-container": "#b92902",
+                    "on-surface-variant": "#adaaaa",
+                    "on-secondary": "#005e39",
+                    "secondary-fixed": "#7cfbb5",
+                    "secondary-dim": "#6deca8",
+                    "tertiary-dim": "#00d4ee",
+                    "primary": "#72fe8f",
+                    "surface-tint": "#72fe8f",
+                    "on-error-container": "#ffd2c8",
+                    "on-surface": "#ffffff",
+                    "secondary": "#7cfbb5",
+                    "primary-fixed": "#72fe8f",
+                    "on-tertiary-container": "#004d58",
+                    "outline": "#767575",
+                    "surface-container": "#1a1a1a",
+                    "on-tertiary": "#005762",
+                    "surface-container-low": "#131313",
+                    "tertiary-fixed": "#0fe3ff",
+                    "surface-variant": "#262626",
+                    "tertiary": "#88ebff",
+                    "on-primary": "#005f26",
+                    "primary-container": "#1cb853",
+                    "background": "#0e0e0e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-primary-gradient {
+            background: linear-gradient(135deg, #72fe8f 0%, #1cb853 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col items-center justify-center">
+<!-- Top Navigation (Shell Supression logic: Hidden for focused wizard) -->
+<!-- Content starts here -->
+<main class="w-full max-w-2xl px-6 py-12 flex flex-col gap-12">
+<!-- Header & Step Indicator -->
+<header class="flex flex-col gap-8 text-center">
+<div class="flex flex-col gap-2">
+<span class="text-primary font-headline text-xs tracking-widest uppercase font-bold">Kreator Nowej Przesyłki</span>
+<h1 class="text-4xl font-extrabold tracking-tight text-white">Informacje Podstawowe</h1>
+</div>
+<!-- Step Progress Tracker -->
+<div class="flex items-center justify-between relative px-4">
+<!-- Track Line -->
+<div class="absolute top-1/2 left-0 w-full h-[2px] bg-surface-container-highest -translate-y-1/2 z-0"></div>
+<!-- Step 1: Active -->
+<div class="relative z-10 flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-gradient flex items-center justify-center shadow-[0_0_15px_rgba(114,254,143,0.3)]">
+<span class="material-symbols-outlined text-on-primary font-bold" data-icon="description">description</span>
+</div>
+<span class="text-xs font-bold text-primary uppercase tracking-tighter">Krok 1</span>
+</div>
+<!-- Step 2: Pending -->
+<div class="relative z-10 flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border-2 border-surface-container-low">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="upload_file">upload_file</span>
+</div>
+<span class="text-xs font-medium text-on-surface-variant uppercase tracking-tighter">Import Excel</span>
+</div>
+<!-- Step 3: Pending -->
+<div class="relative z-10 flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border-2 border-surface-container-low">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="settings">settings</span>
+</div>
+<span class="text-xs font-medium text-on-surface-variant uppercase tracking-tighter">Konfiguracja</span>
+</div>
+</div>
+</header>
+<!-- Form Section -->
+<section class="bg-surface-container-low rounded-xl p-8 shadow-2xl">
+<form class="flex flex-col gap-8">
+<!-- Shipment Number Input -->
+<div class="flex flex-col gap-2 group">
+<label class="text-sm font-semibold text-on-surface-variant flex items-center gap-2" for="shipment_number">
+                        Numer Przesyłki <span class="text-error text-xs">*</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-high border-none rounded-lg p-4 text-white placeholder:text-outline focus:ring-0 focus:outline-none transition-all group-focus-within:bg-surface-bright" id="shipment_number" name="shipment_number" placeholder="np. PL-2023-0001" required="" type="text"/>
+<div class="absolute bottom-0 left-0 w-0 h-[2px] bg-primary transition-all duration-300 group-focus-within:w-full"></div>
+</div>
+<p class="text-[10px] text-on-tertiary-fixed-variant uppercase tracking-widest font-bold">Unikalny identyfikator systemowy</p>
+</div>
+<!-- Destination Input -->
+<div class="flex flex-col gap-2 group">
+<label class="text-sm font-semibold text-on-surface-variant flex items-center gap-2" for="destination">
+                        Miejsce Docelowe <span class="text-error text-xs">*</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-high border-none rounded-lg p-4 text-white placeholder:text-outline focus:ring-0 focus:outline-none transition-all group-focus-within:bg-surface-bright" id="destination" name="destination" placeholder="Centrum Dystrybucji Kraków" required="" type="text"/>
+<div class="absolute bottom-0 left-0 w-0 h-[2px] bg-primary transition-all duration-300 group-focus-within:w-full"></div>
+</div>
+</div>
+<!-- Notes Textarea -->
+<div class="flex flex-col gap-2 group">
+<label class="text-sm font-semibold text-on-surface-variant" for="notes">
+                        Uwagi Dodatkowe <span class="text-on-tertiary-fixed-variant text-xs opacity-50">(Opcjonalnie)</span>
+</label>
+<div class="relative">
+<textarea class="w-full bg-surface-container-high border-none rounded-lg p-4 text-white placeholder:text-outline focus:ring-0 focus:outline-none transition-all group-focus-within:bg-surface-bright custom-scrollbar resize-none" id="notes" name="notes" placeholder="Wpisz instrukcje specjalne dla pakowacza..." rows="4"></textarea>
+<div class="absolute bottom-0 left-0 w-0 h-[2px] bg-primary transition-all duration-300 group-focus-within:w-full"></div>
+</div>
+</div>
+</form>
+</section>
+<!-- Footer Actions -->
+<footer class="flex items-center justify-between pt-4">
+<button class="px-8 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-bold text-sm hover:bg-surface-container-high hover:text-white transition-all active:scale-95">
+                Anuluj
+            </button>
+<button class="group flex items-center gap-3 px-10 py-4 rounded-full bg-primary-gradient text-on-primary font-extrabold text-sm shadow-lg hover:shadow-primary/20 transition-all active:scale-95">
+                Kontynuuj
+                <span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</footer>
+</main>
+<!-- Visual Polish: Background Gradients -->
+<div class="fixed top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+<div class="fixed bottom-[-5%] left-[-5%] w-[40%] h-[40%] bg-primary-container/10 blur-[100px] rounded-full pointer-events-none -z-10"></div>
+</body></html>

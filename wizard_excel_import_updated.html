@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nowa Przesyłka - Import Excel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-dim": "#63ef82",
+                    "surface-dim": "#0e0e0e",
+                    "primary-fixed-dim": "#63ef82",
+                    "surface-container-high": "#20201f",
+                    "inverse-primary": "#006e2d",
+                    "on-tertiary-fixed-variant": "#005763",
+                    "surface": "#0e0e0e",
+                    "on-primary-fixed": "#004a1c",
+                    "on-primary-container": "#002a0c",
+                    "on-secondary-fixed-variant": "#006940",
+                    "inverse-on-surface": "#565555",
+                    "tertiary-container": "#0fe3ff",
+                    "error": "#ff7351",
+                    "on-secondary-container": "#e2ffe9",
+                    "surface-container-highest": "#262626",
+                    "outline-variant": "#484847",
+                    "on-background": "#ffffff",
+                    "surface-bright": "#2c2c2c",
+                    "secondary-container": "#006d42",
+                    "surface-container-lowest": "#000000",
+                    "error-dim": "#d53d18",
+                    "tertiary-fixed-dim": "#00d4ee",
+                    "on-secondary-fixed": "#00492b",
+                    "on-error": "#450900",
+                    "on-primary-fixed-variant": "#006a2b",
+                    "on-tertiary-fixed": "#003840",
+                    "secondary-fixed-dim": "#6deca8",
+                    "inverse-surface": "#fcf9f8",
+                    "error-container": "#b92902",
+                    "on-surface-variant": "#adaaaa",
+                    "on-secondary": "#005e39",
+                    "secondary-fixed": "#7cfbb5",
+                    "secondary-dim": "#6deca8",
+                    "tertiary-dim": "#00d4ee",
+                    "primary": "#72fe8f",
+                    "surface-tint": "#72fe8f",
+                    "on-error-container": "#ffd2c8",
+                    "on-surface": "#ffffff",
+                    "secondary": "#7cfbb5",
+                    "primary-fixed": "#72fe8f",
+                    "on-tertiary-container": "#004d58",
+                    "outline": "#767575",
+                    "surface-container": "#1a1a1a",
+                    "on-tertiary": "#005762",
+                    "surface-container-low": "#131313",
+                    "tertiary-fixed": "#0fe3ff",
+                    "surface-variant": "#262626",
+                    "tertiary": "#88ebff",
+                    "on-primary": "#005f26",
+                    "primary-container": "#1cb853",
+                    "background": "#0e0e0e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #0e0e0e; color: #ffffff; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { background: rgba(38, 38, 38, 0.6); backdrop-filter: blur(24px); }
+        .custom-gradient-btn { background: linear-gradient(135deg, #72fe8f 0%, #1cb853 100%); }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- TopNavBar Shell -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-8 h-20 bg-[#131313]">
+<div class="text-xl font-extrabold tracking-tight text-white font-headline">Asystent Pakowania</div>
+<div class="flex items-center gap-6">
+<button class="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">logout</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 mt-20 p-8 flex flex-col items-center">
+<!-- Step Indicator -->
+<nav class="w-full max-w-5xl mb-10">
+<div class="flex justify-between items-center relative">
+<!-- Progress Line -->
+<div class="absolute top-1/2 left-0 w-full h-[2px] bg-surface-container-highest -z-10 -translate-y-1/2"></div>
+<!-- Step 1: Complete -->
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-[0_0_15px_rgba(114,254,143,0.3)]">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'wght' 700;">check</span>
+</div>
+<span class="text-xs font-headline font-bold uppercase tracking-wider text-primary">Informacje</span>
+</div>
+<!-- Step 2: Active -->
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full bg-surface-bright border-2 border-primary flex items-center justify-center text-primary">
+<span class="font-headline font-extrabold">2</span>
+</div>
+<span class="text-xs font-headline font-bold uppercase tracking-wider text-on-surface">Excel Import</span>
+</div>
+<!-- Step 3: Pending -->
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
+<span class="font-headline font-bold">3</span>
+</div>
+<span class="text-xs font-headline font-bold uppercase tracking-wider text-on-surface-variant">Konfiguracja</span>
+</div>
+</div>
+</nav>
+<!-- Wizard Content -->
+<section class="w-full max-w-5xl flex flex-col gap-8">
+<!-- Upload Area -->
+<div class="group relative flex flex-col items-center justify-center border-2 border-dashed border-outline-variant bg-surface-container-low rounded-xl p-12 transition-all duration-300 hover:border-primary-dim hover:bg-surface-container cursor-pointer">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-3xl text-primary" data-icon="upload_file">upload_file</span>
+</div>
+<h2 class="text-xl font-headline font-bold text-on-surface mb-2">Upload Excel File</h2>
+<p class="text-on-surface-variant text-center max-w-sm text-sm">Przeciągnij plik tutaj lub kliknij, aby wybrać z dysku. Obsługiwane formaty: .xlsx, .xls, .csv</p>
+<div class="mt-6 px-6 py-2.5 bg-surface-container-highest rounded-full text-sm font-semibold text-primary-dim group-hover:text-primary transition-colors">
+                    Wybierz plik
+                </div>
+</div>
+<!-- Info Box: Data Structure -->
+<div class="bg-surface-container-low rounded-xl p-6 overflow-hidden border border-outline-variant/30">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-tertiary" data-icon="info">info</span>
+<h3 class="font-headline font-bold text-lg">Wymagana struktura kolumn</h3>
+</div>
+<!-- Column Grid -->
+<div class="space-y-6">
+<!-- Required Columns -->
+<div>
+<div class="flex items-center gap-2 mb-3">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20">Wymagane</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="p-4 bg-surface-container rounded-lg border-l-2 border-primary">
+<div class="text-[10px] uppercase tracking-tighter text-on-surface-variant mb-1">Kolumna A</div>
+<div class="font-headline font-bold text-sm">SAP Index</div>
+<div class="text-xs text-on-surface-variant mt-2">Kod produktu SAP (np. 120045)</div>
+</div>
+<div class="p-4 bg-surface-container rounded-lg border-l-2 border-primary">
+<div class="text-[10px] uppercase tracking-tighter text-on-surface-variant mb-1">Kolumna B</div>
+<div class="font-headline font-bold text-sm">Description</div>
+<div class="text-xs text-on-surface-variant mt-2">Pełna nazwa towaru</div>
+</div>
+<div class="p-4 bg-surface-container rounded-lg border-l-2 border-primary">
+<div class="text-[10px] uppercase tracking-tighter text-on-surface-variant mb-1">Kolumna C</div>
+<div class="font-headline font-bold text-sm">Quantity</div>
+<div class="text-xs text-on-surface-variant mt-2">Ilość do spakowania</div>
+</div>
+<div class="p-4 bg-surface-container rounded-lg border-l-2 border-primary">
+<div class="text-[10px] uppercase tracking-tighter text-on-surface-variant mb-1">Kolumna D</div>
+<div class="font-headline font-bold text-sm">Unit</div>
+<div class="text-xs text-on-surface-variant mt-2">Jednostka (szt, kg, mb)</div>
+</div>
+</div>
+</div>
+<!-- Optional Columns -->
+<div>
+<div class="flex items-center gap-2 mb-3">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant px-2 py-0.5 rounded bg-surface-container-highest border border-outline-variant/30">Opcjonalne</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="p-4 bg-surface-container rounded-lg border-l-2 border-outline-variant">
+<div class="text-[10px] uppercase tracking-tighter text-on-surface-variant mb-1">Kolumna E</div>
+<div class="font-headline font-bold text-sm">Zlecenie (Nr)</div>
+<div class="text-xs text-on-surface-variant mt-2">Numer zlecenia powiązanego</div>
+</div>
+<div class="p-4 bg-surface-container rounded-lg border-l-2 border-outline-variant">
+<div class="text-[10px] uppercase tracking-tighter text-on-surface-variant mb-1">Kolumna F</div>
+<div class="font-headline font-bold text-sm">Zlecenie (Opis)</div>
+<div class="text-xs text-on-surface-variant mt-2">Dodatkowy opis zlecenia</div>
+</div>
+<div class="p-4 bg-surface-container rounded-lg border-l-2 border-outline-variant">
+<div class="text-[10px] uppercase tracking-tighter text-on-surface-variant mb-1">Kolumna G</div>
+<div class="font-headline font-bold text-sm">Kraj Pochodzenia</div>
+<div class="text-xs text-on-surface-variant mt-2">Kraj pochodzenia towaru (COO)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-8 flex justify-between items-center bg-surface-container rounded-lg p-4 border border-outline-variant/20">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="description">description</span>
+<span class="text-sm text-on-surface-variant font-medium">Pobierz aktualny szablon importu z pełną strukturą</span>
+</div>
+<button class="bg-surface-container-highest px-4 py-2 rounded-full text-primary text-xs font-bold hover:bg-primary/10 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">download</span>
+                        Pobierz .xlsx
+                    </button>
+</div>
+</div>
+</section>
+<!-- Wizard Footer -->
+<footer class="w-full max-w-5xl mt-10 flex justify-between items-center">
+<button class="px-8 py-3 rounded-full border border-outline-variant text-on-surface font-semibold hover:bg-surface-container-high transition-all">
+                Anuluj
+            </button>
+<div class="relative group">
+<!-- Tooltip -->
+<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-surface-container-highest text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-10">
+                    Wgraj plik, aby przejść dalej
+                </div>
+<!-- Disabled Button Logic -->
+<button class="px-10 py-3 rounded-full bg-surface-container-highest text-on-surface-variant font-bold flex items-center gap-2 cursor-not-allowed grayscale opacity-60" disabled="">
+                    Dalej
+                    <span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</footer>
+</main>
+<!-- Background Decorative Elements -->
+<div class="fixed top-1/4 right-0 w-96 h-96 bg-primary/5 blur-[120px] rounded-full -z-20"></div>
+<div class="fixed bottom-1/4 left-0 w-64 h-64 bg-tertiary/5 blur-[100px] rounded-full -z-20"></div>
+</body></html>

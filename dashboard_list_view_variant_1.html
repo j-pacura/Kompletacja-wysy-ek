@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Asystent Pakowania - Dashboard (Lista)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-dim": "#63ef82",
+                      "surface-dim": "#0e0e0e",
+                      "primary-fixed-dim": "#63ef82",
+                      "surface-container-high": "#20201f",
+                      "inverse-primary": "#006e2d",
+                      "on-tertiary-fixed-variant": "#005763",
+                      "surface": "#0e0e0e",
+                      "on-primary-fixed": "#004a1c",
+                      "on-primary-container": "#002a0c",
+                      "on-secondary-fixed-variant": "#006940",
+                      "inverse-on-surface": "#565555",
+                      "tertiary-container": "#0fe3ff",
+                      "error": "#ff7351",
+                      "on-secondary-container": "#e2ffe9",
+                      "surface-container-highest": "#262626",
+                      "outline-variant": "#484847",
+                      "on-background": "#ffffff",
+                      "surface-bright": "#2c2c2c",
+                      "secondary-container": "#006d42",
+                      "surface-container-lowest": "#000000",
+                      "error-dim": "#d53d18",
+                      "tertiary-fixed-dim": "#00d4ee",
+                      "on-secondary-fixed": "#00492b",
+                      "on-error": "#450900",
+                      "on-primary-fixed-variant": "#006a2b",
+                      "on-tertiary-fixed": "#003840",
+                      "secondary-fixed-dim": "#6deca8",
+                      "inverse-surface": "#fcf9f8",
+                      "error-container": "#b92902",
+                      "on-surface-variant": "#adaaaa",
+                      "on-secondary": "#005e39",
+                      "secondary-fixed": "#7cfbb5",
+                      "secondary-dim": "#6deca8",
+                      "tertiary-dim": "#00d4ee",
+                      "primary": "#72fe8f",
+                      "surface-tint": "#72fe8f",
+                      "on-error-container": "#ffd2c8",
+                      "on-surface": "#ffffff",
+                      "secondary": "#7cfbb5",
+                      "primary-fixed": "#72fe8f",
+                      "on-tertiary-container": "#004d58",
+                      "outline": "#767575",
+                      "surface-container": "#1a1a1a",
+                      "on-tertiary": "#005762",
+                      "surface-container-low": "#131313",
+                      "tertiary-fixed": "#0fe3ff",
+                      "surface-variant": "#262626",
+                      "tertiary": "#88ebff",
+                      "on-primary": "#005f26",
+                      "primary-container": "#1cb853",
+                      "background": "#0e0e0e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Manrope"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0e0e0e;
+        }
+        h1, h2, h3, .headline {
+            font-family: 'Manrope', sans-serif;
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #72fe8f 0%, #1cb853 100%);
+        }
+        .glass-panel {
+            background: rgba(38, 38, 38, 0.6);
+            backdrop-filter: blur(24px);
+        }
+        /* Custom scrollbar for better look in dark mode */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0e0e0e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262626;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #484847;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-8 h-20 bg-[#131313]">
+<div class="flex items-center gap-4">
+<span class="text-xl font-extrabold tracking-tight text-white">Asystent Pakowania</span>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-gray-400 hover:text-white transition-colors" href="#">Archiwum</a>
+<a class="text-gray-400 hover:text-white transition-colors" href="#">Statystyki</a>
+<a class="text-gray-400 hover:text-white transition-colors" href="#">Ustawienia</a>
+<a class="text-gray-400 hover:text-white transition-colors" href="#">Panel Admin</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="primary-gradient text-on-primary font-bold px-6 py-2.5 rounded-full flex items-center gap-2 transition-transform active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                Nowa Przesyłka
+            </button>
+<button class="text-gray-400 hover:text-white p-2 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+</button>
+</div>
+</header>
+<main class="pt-28 pb-12 px-8 max-w-7xl mx-auto">
+<!-- Stats Bar -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+<div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-primary">
+<div class="flex justify-between items-start mb-4">
+<span class="text-on-surface-variant font-label text-xs tracking-wider uppercase">Total</span>
+<span class="material-symbols-outlined text-primary" data-icon="inventory_2">inventory_2</span>
+</div>
+<div class="headline text-3xl font-extrabold">156</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl">
+<div class="flex justify-between items-start mb-4">
+<span class="text-on-surface-variant font-label text-xs tracking-wider uppercase">In Progress</span>
+<span class="material-symbols-outlined text-tertiary" data-icon="pending">pending</span>
+</div>
+<div class="headline text-3xl font-extrabold">12</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl">
+<div class="flex justify-between items-start mb-4">
+<span class="text-on-surface-variant font-label text-xs tracking-wider uppercase">Completed</span>
+<span class="material-symbols-outlined text-secondary" data-icon="check_circle">check_circle</span>
+</div>
+<div class="headline text-3xl font-extrabold">144</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl">
+<div class="flex justify-between items-start mb-4">
+<span class="text-on-surface-variant font-label text-xs tracking-wider uppercase">Today</span>
+<span class="material-symbols-outlined text-primary-dim" data-icon="today">today</span>
+</div>
+<div class="headline text-3xl font-extrabold">24</div>
+</div>
+</div>
+<!-- Filters & Search -->
+<div class="flex flex-col md:flex-row items-center gap-6 mb-8">
+<div class="relative w-full md:flex-1">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full bg-surface-container-high border-none rounded-xl py-4 pl-12 pr-4 focus:ring-1 focus:ring-primary text-on-surface placeholder:text-on-surface-variant transition-all" placeholder="Wyszukaj numer przesyłki lub miejsce docelowe..." type="text"/>
+</div>
+<div class="flex bg-surface-container-low p-1.5 rounded-full">
+<button class="bg-surface-bright text-primary px-8 py-2 rounded-full font-medium transition-all">All</button>
+<button class="text-on-surface-variant hover:text-on-surface px-8 py-2 rounded-full font-medium transition-all">In Progress</button>
+<button class="text-on-surface-variant hover:text-on-surface px-8 py-2 rounded-full font-medium transition-all">Completed</button>
+</div>
+</div>
+<!-- List View Table -->
+<div class="w-full overflow-x-auto">
+<table class="w-full border-separate border-spacing-y-4">
+<thead class="text-on-surface-variant text-xs uppercase tracking-widest font-label">
+<tr>
+<th class="text-left px-6 py-2 font-medium">Shipment ID</th>
+<th class="text-left px-6 py-2 font-medium">Destination</th>
+<th class="text-left px-6 py-2 font-medium">Status</th>
+<th class="text-left px-6 py-2 font-medium w-1/4">Progress</th>
+<th class="text-center px-4 py-2 font-medium">Details</th>
+<th class="text-right px-6 py-2 font-medium">Actions</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<!-- Row 1 -->
+<tr class="bg-surface-container hover:bg-surface-container-high transition-colors group">
+<td class="px-6 py-6 rounded-l-2xl">
+<div class="flex items-center gap-3">
+<span class="headline font-extrabold text-lg text-white">#SPR-2026-001</span>
+<span class="bg-secondary-container text-on-secondary-container text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded">Express</span>
+</div>
+<div class="flex items-center gap-2 mt-1 text-on-surface-variant text-xs">
+<img class="w-5 h-5 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8pzo1a5Bft0Rrcbyc9RhshFw7sQYl99z5H5zqQqTlc7xHKfvh1uCmOC_QbuU5eNkvQGEjJ5gTCgdVYv8OMaJcXHNUW4PCd81t1lN8-2hroezq0vUkFs8WvRwAq15p-vi4siglmOA0XoFYu63y4GHG2u7mAiQyHc4vmzjjRv4XwGzGnXsNny6qqzLqh1P9fih3egij_LDX37hqLo56Cp5_6ov4LSKMVo7ZwlodU0ENvmtLoTyOE9dq6yhuUg9rcqaWQyDAMb4oJlk"/>
+<span>John Doe</span>
+</div>
+</td>
+<td class="px-6 py-6">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-primary text-base" data-icon="location_on">location_on</span>
+                                Warehouse B, Berlin
+                            </div>
+</td>
+<td class="px-6 py-6">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="sync">sync</span>
+<span class="font-bold">Active</span>
+</div>
+</td>
+<td class="px-6 py-6">
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between text-[10px] font-bold uppercase text-on-surface-variant">
+<span>4 / 14 Parts</span>
+<span class="text-primary">28%</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full primary-gradient" style="width: 28%"></div>
+</div>
+</div>
+</td>
+<td class="px-4 py-6 text-center">
+<div class="flex items-center justify-center gap-4 text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-base" data-icon="scale">scale</span>
+<span class="text-xs">Yes</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-base" data-icon="photo_camera">photo_camera</span>
+<span class="text-xs font-medium">2/14</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-6 rounded-r-2xl text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="primary-gradient text-on-primary font-bold px-5 py-2 rounded-lg transition-transform active:scale-95">
+                                    Continue
+                                </button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-lg">
+<span class="material-symbols-outlined text-xl" data-icon="report">report</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container hover:bg-surface-container-high transition-colors group">
+<td class="px-6 py-6 rounded-l-2xl">
+<div class="flex items-center gap-3">
+<span class="headline font-extrabold text-lg text-white">#SPR-2026-005</span>
+<span class="bg-surface-container-highest text-on-surface-variant text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded">Standard</span>
+</div>
+<div class="flex items-center gap-2 mt-1 text-on-surface-variant text-xs">
+<img class="w-5 h-5 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjyWr0XZRW4SL4RB1aBdTiPSJQUjFfaV2l8W3N_GAsu-UwxKuKC1nWR_iLtbbvPe17OFK7RGN5KKswclyxqN30vlEhR8HI8Dk0Dllp_oHJbB_8N4xAK-h6_gYe5q1bRbyP6BNAdHzCN4rqhW_HXxYnJ7tW__t_idGhbPQ5KpMEXb0Y0eHlB21yShcBlx4K-eUwF3j2kIfRexmrqv84V-W7Y6yW6d0J2rRZwTCSI9qMvwq7QykjUDyzHR-yQemJypOsxMdfyDzvHDM"/>
+<span>Anna Smith</span>
+</div>
+</td>
+<td class="px-6 py-6">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-primary text-base" data-icon="location_on">location_on</span>
+                                Port Logistics, Hamburg
+                            </div>
+</td>
+<td class="px-6 py-6">
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span>
+<span class="font-bold">Completed</span>
+</div>
+</td>
+<td class="px-6 py-6">
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between text-[10px] font-bold uppercase text-on-surface-variant">
+<span>12 / 12 Parts</span>
+<span class="text-secondary">100%</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary" style="width: 100%"></div>
+</div>
+</div>
+</td>
+<td class="px-4 py-6 text-center">
+<div class="flex items-center justify-center gap-4 text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-base" data-icon="scale">scale</span>
+<span class="text-xs">Yes</span>
+</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-base" data-icon="photo_camera" data-weight="fill">photo_camera</span>
+<span class="text-xs font-bold">12/12</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-6 rounded-r-2xl text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="bg-surface-container-highest text-on-surface-variant font-bold px-5 py-2 rounded-lg opacity-50 cursor-not-allowed">
+                                    Archive
+                                </button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-lg">
+<span class="material-symbols-outlined text-xl" data-icon="visibility">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="bg-surface-container hover:bg-surface-container-high transition-colors group">
+<td class="px-6 py-6 rounded-l-2xl">
+<div class="flex items-center gap-3">
+<span class="headline font-extrabold text-lg text-white">#SPR-2026-009</span>
+<span class="bg-error-container/20 text-error text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded">Priority</span>
+</div>
+<div class="flex items-center gap-2 mt-1 text-on-surface-variant text-xs">
+<img class="w-5 h-5 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7OQ9mCbZsvh86q3dLdd865gAY_tMakrF2pnzcFj2k46ehB-NrEMJJJU4iiZWKCJL5ZS-0rLYBH8NKMKAh0k9yFB5J0WYW5F9lE929y6uVcIw6Bc9Ax4MDHSsbqzP-G1BokJ5_glfN1tSzhTfRhNbPkVVVCNfXgHfU3_fz0aem9yHTGrm01PlJOR8DFT-KVtuWdEDLUlwk40qp3r7ND52WH6OWIhh6n7YIedbpK898HCAt4P1GRedq4gUjfBCSiEXdOZcEBLVQWmE"/>
+<span>Marek Kowalski</span>
+</div>
+</td>
+<td class="px-6 py-6">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-primary text-base" data-icon="location_on">location_on</span>
+                                Distribution Hub, Warsaw
+                            </div>
+</td>
+<td class="px-6 py-6">
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined text-sm" data-icon="warning">warning</span>
+<span class="font-bold">Waiting</span>
+</div>
+</td>
+<td class="px-6 py-6">
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between text-[10px] font-bold uppercase text-on-surface-variant">
+<span>1 / 8 Parts</span>
+<span class="text-primary">12.5%</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full primary-gradient" style="width: 12.5%"></div>
+</div>
+</div>
+</td>
+<td class="px-4 py-6 text-center">
+<div class="flex items-center justify-center gap-4 text-on-surface-variant">
+<div class="flex items-center gap-1 text-error">
+<span class="material-symbols-outlined text-base" data-icon="report">report</span>
+<span class="text-xs">No</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-base" data-icon="photo_camera">photo_camera</span>
+<span class="text-xs font-medium">0/8</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-6 rounded-r-2xl text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="primary-gradient text-on-primary font-bold px-5 py-2 rounded-lg transition-transform active:scale-95">
+                                    Continue
+                                </button>
+<button class="p-2 text-on-surface-variant hover:bg-error-container/20 hover:text-error rounded-lg">
+<span class="material-symbols-outlined text-xl" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination/Footer Actions -->
+<div class="mt-8 flex justify-between items-center">
+<p class="text-on-surface-variant text-sm">Showing 3 of 156 shipments</p>
+<div class="flex gap-4">
+<button class="bg-surface-container-low border border-white/5 px-6 py-2 rounded-xl text-sm font-bold hover:bg-surface-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="add_box">add_box</span>
+                    New Batch
+                </button>
+<div class="flex bg-surface-container-low rounded-xl p-1">
+<button class="p-2 text-on-surface-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="px-4 text-sm font-bold text-primary">1</button>
+<button class="px-4 text-sm font-bold text-on-surface-variant hover:text-white transition-colors">2</button>
+<button class="p-2 text-on-surface-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Success Toast - Glassmorphism -->
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 glass-panel px-6 py-4 rounded-2xl flex items-center gap-4 border border-white/10 shadow-2xl">
+<div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="sync" data-weight="fill">sync</span>
+</div>
+<div>
+<div class="text-sm font-bold">Live Synchronizing</div>
+<div class="text-[10px] text-on-surface-variant uppercase tracking-widest">All stations operational</div>
+</div>
+<div class="ml-4 h-1 w-12 bg-surface-container-highest rounded-full relative overflow-hidden">
+<div class="absolute inset-0 bg-primary w-1/2 animate-pulse"></div>
+</div>
+</div>
+</body></html>

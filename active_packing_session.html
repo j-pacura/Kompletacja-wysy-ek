@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0e0e0e;
+            color: #ffffff;
+        }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .glass-panel {
+            background: rgba(38, 38, 38, 0.6);
+            backdrop-filter: blur(24px);
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #72fe8f 0%, #1cb853 100%);
+        }
+        /* Custom scrollbar for high-density lists */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0e0e0e; }
+        ::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #72fe8f; }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "primary-dim": "#63ef82",
+                "surface-dim": "#0e0e0e",
+                "primary-fixed-dim": "#63ef82",
+                "surface-container-high": "#20201f",
+                "inverse-primary": "#006e2d",
+                "on-tertiary-fixed-variant": "#005763",
+                "surface": "#0e0e0e",
+                "on-primary-fixed": "#004a1c",
+                "on-primary-container": "#002a0c",
+                "on-secondary-fixed-variant": "#006940",
+                "inverse-on-surface": "#565555",
+                "tertiary-container": "#0fe3ff",
+                "error": "#ff7351",
+                "on-secondary-container": "#e2ffe9",
+                "surface-container-highest": "#262626",
+                "outline-variant": "#484847",
+                "on-background": "#ffffff",
+                "surface-bright": "#2c2c2c",
+                "secondary-container": "#006d42",
+                "surface-container-lowest": "#000000",
+                "error-dim": "#d53d18",
+                "tertiary-fixed-dim": "#00d4ee",
+                "on-secondary-fixed": "#00492b",
+                "on-error": "#450900",
+                "on-primary-fixed-variant": "#006a2b",
+                "on-tertiary-fixed": "#003840",
+                "secondary-fixed-dim": "#6deca8",
+                "inverse-surface": "#fcf9f8",
+                "error-container": "#b92902",
+                "on-surface-variant": "#adaaaa",
+                "on-secondary": "#005e39",
+                "secondary-fixed": "#7cfbb5",
+                "secondary-dim": "#6deca8",
+                "tertiary-dim": "#00d4ee",
+                "primary": "#72fe8f",
+                "surface-tint": "#72fe8f",
+                "on-error-container": "#ffd2c8",
+                "on-surface": "#ffffff",
+                "secondary": "#7cfbb5",
+                "primary-fixed": "#72fe8f",
+                "on-tertiary-container": "#004d58",
+                "outline": "#767575",
+                "surface-container": "#1a1a1a",
+                "on-tertiary": "#005762",
+                "surface-container-low": "#131313",
+                "tertiary-fixed": "#0fe3ff",
+                "surface-variant": "#262626",
+                "tertiary": "#88ebff",
+                "on-primary": "#005f26",
+                "primary-container": "#1cb853",
+                "background": "#0e0e0e"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "fontFamily": {
+                "headline": ["Manrope"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex">
+<!-- Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-full flex flex-col bg-[#131313] w-64 z-50">
+<div class="p-8">
+<h1 class="text-lg font-headline font-bold text-white">Asystent Pakowania</h1>
+<p class="text-xs text-on-surface-variant font-label mt-1">Terminal Pakowacza</p>
+</div>
+<nav class="flex-1 px-4 space-y-2">
+<div class="bg-[#2c2c2c] text-[#72fe8f] border-l-4 border-[#72fe8f] px-4 py-3 flex items-center gap-3 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</div>
+<div class="text-gray-500 px-4 py-3 hover:text-white flex items-center gap-3 transition-all duration-200 cursor-pointer hover:bg-[#1a1a1a] rounded-lg">
+<span class="material-symbols-outlined" data-icon="archive">archive</span>
+<span class="font-medium">Archiwum</span>
+</div>
+<div class="text-gray-500 px-4 py-3 hover:text-white flex items-center gap-3 transition-all duration-200 cursor-pointer hover:bg-[#1a1a1a] rounded-lg">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-medium">Statystyki</span>
+</div>
+<div class="text-gray-500 px-4 py-3 hover:text-white flex items-center gap-3 transition-all duration-200 cursor-pointer hover:bg-[#1a1a1a] rounded-lg">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-medium">Ustawienia</span>
+</div>
+<div class="text-gray-500 px-4 py-3 hover:text-white flex items-center gap-3 transition-all duration-200 cursor-pointer hover:bg-[#1a1a1a] rounded-lg">
+<span class="material-symbols-outlined" data-icon="admin_panel_settings">admin_panel_settings</span>
+<span class="font-medium">Admin</span>
+</div>
+</nav>
+<div class="p-4 mt-auto">
+<button class="w-full primary-gradient text-on-primary font-bold py-3 rounded-full flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                Nowa Przesyłka
+            </button>
+<div class="mt-4 pt-4 border-t border-outline-variant/20 text-gray-500 px-4 py-3 hover:text-white flex items-center gap-3 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-medium">Wyloguj</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-64 p-8 flex flex-col gap-6">
+<!-- Top Session Bar -->
+<header class="flex items-center justify-between bg-surface-container-low p-6 rounded-xl">
+<div class="flex flex-col">
+<div class="flex items-center gap-3">
+<span class="text-primary-fixed font-headline font-extrabold text-2xl tracking-tight">#SPR-2026-001</span>
+<span class="bg-secondary-container text-on-secondary-container text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full font-bold">Active</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant mt-1">
+<span class="material-symbols-outlined text-sm" data-icon="location_on">location_on</span>
+<span class="text-sm font-medium">Berlin, DE (Zentrum Logistik)</span>
+</div>
+</div>
+<!-- Session Timer -->
+<div class="text-center">
+<div class="text-4xl font-headline font-extrabold tracking-tighter text-white">00:12:45</div>
+<div class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold">Session Time</div>
+</div>
+<!-- Progress & Actions -->
+<div class="flex items-center gap-8">
+<div class="flex flex-col items-end gap-2">
+<div class="flex items-center gap-3">
+<span class="text-xs font-bold text-on-surface-variant">4 / 14 ITEMS</span>
+<span class="text-primary font-headline font-bold">28%</span>
+</div>
+<div class="w-48 h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full primary-gradient w-[28%] rounded-full shadow-[0_0_8px_rgba(114,254,143,0.3)]"></div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="report">report</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="view_column">view_column</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Data Badges & Search Row -->
+<section class="flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<div class="px-4 py-2 bg-surface-container-high rounded-full border border-outline-variant/10 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-tertiary" data-icon="weight">weight</span>
+<span class="text-xs font-bold uppercase tracking-wider text-on-surface">42.5 KG</span>
+</div>
+<div class="px-4 py-2 bg-surface-container-high rounded-full border border-outline-variant/10 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="flag">flag</span>
+<span class="text-xs font-bold uppercase tracking-wider text-on-surface">GERMANY</span>
+</div>
+<div class="px-4 py-2 bg-surface-container-high rounded-full border border-outline-variant/10 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="photo_camera">photo_camera</span>
+<span class="text-xs font-bold uppercase tracking-wider text-on-surface">3 PHOTOS REQ.</span>
+</div>
+<div class="px-4 py-2 bg-surface-container-high rounded-full border border-outline-variant/10 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-error" data-icon="warning">warning</span>
+<span class="text-xs font-bold uppercase tracking-wider text-on-surface">FRAGILE</span>
+</div>
+</div>
+<!-- Scan Bar -->
+<div class="relative group">
+<div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-primary group-focus-within:scale-110 transition-transform" data-icon="qr_code_scanner">qr_code_scanner</span>
+</div>
+<input class="w-full bg-surface-container-high border-none rounded-xl py-5 pl-14 pr-6 focus:ring-0 focus:bg-surface-container-highest transition-all text-lg font-medium placeholder:text-on-surface-variant/50" placeholder="Scan part QR or search manual..." type="text"/>
+<div class="absolute inset-y-0 right-5 flex items-center gap-4">
+<kbd class="hidden md:flex items-center gap-1 px-2 py-1 bg-surface-container border border-outline-variant/20 rounded text-[10px] text-on-surface-variant font-bold">
+<span class="material-symbols-outlined text-xs" data-icon="keyboard_command_key">keyboard_command_key</span> K
+                    </kbd>
+<button class="primary-gradient text-on-primary px-6 py-2 rounded-lg font-bold text-sm shadow-lg shadow-primary/10">SEARCH</button>
+</div>
+<div class="absolute bottom-0 left-0 h-[2px] w-0 bg-primary group-focus-within:w-full transition-all duration-500"></div>
+</div>
+</section>
+<!-- Parts List Section -->
+<section class="flex-1 flex flex-col min-h-0 bg-surface-container-low rounded-2xl overflow-hidden">
+<div class="p-6 border-b border-outline-variant/10 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-headline font-extrabold">TO PACK (14)</h2>
+<div class="flex items-center bg-surface-container px-3 py-1 rounded-md">
+<span class="text-[10px] font-bold text-on-surface-variant mr-2">SORT BY:</span>
+<span class="text-xs font-bold text-white">POS #</span>
+<span class="material-symbols-outlined text-xs ml-1" data-icon="arrow_drop_down">arrow_drop_down</span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="bg-surface-container-high p-2 rounded hover:bg-surface-bright transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-3">
+<!-- Active Item -->
+<div class="bg-surface-bright p-5 rounded-xl flex items-center gap-6 border-l-[4px] border-primary group transition-all duration-300">
+<div class="flex flex-col items-center justify-center w-12 h-12 bg-primary/10 rounded-lg">
+<span class="text-primary font-headline font-extrabold text-lg">05</span>
+<span class="text-[8px] font-bold text-primary/60 uppercase">POS</span>
+</div>
+<div class="flex flex-col flex-1">
+<div class="flex items-center gap-3">
+<span class="text-primary font-headline font-bold tracking-wider">SAP: 4902-XJ-001</span>
+<span class="bg-surface-container-highest px-2 py-0.5 rounded text-[10px] font-mono text-on-surface-variant">BIN: A-42-01</span>
+</div>
+<h3 class="text-lg font-bold text-white mt-1">Industrial Hydraulic Valve Housing G-400</h3>
+<p class="text-sm text-on-surface-variant">Spec: Carbon Steel, Powder Coated (Jet Black), 4.2kg</p>
+</div>
+<div class="flex items-center gap-8">
+<div class="text-center">
+<div class="text-2xl font-headline font-extrabold text-white">1 PCS</div>
+<div class="text-[10px] font-bold text-on-surface-variant uppercase">Remaining</div>
+</div>
+<button class="primary-gradient w-14 h-14 rounded-xl flex items-center justify-center shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-on-primary font-bold text-3xl" data-icon="check">check</span>
+</button>
+</div>
+</div>
+<!-- Regular Item 1 -->
+<div class="bg-surface-container p-5 rounded-xl flex items-center gap-6 group hover:bg-surface-container-high transition-all duration-300">
+<div class="flex flex-col items-center justify-center w-12 h-12 bg-surface-container-highest rounded-lg">
+<span class="text-on-surface-variant font-headline font-extrabold text-lg">06</span>
+<span class="text-[8px] font-bold text-on-surface-variant uppercase">POS</span>
+</div>
+<div class="flex flex-col flex-1">
+<div class="flex items-center gap-3">
+<span class="text-on-surface-variant font-headline font-bold tracking-wider">SAP: 1205-MK-998</span>
+<span class="bg-surface-container-highest px-2 py-0.5 rounded text-[10px] font-mono text-on-surface-variant">BIN: B-12-09</span>
+</div>
+<h3 class="text-lg font-bold text-on-surface-variant mt-1">Stainless Steel Fastener Kit (M12 Long)</h3>
+<p class="text-sm text-on-surface-variant/60">Pack of 50 units, includes nylon spacers</p>
+</div>
+<div class="flex items-center gap-8">
+<div class="text-center">
+<div class="text-2xl font-headline font-extrabold text-on-surface-variant">2 PCS</div>
+<div class="text-[10px] font-bold text-on-surface-variant/60 uppercase">Remaining</div>
+</div>
+<button class="bg-surface-container-highest w-14 h-14 rounded-xl flex items-center justify-center border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary transition-all">
+<span class="material-symbols-outlined text-3xl" data-icon="add_task">add_task</span>
+</button>
+</div>
+</div>
+<!-- Regular Item 2 -->
+<div class="bg-surface-container p-5 rounded-xl flex items-center gap-6 group hover:bg-surface-container-high transition-all duration-300">
+<div class="flex flex-col items-center justify-center w-12 h-12 bg-surface-container-highest rounded-lg">
+<span class="text-on-surface-variant font-headline font-extrabold text-lg">07</span>
+<span class="text-[8px] font-bold text-on-surface-variant uppercase">POS</span>
+</div>
+<div class="flex flex-col flex-1">
+<div class="flex items-center gap-3">
+<span class="text-on-surface-variant font-headline font-bold tracking-wider">SAP: 8871-TR-420</span>
+<span class="bg-surface-container-highest px-2 py-0.5 rounded text-[10px] font-mono text-on-surface-variant">BIN: C-01-01</span>
+</div>
+<h3 class="text-lg font-bold text-on-surface-variant mt-1">High-Tension Gasket Seal (Outer Rim)</h3>
+<p class="text-sm text-on-surface-variant/60">Rubber compound Type-S, Temperature resistant</p>
+</div>
+<div class="flex items-center gap-8">
+<div class="text-center">
+<div class="text-2xl font-headline font-extrabold text-on-surface-variant">12 PCS</div>
+<div class="text-[10px] font-bold text-on-surface-variant/60 uppercase">Remaining</div>
+</div>
+<button class="bg-surface-container-highest w-14 h-14 rounded-xl flex items-center justify-center border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary transition-all">
+<span class="material-symbols-outlined text-3xl" data-icon="add_task">add_task</span>
+</button>
+</div>
+</div>
+<!-- Completed Item Example (Faded) -->
+<div class="bg-surface-container/30 p-5 rounded-xl flex items-center gap-6 opacity-40">
+<div class="flex flex-col items-center justify-center w-12 h-12 bg-primary/20 rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="done_all">done_all</span>
+</div>
+<div class="flex flex-col flex-1 line-through decoration-primary/50">
+<span class="text-xs font-headline font-bold tracking-wider">SAP: 5541-ZZ-001</span>
+<h3 class="text-lg font-bold">Standard Mounting Bracket</h3>
+</div>
+<div class="flex items-center gap-8">
+<div class="text-center">
+<div class="text-2xl font-headline font-extrabold">0 PCS</div>
+</div>
+<div class="w-14 h-14 rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</div>
+<!-- More items would scroll here -->
+<div class="bg-surface-container p-5 rounded-xl flex items-center gap-6 group hover:bg-surface-container-high transition-all duration-300">
+<div class="flex flex-col items-center justify-center w-12 h-12 bg-surface-container-highest rounded-lg">
+<span class="text-on-surface-variant font-headline font-extrabold text-lg">08</span>
+<span class="text-[8px] font-bold text-on-surface-variant uppercase">POS</span>
+</div>
+<div class="flex flex-col flex-1">
+<div class="flex items-center gap-3">
+<span class="text-on-surface-variant font-headline font-bold tracking-wider">SAP: 2211-OP-112</span>
+<span class="bg-surface-container-highest px-2 py-0.5 rounded text-[10px] font-mono text-on-surface-variant">BIN: B-05-22</span>
+</div>
+<h3 class="text-lg font-bold text-on-surface-variant mt-1">Internal Wiring Harness - Main Feed</h3>
+<p class="text-sm text-on-surface-variant/60">3-meter shielded copper wiring with connectors</p>
+</div>
+<div class="flex items-center gap-8">
+<div class="text-center">
+<div class="text-2xl font-headline font-extrabold text-on-surface-variant">1 PCS</div>
+<div class="text-[10px] font-bold text-on-surface-variant/60 uppercase">Remaining</div>
+</div>
+<button class="bg-surface-container-highest w-14 h-14 rounded-xl flex items-center justify-center border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary transition-all">
+<span class="material-symbols-outlined text-3xl" data-icon="add_task">add_task</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer Summary -->
+<div class="p-4 bg-surface-container border-t border-outline-variant/10 flex items-center justify-between">
+<div class="flex items-center gap-6">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Operator</span>
+<span class="text-sm font-bold">Jan Kowalski (ID: 4492)</span>
+</div>
+<div class="w-px h-8 bg-outline-variant/30"></div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Station</span>
+<span class="text-sm font-bold">PACK-STATION-B4</span>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2.5 rounded-xl border border-outline-variant/50 font-bold text-sm text-on-surface-variant hover:bg-surface-container-highest transition-colors">
+                        PAUSE SESSION
+                    </button>
+<button class="px-8 py-2.5 rounded-xl bg-error/10 text-error border border-error/20 font-bold text-sm hover:bg-error hover:text-on-error transition-all">
+                        CANCEL SHIPMENT
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating UI Notification (Glassmorphism) -->
+<div class="fixed bottom-10 right-10 glass-panel p-5 rounded-2xl border border-white/5 shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-5 duration-700">
+<div class="w-12 h-12 rounded-full primary-gradient flex items-center justify-center shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-on-primary" data-icon="lightbulb">lightbulb</span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-bold text-white text-sm">Packing Tip</h4>
+<p class="text-xs text-on-surface-variant max-w-[200px]">Next item (POS #06) requires extra bubble wrap padding as per SOP-42.</p>
+</div>
+<button class="p-1 hover:bg-white/10 rounded-full transition-colors self-start">
+<span class="material-symbols-outlined text-xs" data-icon="close">close</span>
+</button>
+</div>
+</body></html>

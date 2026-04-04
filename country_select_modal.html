@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-dim": "#63ef82",
+                    "surface-dim": "#0e0e0e",
+                    "primary-fixed-dim": "#63ef82",
+                    "surface-container-high": "#20201f",
+                    "inverse-primary": "#006e2d",
+                    "on-tertiary-fixed-variant": "#005763",
+                    "surface": "#0e0e0e",
+                    "on-primary-fixed": "#004a1c",
+                    "on-primary-container": "#002a0c",
+                    "on-secondary-fixed-variant": "#006940",
+                    "inverse-on-surface": "#565555",
+                    "tertiary-container": "#0fe3ff",
+                    "error": "#ff7351",
+                    "on-secondary-container": "#e2ffe9",
+                    "surface-container-highest": "#262626",
+                    "outline-variant": "#484847",
+                    "on-background": "#ffffff",
+                    "surface-bright": "#2c2c2c",
+                    "secondary-container": "#006d42",
+                    "surface-container-lowest": "#000000",
+                    "error-dim": "#d53d18",
+                    "tertiary-fixed-dim": "#00d4ee",
+                    "on-secondary-fixed": "#00492b",
+                    "on-error": "#450900",
+                    "on-primary-fixed-variant": "#006a2b",
+                    "on-tertiary-fixed": "#003840",
+                    "secondary-fixed-dim": "#6deca8",
+                    "inverse-surface": "#fcf9f8",
+                    "error-container": "#b92902",
+                    "on-surface-variant": "#adaaaa",
+                    "on-secondary": "#005e39",
+                    "secondary-fixed": "#7cfbb5",
+                    "secondary-dim": "#6deca8",
+                    "tertiary-dim": "#00d4ee",
+                    "primary": "#72fe8f",
+                    "surface-tint": "#72fe8f",
+                    "on-error-container": "#ffd2c8",
+                    "on-surface": "#ffffff",
+                    "secondary": "#7cfbb5",
+                    "primary-fixed": "#72fe8f",
+                    "on-tertiary-container": "#004d58",
+                    "outline": "#767575",
+                    "surface-container": "#1a1a1a",
+                    "on-tertiary": "#005762",
+                    "surface-container-low": "#131313",
+                    "tertiary-fixed": "#0fe3ff",
+                    "surface-variant": "#262626",
+                    "tertiary": "#88ebff",
+                    "on-primary": "#005f26",
+                    "primary-container": "#1cb853",
+                    "background": "#0e0e0e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.75rem",
+                    "xl": "1rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .headline { font-family: 'Manrope', sans-serif; }
+        .glass-panel {
+            background: rgba(38, 38, 38, 0.6);
+            backdrop-filter: blur(24px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary selection:text-on-primary">
+<!-- Sidebar Navigation Shell -->
+<nav class="fixed left-0 top-0 h-full flex flex-col bg-[#131313] w-64 z-40 hidden md:flex">
+<div class="p-8">
+<h1 class="text-lg font-bold text-white tracking-tight headline">Asystent Pakowania</h1>
+<p class="text-xs text-on-surface-variant mt-1">Terminal Pakowacza</p>
+</div>
+<div class="flex-1 px-4 space-y-2 mt-4">
+<div class="text-gray-500 px-4 py-3 hover:text-white transition-all duration-200 cursor-pointer flex items-center gap-4">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</div>
+<!-- Active State for Archiwum/Packing Session related areas -->
+<div class="bg-[#2c2c2c] text-[#72fe8f] border-l-4 border-[#72fe8f] px-4 py-3 transition-all duration-200 flex items-center gap-4">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">archive</span>
+<span class="font-medium">Sesja Pakowania</span>
+</div>
+<div class="text-gray-500 px-4 py-3 hover:text-white transition-all duration-200 cursor-pointer flex items-center gap-4">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="font-medium">Statystyki</span>
+</div>
+<div class="text-gray-500 px-4 py-3 hover:text-white transition-all duration-200 cursor-pointer flex items-center gap-4">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium">Ustawienia</span>
+</div>
+</div>
+<div class="p-8">
+<div class="text-gray-500 px-4 py-3 hover:text-white transition-all duration-200 cursor-pointer flex items-center gap-4">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-medium">Wyloguj</span>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas (Blurred background for Modal) -->
+<main class="md:ml-64 p-8 min-h-screen filter blur-sm grayscale-[0.2]">
+<!-- Active Packing Session Content (Abstracted) -->
+<header class="flex justify-between items-center mb-12">
+<div>
+<span class="text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Aktualne Zadanie</span>
+<h2 class="text-4xl font-extrabold headline mt-2 tracking-tight">KONTROLER RUCHU #4482</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="h-12 w-12 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">person</span>
+</div>
+</div>
+</header>
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-2 space-y-6">
+<div class="h-64 bg-surface-container-low rounded-xl"></div>
+<div class="h-96 bg-surface-container-low rounded-xl"></div>
+</div>
+<div class="space-y-6">
+<div class="h-full bg-surface-container-low rounded-xl"></div>
+</div>
+</section>
+</main>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+<!-- Backdrop -->
+<div class="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
+<!-- Modal Container -->
+<div class="relative w-full max-w-2xl glass-panel border border-outline-variant/10 rounded-xl overflow-hidden shadow-2xl flex flex-col">
+<!-- Modal Header -->
+<div class="p-8 border-b border-outline-variant/5">
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-3 mb-1">
+<span class="text-[10px] font-bold tracking-widest text-primary uppercase bg-primary/10 px-2 py-0.5 rounded">SAP INDEX: 0093821-X</span>
+<span class="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase bg-surface-container-highest px-2 py-0.5 rounded">Wymagane dane</span>
+</div>
+<h3 class="text-2xl font-extrabold headline text-white leading-tight">Wybierz Kraj Pochodzenia</h3>
+</div>
+<button class="text-on-surface-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+</div>
+</div>
+<!-- Modal Content -->
+<div class="p-8 overflow-y-auto max-h-[716px]">
+<div class="mb-8">
+<label class="text-[10px] font-bold tracking-wider uppercase text-on-surface-variant block mb-4">Szybki Wybór (Skróty Klawiszowe)</label>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<!-- Country Items -->
+<div class="flex items-center justify-between p-4 bg-surface-container hover:bg-surface-bright rounded-lg cursor-pointer transition-all duration-200 group border-l-2 border-transparent hover:border-primary active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<img alt="China Flag" class="w-6 h-4 object-cover rounded-sm shadow-sm" data-alt="National flag of China with five stars on a red background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzRYztnDDc2FJxShN97kMIUrMQHQhyNhPMFqSvJoypT-UFsUTjDDO5_9sOm8vOkBfyVjxOsXh-rlFTrbbBhmit7Suv6eaJQV5Cz6S1utOgo6YipI6ucKx3nNck2wwCTEG8xPY0sgDGqGlxqcH8VeoW0qI05eZ_YhsM6skTg_UYVtWb3QyTCa0JOY3k-Cxap2IdlMHTDq0yl6W5uSip38yDK-KMQsMwvakRyl38K6ZzAmM2H9b9-G_vLLj8Wt8pjlL4MonWVv-Ednc"/>
+<span class="font-medium text-white group-hover:text-primary">Chiny</span>
+</div>
+<span class="text-xs font-mono bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded border border-outline-variant/20">1</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container hover:bg-surface-bright rounded-lg cursor-pointer transition-all duration-200 group border-l-2 border-transparent hover:border-primary active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<img alt="USA Flag" class="w-6 h-4 object-cover rounded-sm shadow-sm" data-alt="National flag of the United States with stars and stripes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGnKjYYauU81Zh70G6Kt8sNFaxb5dX8rmA1M1wMwBMbHVS1HfSdHecUNNAXClWWjHbqifXNc0aHgf-OyGvybz_UJ-EQPS5sNq80Hm0nlRSDN6xVuygUeSBos8FVMi13DU6eJR557T4Y6drKBW69X0lSQ8GL-ndDxMsfWNyYxk-1j-IpoEKoGue0RJfvqjz0M6RiMYbtVWvpvnmHLULgVxoFKVHGersbZ_1OOQW8WvZiA2C9KohcjM1yYlN24TsbOun_A-npoNX8HY"/>
+<span class="font-medium text-white group-hover:text-primary">USA</span>
+</div>
+<span class="text-xs font-mono bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded border border-outline-variant/20">2</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container hover:bg-surface-bright rounded-lg cursor-pointer transition-all duration-200 group border-l-2 border-transparent hover:border-primary active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<img alt="Germany Flag" class="w-6 h-4 object-cover rounded-sm shadow-sm" data-alt="National flag of Germany with black red and gold horizontal stripes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYXNCudCc0qbrQWuckJY6mNHg6zFuTIyeVvz28vvNgH1VDWxO9QIoB6NEZY4ooEAFnlO5nkUmA3J467yUMU90RZVRj7FoQQkl1pxqYgmESgwVYfXtpCMEqV9wMdwRFrJ-v1OSouAqfYMOEWgBzwSalVIo81FY5nfAPCVWNvbS1pxM4sIMu2Kakk4JgeSrvYuGDB6uE-nJJ4neITIIPz2dtCAKLyLyxunAGHFJZGCe9xlkM_zP4v7s05WXAzgPFmAkPy3GjQowWJXw"/>
+<span class="font-medium text-white group-hover:text-primary">Niemcy</span>
+</div>
+<span class="text-xs font-mono bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded border border-outline-variant/20">3</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-bright border-l-4 border-primary rounded-lg cursor-pointer transition-all duration-200 group active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<img alt="Poland Flag" class="w-6 h-4 object-cover rounded-sm shadow-sm" data-alt="National flag of Poland with white and red horizontal stripes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAri9-adGYveZijDxjIpd_ToVqjM3YuYE81PTY3rE5WbjRXZV3JmplKaBYvTD-p-jJCFBWyPOPi0i4M8no7b7-S1DQY9segLP_b7gkGhCebmx5Tms7F0fS4JFVWz_Ny0LbTY_kcDjYNWwEWEcjfnacAuFbuyWlx84RAyrKlvazKz4XFPJgOoazs6AaXSZOL1WkM9Tso263zTbk7wXsAU6I23CFewtS4C0Zxanda7fm0Gp3DkLRDB3c2oXLoDX2-eCVcLtKlurfPaI"/>
+<span class="font-medium text-primary">Polska</span>
+</div>
+<span class="text-xs font-mono bg-primary/20 text-primary px-2 py-1 rounded border border-primary/20">4</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container hover:bg-surface-bright rounded-lg cursor-pointer transition-all duration-200 group border-l-2 border-transparent hover:border-primary active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<img alt="UK Flag" class="w-6 h-4 object-cover rounded-sm shadow-sm" data-alt="National flag of the United Kingdom with union jack design" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBvTDt13COjRjkD7eLWIb6X_ffH6L-sYiwh0QwPbFvQDieUfENGjv1mIW7Ij1mIGL4zqvt-HPyQLSdZMwyeIPdaF-m-iJbq2tByk2It6hPAuCv3CsJvsErrFnnDXmh2kAIkBr88MmCNtMmjveqL8NJRABQP0FvwvQm13W4XLptsfvZ8wJX30eudbb8XCI6u7152nFgflN8_jNb0m1GwlqexAzUH0EgR_nQricqTaQ6DofRkCOfhfZC0XLj--fF9fXJca72o106guQ"/>
+<span class="font-medium text-white group-hover:text-primary">Wielka Brytania</span>
+</div>
+<span class="text-xs font-mono bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded border border-outline-variant/20">5</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container hover:bg-surface-bright rounded-lg cursor-pointer transition-all duration-200 group border-l-2 border-transparent hover:border-primary active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<img alt="France Flag" class="w-6 h-4 object-cover rounded-sm shadow-sm" data-alt="National flag of France with vertical blue white and red stripes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFzbZU4hpi3fMlYjt-g6FZoWjgwPhVjllto9WuMPRPYUbf_SAAMwfYtgZBZs-AhXJ1fJPXxJIOYGrzBDSDbrFYoJLVNUvQBqDbR-wi9U1FJ_5Z4mKoLEC-98hXcgsU-lsu57s1QmNaJbAFQnusjBe7p3LqFFLhbzGpRifm78NBEn-prV6Xw5-stQYOHfdixhCJEEK77CucKbmg_bdCWIK2NO6lKHqc0bmU6kmhCs-JQyCYyc9eE4Tod4rD6wXBdrZ4DXBEMFsXUO8"/>
+<span class="font-medium text-white group-hover:text-primary">Francja</span>
+</div>
+<span class="text-xs font-mono bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded border border-outline-variant/20">6</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container hover:bg-surface-bright rounded-lg cursor-pointer transition-all duration-200 group border-l-2 border-transparent hover:border-primary active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<img alt="Italy Flag" class="w-6 h-4 object-cover rounded-sm shadow-sm" data-alt="National flag of Italy with vertical green white and red stripes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8B1vEDWAQxaJEATpb6o1M3uc0PkXJeJsXA7pKw-lj-THdVXmmATpwNRUbP0GZ0eQCuFAkTOM_xJWO3FZmc9vxxqosrLuf95zaMg8nAYIxLv0lv7gqgn5ToIBCyb4lShoqcfVwIFo1paERaDZPX1xdtZp2roWDoYu3T1N-rDr0xpujr_QYP82orhZaEematBvxI17nV_86LR2FK2Jj5ySglPSZD459FvHnsIgfuenH7O3iWt_h5m2lmbN9Uq-3gad2B88KJvAzXU8"/>
+<span class="font-medium text-white group-hover:text-primary">Włochy</span>
+</div>
+<span class="text-xs font-mono bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded border border-outline-variant/20">7</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container hover:bg-surface-bright rounded-lg cursor-pointer transition-all duration-200 group border-l-2 border-transparent hover:border-primary active:scale-[0.98]">
+<div class="flex items-center gap-4">
+<img alt="Japan Flag" class="w-6 h-4 object-cover rounded-sm shadow-sm" data-alt="National flag of Japan with red circle on white background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPQ5OY48CQb8xI1njhHHCRVUgv6GqPd8nirg0Gda1oXLgD4O-tnkCTIa-id5VyWMqJ0IfeCCNz38c4O1jqGQI3T1tT1huc8uNBN9deLifineqjNfP8NA9_GBMIjUKOEGQup2i6rHOZ7BOZvdOzaG5DDH9r4R3jfi46ShXDxyzaEK6S3DrjvEuIHmAYSr2vp4uwkc5tstntQyT4XGzWJFOkAvvhC-ngehkJNGoh5tdXzWDnaz7WI5YKb10SRgH7AAH-LLziBw5p5eI"/>
+<span class="font-medium text-white group-hover:text-primary">Japonia</span>
+</div>
+<span class="text-xs font-mono bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded border border-outline-variant/20">8</span>
+</div>
+</div>
+</div>
+<!-- Manual Input -->
+<div class="pt-6 border-t border-outline-variant/5">
+<label class="text-[10px] font-bold tracking-wider uppercase text-on-surface-variant block mb-3" for="manual_country">Ręczne Wpisywanie</label>
+<div class="relative">
+<input class="w-full bg-surface-container-high border-none rounded-lg p-4 text-white focus:ring-0 focus:border-b-2 focus:border-primary transition-all placeholder:text-outline/50" id="manual_country" placeholder="Wpisz nazwę kraju lub kod ISO..." type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-primary">
+<span class="material-symbols-outlined">search</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="p-8 bg-surface-container-low flex flex-col sm:flex-row justify-end items-center gap-4">
+<button class="w-full sm:w-auto px-8 py-3 text-sm font-bold text-on-surface-variant hover:text-white transition-colors headline">Anuluj</button>
+<button class="w-full sm:w-auto px-10 py-3 rounded-full bg-gradient-to-br from-primary to-primary-container text-on-primary text-sm font-extrabold uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all headline">
+                    Zatwierdź Wybór
+                </button>
+</div>
+</div>
+</div>
+<!-- Mobile Nav Bar (Suppressed as per rules for transactional focused screens but template provided for shell integrity) -->
+<div class="fixed bottom-0 left-0 w-full h-16 bg-[#131313] md:hidden z-50 flex justify-around items-center px-4 border-t border-outline-variant/5">
+<span class="material-symbols-outlined text-gray-500">dashboard</span>
+<span class="material-symbols-outlined text-[#72fe8f]" style="font-variation-settings: 'FILL' 1;">archive</span>
+<span class="material-symbols-outlined text-gray-500">bar_chart</span>
+<span class="material-symbols-outlined text-gray-500">settings</span>
+</div>
+</body></html>

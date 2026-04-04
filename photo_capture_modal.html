@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Asystent Pakowania - Photo Capture</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-dim": "#63ef82",
+                    "surface-dim": "#0e0e0e",
+                    "primary-fixed-dim": "#63ef82",
+                    "surface-container-high": "#20201f",
+                    "inverse-primary": "#006e2d",
+                    "on-tertiary-fixed-variant": "#005763",
+                    "surface": "#0e0e0e",
+                    "on-primary-fixed": "#004a1c",
+                    "on-primary-container": "#002a0c",
+                    "on-secondary-fixed-variant": "#006940",
+                    "inverse-on-surface": "#565555",
+                    "tertiary-container": "#0fe3ff",
+                    "error": "#ff7351",
+                    "on-secondary-container": "#e2ffe9",
+                    "surface-container-highest": "#262626",
+                    "outline-variant": "#484847",
+                    "on-background": "#ffffff",
+                    "surface-bright": "#2c2c2c",
+                    "secondary-container": "#006d42",
+                    "surface-container-lowest": "#000000",
+                    "error-dim": "#d53d18",
+                    "tertiary-fixed-dim": "#00d4ee",
+                    "on-secondary-fixed": "#00492b",
+                    "on-error": "#450900",
+                    "on-primary-fixed-variant": "#006a2b",
+                    "on-tertiary-fixed": "#003840",
+                    "secondary-fixed-dim": "#6deca8",
+                    "inverse-surface": "#fcf9f8",
+                    "error-container": "#b92902",
+                    "on-surface-variant": "#adaaaa",
+                    "on-secondary": "#005e39",
+                    "secondary-fixed": "#7cfbb5",
+                    "secondary-dim": "#6deca8",
+                    "tertiary-dim": "#00d4ee",
+                    "primary": "#72fe8f",
+                    "surface-tint": "#72fe8f",
+                    "on-error-container": "#ffd2c8",
+                    "on-surface": "#ffffff",
+                    "secondary": "#7cfbb5",
+                    "primary-fixed": "#72fe8f",
+                    "on-tertiary-container": "#004d58",
+                    "outline": "#767575",
+                    "surface-container": "#1a1a1a",
+                    "on-tertiary": "#005762",
+                    "surface-container-low": "#131313",
+                    "tertiary-fixed": "#0fe3ff",
+                    "surface-variant": "#262626",
+                    "tertiary": "#88ebff",
+                    "on-primary": "#005f26",
+                    "primary-container": "#1cb853",
+                    "background": "#0e0e0e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(38, 38, 38, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased overflow-hidden">
+<!-- Background Content (Simulating Active Packing Session) -->
+<div class="fixed inset-0 z-0 flex blur-sm opacity-40">
+<!-- SideNav Mock -->
+<aside class="fixed left-0 top-0 h-full flex flex-col bg-[#131313] w-64 p-6">
+<div class="text-lg font-bold text-white font-headline mb-8">Asystent Pakowania</div>
+<nav class="space-y-4">
+<div class="bg-[#2c2c2c] text-[#72fe8f] border-l-4 border-[#72fe8f] px-4 py-3 flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</div>
+</nav>
+</aside>
+<!-- Main Workspace Mock -->
+<main class="ml-64 w-full p-10 bg-surface">
+<header class="flex justify-between items-center mb-12">
+<h1 class="text-4xl font-headline font-extrabold tracking-tight">Aktywna Sesja</h1>
+<div class="w-12 h-12 rounded-full bg-surface-container"></div>
+</header>
+<div class="grid grid-cols-3 gap-6">
+<div class="h-64 bg-surface-container rounded-xl"></div>
+<div class="h-64 bg-surface-container rounded-xl"></div>
+<div class="h-64 bg-surface-container rounded-xl"></div>
+</div>
+</main>
+</div>
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-surface/80 backdrop-blur-md">
+<!-- Photo Capture Modal -->
+<div class="relative w-full max-w-4xl glass-panel border border-outline-variant/15 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[921px]">
+<!-- Step Indicator -->
+<div class="flex justify-between items-center p-6 bg-surface-container-low">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="check" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="text-xs font-label tracking-wider uppercase text-on-surface-variant">Weryfikacja</span>
+</div>
+<div class="h-px w-8 bg-outline-variant"></div>
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="check" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="text-xs font-label tracking-wider uppercase text-on-surface-variant">Etykietowanie</span>
+</div>
+<div class="h-px w-8 bg-outline-variant"></div>
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(114,254,143,0.3)]">
+                            3
+                        </div>
+<span class="text-xs font-label tracking-wider uppercase text-primary font-bold">Dokumentacja Foto</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Modal Header -->
+<div class="px-8 py-6 border-b border-outline-variant/10">
+<div class="flex items-baseline gap-4">
+<h2 class="text-3xl font-headline font-extrabold text-white">SAP-992031-LX</h2>
+<span class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold uppercase tracking-widest">Wysoka Priorytet</span>
+</div>
+<p class="text-on-surface-variant font-medium mt-1">Moduł Sensoryczny v4.2 - Seria Przemysłowa</p>
+</div>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto p-8 flex flex-col md:flex-row gap-8">
+<!-- Left Column: Camera Preview -->
+<div class="flex-1 flex flex-col gap-4">
+<div class="relative aspect-video rounded-xl overflow-hidden bg-surface-container-lowest border border-outline-variant/20 group">
+<img alt="Live Warehouse Camera Feed" class="w-full h-full object-cover opacity-60 mix-blend-luminosity" data-alt="industrial warehouse workstation with conveyor belt and robotic arm, blue ambient lighting, sharp focus on packing station" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1-MLrMLtUPLLGgIM_cn5r9PNKzE5s-sSHeWez3J2ulYYZ_MSlvUcuBcJy9yTfqyd8dHZE1CnNJSc1tRWc0umjrfFh9d9nklHc6PRvh2zS5dsR1cbU4bMPVCm_vbDyUiCYwAZF0EVNp1AfBq6F52J2l-Up7TV_U5QpJGxiPxUBbQ19-B_8JF7Tl33hBDk9wbGYN9rQoE8YDTtyyzgxGYRZLexZ96_wKgfYZJbF4TK5cU-MfRjNE1i1B81eojOkF_ILFjgnk4XbvMY"/>
+<!-- Overlay UI for Camera -->
+<div class="absolute inset-0 flex flex-col justify-between p-6">
+<div class="flex justify-between items-start">
+<div class="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/10">
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+<span class="text-[10px] font-bold tracking-widest uppercase text-white">Live Feed</span>
+</div>
+<div class="flex gap-2">
+<button class="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 hover:bg-black/60 transition-colors">
+<span class="material-symbols-outlined text-white" data-icon="zoom_in">zoom_in</span>
+</button>
+<button class="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 hover:bg-black/60 transition-colors">
+<span class="material-symbols-outlined text-white" data-icon="light_mode">light_mode</span>
+</button>
+</div>
+</div>
+<!-- Camera Reticle -->
+<div class="self-center flex flex-col items-center gap-4 opacity-50">
+<div class="w-32 h-32 border-2 border-dashed border-primary/40 rounded-2xl flex items-center justify-center">
+<div class="w-2 h-2 rounded-full bg-primary/40"></div>
+</div>
+<p class="text-[10px] text-white/50 font-label tracking-widest uppercase">Wyśrodkuj zawartość przesyłki</p>
+</div>
+<div class="flex justify-center">
+<button class="h-16 w-16 rounded-full bg-white flex items-center justify-center shadow-2xl active:scale-95 transition-transform group/btn">
+<div class="h-12 w-12 rounded-full border-4 border-surface ring-2 ring-primary group-hover/btn:ring-4 transition-all"></div>
+</button>
+</div>
+</div>
+</div>
+<!-- Primary CTA -->
+<button class="w-full h-14 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-primary/10 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined" data-icon="photo_camera" data-weight="fill" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+                        Zrób Zdjęcie
+                    </button>
+</div>
+<!-- Right Column: Results & State (The Transition State) -->
+<div class="w-full md:w-80 flex flex-col gap-6">
+<div class="p-6 rounded-xl bg-surface-container-high border border-outline-variant/10">
+<h3 class="text-xs font-label font-bold tracking-[0.2em] uppercase text-on-surface-variant mb-4">Podgląd Ostatniego</h3>
+<div class="relative aspect-square rounded-lg overflow-hidden mb-6 bg-surface-container-highest ring-1 ring-white/5">
+<img alt="Captured Package Photo" class="w-full h-full object-cover" data-alt="top-down high quality studio photo of an open cardboard box containing electronic components and bubble wrap, clean neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfn6YyDej2oVlpws5756si2K0uzAzqO4C9uT3HzAwp9bGJ3Utm3I3z0UsMNsJSJdTG7BDskT5cB1as07IslCEVI2EyDl3G3vGiKG0S0fIgwDNceucvbWFMXbfl5sGPF3UIVyC9fANI5u3f4vRXI8zcAj-hZ-Ka04PACzYk_r4wV90pZcZa-xh8dY1crJXAfKpYScLkvIhBmTFivK-XKVERtQBAWd83IhmrM9fk9zULzDFBNoQj4FCQMs7dNTRGCpvsrxzd_oa0xsY"/>
+<div class="absolute top-2 right-2 px-2 py-1 bg-primary text-on-primary text-[9px] font-bold rounded uppercase">Zapisano</div>
+</div>
+<!-- 2x2 Clean Layout Action Buttons -->
+<div class="grid grid-cols-2 gap-3">
+<!-- Confirm -->
+<button class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-all group">
+<span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform" data-icon="check_circle">check_circle</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Potwierdź</span>
+</button>
+<!-- Take Another -->
+<button class="flex flex-col items-center justify-center p-3 rounded-lg bg-surface-container-highest border border-outline-variant/20 text-on-surface hover:bg-surface-bright transition-all group">
+<span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform" data-icon="add_a_photo">add_a_photo</span>
+<span class="text-[10px] font-bold uppercase tracking-wider text-center">Następne</span>
+</button>
+<!-- Retake -->
+<button class="flex flex-col items-center justify-center p-3 rounded-lg bg-surface-container-highest border border-outline-variant/20 text-on-surface hover:bg-surface-bright transition-all group">
+<span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform" data-icon="replay">replay</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Powtórz</span>
+</button>
+<!-- Cancel -->
+<button class="flex flex-col items-center justify-center p-3 rounded-lg bg-surface-container-highest border border-outline-variant/20 text-error/80 hover:bg-error/10 transition-all group">
+<span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform" data-icon="cancel">cancel</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Anuluj</span>
+</button>
+</div>
+</div>
+<!-- Guidance Info -->
+<div class="bg-tertiary-container/5 rounded-xl p-4 flex gap-4 items-start border border-tertiary-container/10">
+<span class="material-symbols-outlined text-tertiary" data-icon="info">info</span>
+<div>
+<p class="text-xs font-bold text-tertiary uppercase tracking-wider mb-1">Standard Jakości</p>
+<p class="text-[11px] text-on-surface-variant leading-relaxed">Upewnij się, że etykieta transportowa jest widoczna i czytelna na co najmniej jednym zdjęciu.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="p-6 bg-surface-container-lowest border-t border-outline-variant/10 flex justify-between items-center">
+<div class="flex gap-2">
+<div class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(114,254,143,0.5)]"></div>
+<div class="w-2 h-2 rounded-full bg-surface-container-highest"></div>
+<div class="w-2 h-2 rounded-full bg-surface-container-highest"></div>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-2 rounded-full text-on-surface-variant font-bold text-sm hover:text-white transition-colors">Wróć</button>
+<button class="px-8 py-2 rounded-full bg-surface-container-highest border border-outline-variant/20 text-on-surface font-bold text-sm hover:bg-surface-bright transition-colors">Pomiń Krok</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Contextual Toast Notification (Glassmorphism Example) -->
+<div class="fixed bottom-10 right-10 z-[60] flex items-center gap-4 px-6 py-4 glass-panel border border-primary/20 rounded-2xl shadow-2xl">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="cloud_upload">cloud_upload</span>
+</div>
+<div>
+<p class="text-sm font-bold text-white leading-none mb-1">Synchronizacja aktywna</p>
+<p class="text-[11px] text-on-surface-variant">Zdjęcia są przesyłane do SAP w czasie rzeczywistym.</p>
+</div>
+</div>
+</body></html>
