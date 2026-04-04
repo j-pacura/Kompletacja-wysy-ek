@@ -22,9 +22,11 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  console.log('🏗️ Layout component mounted');
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout } = useUser();
+  console.log('📍 Current path:', location.pathname);
 
   const handleNavigation = (path: string) => {
     navigate(path);

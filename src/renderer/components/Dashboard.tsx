@@ -5,12 +5,14 @@ import { pl } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
+  console.log('🎯 Dashboard component mounted');
   const navigate = useNavigate();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [shipmentParts, setShipmentParts] = useState<{ [shipmentId: number]: any[] }>({});
 
   useEffect(() => {
+    console.log('📊 Dashboard useEffect - loading shipments');
     loadShipments();
   }, []);
 
@@ -103,6 +105,7 @@ const Dashboard: React.FC = () => {
   };
 
   if (loading) {
+    console.log('⏳ Dashboard is loading...');
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
@@ -112,6 +115,8 @@ const Dashboard: React.FC = () => {
       </div>
     );
   }
+
+  console.log('✅ Dashboard loaded with', shipments.length, 'shipments');
 
   return (
     <div className="w-full space-y-8">
