@@ -5,6 +5,14 @@ module.exports = {
     "./src/renderer/index.html",
   ],
   darkMode: 'class',
+  safelist: [
+    // Material Design 3 color classes that must always be generated
+    { pattern: /^(bg|text|border|ring)-(surface|primary|secondary|tertiary|error|on-)/ },
+    { pattern: /^(bg|text|border|ring)-(outline|inverse)/ },
+    'primary-gradient',
+    'glass-panel',
+    'shadow-glow',
+  ],
   theme: {
     extend: {
       // Material Design 3 Color Palette
