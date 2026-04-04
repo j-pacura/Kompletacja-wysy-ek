@@ -3,12 +3,9 @@ import { Shipment } from '../types/shipment';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../contexts/UserContext';
-import toast from 'react-hot-toast';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser } = useUser();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [shipmentParts, setShipmentParts] = useState<{ [shipmentId: number]: any[] }>({});
@@ -272,12 +269,14 @@ const Dashboard: React.FC = () => {
 
                   {/* Metadata - extreme whitespace between items */}
                   <div className="flex items-center gap-6 text-on-surface-variant font-label text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-base">
-                        person
-                      </span>
-                      <span>{shipment.created_by_name}</span>
-                    </div>
+                    {shipment.packed_by && (
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-base">
+                          person
+                        </span>
+                        <span>{shipment.packed_by}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-base">
                         calendar_today
