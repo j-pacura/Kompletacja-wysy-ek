@@ -2,19 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Confetti from 'react-confetti';
 import toast, { Toaster } from 'react-hot-toast';
-import {
-  ArrowLeft,
-  Search,
-  Settings,
-  Save,
-  Pause,
-  FileText,
-  BarChart3,
-  CheckCircle2,
-  Clock,
-  Camera,
-  X,
-} from 'lucide-react';
 import { Shipment } from '../types/shipment';
 import { Part } from '../types/part';
 import { useAudio } from '../hooks/useAudio';
@@ -1031,7 +1018,6 @@ const PackingScreen: React.FC = () => {
 
     return (
       <svg width={size} height={size} className="transform -rotate-90">
-        {/* Background circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -1039,45 +1025,37 @@ const PackingScreen: React.FC = () => {
           stroke="currentColor"
           strokeWidth={strokeWidth}
           fill="none"
-          className="text-bg-tertiary"
+          className="text-surface-container"
         />
-        {/* Progress circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="url(#gradient)"
+          stroke="currentColor"
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className="transition-all duration-500 ease-out"
+          className="text-primary transition-all duration-500 ease-out"
         />
-        {/* Gradient definition */}
-        <defs>
-          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#1db954" />
-            <stop offset="100%" stopColor="#1ed760" />
-          </linearGradient>
-        </defs>
       </svg>
     );
   };
 
   if (loading || !shipment) {
     return (
-      <div className="flex items-center justify-center w-screen h-screen bg-bg-primary">
+      <div className="flex items-center justify-center w-screen h-screen bg-surface">
         <div className="text-center">
-          <div className="spinner mx-auto mb-4"></div>
-          <p className="text-text-secondary text-lg">Ładowanie wysyłki...</p>
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-on-surface-variant text-lg">Ładowanie wysyłki...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col w-full h-full bg-bg-primary">
+    <div className="flex flex-col w-full h-full bg-surface">
       {/* Hidden scanner input */}
       <input
         ref={scannerInputRef}
@@ -1099,16 +1077,25 @@ const PackingScreen: React.FC = () => {
 
       {/* Toast notifications */}
       <Toaster
+        position="top-right"
         toastOptions={{
+          duration: 3000,
           style: {
-            background: '#1e1e1e',
-            color: '#fff',
-            border: '1px solid #333',
+            background: 'var(--md-surface-container-high)',
+            color: 'var(--md-on-surface)',
+            borderRadius: '12px',
+            padding: '16px',
           },
           success: {
             iconTheme: {
-              primary: '#1db954',
-              secondary: '#fff',
+              primary: 'var(--md-primary)',
+              secondary: 'var(--md-on-primary)',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: 'var(--md-error)',
+              secondary: 'var(--md-on-error)',
             },
           },
         }}
@@ -1117,28 +1104,32 @@ const PackingScreen: React.FC = () => {
       {/* Scan Confirmation Modal */}
       {isModalOpen && selectedPart && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 animate-fade-in"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={handleCloseModal}
         >
           <div
-            className="bg-bg-secondary rounded-2xl p-8 max-w-2xl w-full mx-4 animate-scale-in"
+            className="glass-panel rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Breadcrumb */}
+            {/* Progress Stepper */}
             <div className="flex items-center justify-center gap-4 mb-8">
-              <div className={`flex items-center gap-2 ${modalStep >= 1 ? 'text-accent-success' : 'text-text-tertiary'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${modalStep >= 1 ? 'bg-accent-success' : 'bg-bg-tertiary'}`}>
-                  <span className="text-white font-bold">1</span>
+              <div className={`flex items-center gap-2 ${modalStep >= 1 ? 'text-primary' : 'text-on-surface-variant'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${modalStep >= 1 ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'}`}>
+                  <span className="material-symbols-outlined text-xl">
+                    {modalStep > 1 ? 'check' : 'check_circle'}
+                  </span>
                 </div>
                 <span className="text-sm font-semibold">Potwierdzenie</span>
               </div>
 
               {shipment?.require_weight && (
                 <>
-                  <div className="w-8 h-0.5 bg-bg-tertiary"></div>
-                  <div className={`flex items-center gap-2 ${modalStep >= 2 ? 'text-accent-success' : 'text-text-tertiary'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${modalStep >= 2 ? 'bg-accent-success' : 'bg-bg-tertiary'}`}>
-                      <span className="text-white font-bold">2</span>
+                  <div className={`flex-1 h-1 rounded-full ${modalStep >= 2 ? 'bg-primary' : 'bg-surface-container'}`}></div>
+                  <div className={`flex items-center gap-2 ${modalStep >= 2 ? 'text-primary' : 'text-on-surface-variant'}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${modalStep >= 2 ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'}`}>
+                      <span className="material-symbols-outlined text-xl">
+                        {modalStep > 2 ? 'check' : 'scale'}
+                      </span>
                     </div>
                     <span className="text-sm font-semibold">Waga</span>
                   </div>
@@ -1147,10 +1138,12 @@ const PackingScreen: React.FC = () => {
 
               {shipment?.require_photos && (
                 <>
-                  <div className="w-8 h-0.5 bg-bg-tertiary"></div>
-                  <div className={`flex items-center gap-2 ${modalStep >= 3 ? 'text-accent-success' : 'text-text-tertiary'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${modalStep >= 3 ? 'bg-accent-success' : 'bg-bg-tertiary'}`}>
-                      <span className="text-white font-bold">3</span>
+                  <div className={`flex-1 h-1 rounded-full ${modalStep >= 3 ? 'bg-primary' : 'bg-surface-container'}`}></div>
+                  <div className={`flex items-center gap-2 ${modalStep >= 3 ? 'text-primary' : 'text-on-surface-variant'}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${modalStep >= 3 ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'}`}>
+                      <span className="material-symbols-outlined text-xl">
+                        {modalStep > 3 ? 'check' : 'photo_camera'}
+                      </span>
                     </div>
                     <span className="text-sm font-semibold">Zdjęcie</span>
                   </div>
@@ -1161,37 +1154,41 @@ const PackingScreen: React.FC = () => {
             {/* Step 1: Confirmation */}
             {modalStep === 1 && (
               <div className="text-center">
-                <h2 className="text-text-secondary text-lg mb-4">Odnaleziono produkt:</h2>
+                <h2 className="text-on-surface-variant text-lg mb-6">Odnaleziono produkt:</h2>
 
                 {/* SAP Index - DUŻY */}
-                <div className="text-accent-primary font-bold text-6xl mb-4 tracking-wide">
+                <div className="text-primary font-headline text-6xl mb-6 tracking-wide">
                   {selectedPart.sap_index}
                 </div>
 
-                {/* Description - mały */}
-                <p className="text-text-secondary text-xl mb-8">
+                {/* Description */}
+                <p className="text-on-surface text-xl mb-8">
                   {selectedPart.description}
                 </p>
 
                 {/* Quantity - DUŻY */}
                 <div className="flex items-center justify-center gap-3 mb-8">
-                  <span className="text-text-primary font-bold text-5xl">
+                  <span className="text-on-surface font-headline text-5xl">
                     {selectedPart.quantity}
                   </span>
-                  <span className="text-text-secondary text-3xl">
+                  <span className="text-on-surface-variant text-3xl">
                     {selectedPart.unit}
                   </span>
                 </div>
 
                 {/* Confirmation instructions */}
-                <div className="bg-bg-tertiary rounded-lg p-6 mb-6">
-                  <p className="text-text-secondary text-lg mb-4">Potwierdź ilość:</p>
-                  <div className="flex items-center justify-center gap-6 text-sm text-text-tertiary">
-                    <span>📱 Zeskanuj ponownie</span>
+                <div className="bg-surface-container-high rounded-2xl p-6 mb-8">
+                  <p className="text-on-surface text-lg mb-4 font-semibold">Potwierdź ilość:</p>
+                  <div className="flex items-center justify-center gap-6 text-sm text-on-surface-variant">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+                      <span>Zeskanuj ponownie</span>
+                    </div>
                     <span>•</span>
-                    <span>⌨️ Naciśnij Enter</span>
-                    <span>•</span>
-                    <span>🖱️ Kliknij przycisk</span>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base">keyboard_return</span>
+                      <span>Naciśnij Enter</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1199,17 +1196,17 @@ const PackingScreen: React.FC = () => {
                 <div className="flex gap-4">
                   <button
                     onClick={handleCloseModal}
-                    className="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
+                    className="flex-1 px-6 py-4 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-xl transition-all text-lg font-semibold"
                   >
                     Anuluj
                   </button>
                   <button
                     onClick={handleConfirmPart}
                     onKeyPress={(e) => e.key === 'Enter' && handleConfirmPart()}
-                    className="flex-1 px-6 py-4 gradient-primary text-white rounded-lg hover:opacity-90 transition-all text-lg font-semibold"
+                    className="flex-1 px-6 py-4 primary-gradient text-on-primary rounded-xl hover:shadow-glow transition-all text-lg font-semibold"
                     autoFocus
                   >
-                    ✓ Potwierdź
+                    Potwierdź
                   </button>
                 </div>
               </div>
@@ -1218,33 +1215,36 @@ const PackingScreen: React.FC = () => {
             {/* Step 2: Weight */}
             {modalStep === 2 && selectedPart && (
               <div className="text-center">
-                <h2 className="text-text-secondary text-lg mb-6">Ważenie:</h2>
+                <h2 className="text-on-surface-variant text-lg mb-6">Ważenie:</h2>
 
                 {/* Part info */}
-                <div className="text-accent-primary font-bold text-4xl mb-8">
+                <div className="text-primary font-headline text-4xl mb-8">
                   {selectedPart.sap_index}
                 </div>
 
                 {/* Weight reading - DUŻY */}
-                <div className="bg-bg-tertiary rounded-2xl p-8 mb-6">
+                <div className="bg-surface-container-high rounded-3xl p-8 mb-6">
                   {/* Scale connection status */}
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <div className={`w-2 h-2 rounded-full ${scaleConnected ? 'bg-accent-success' : 'bg-accent-warning'}`}></div>
-                    <p className="text-text-tertiary text-xs">
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <div className={`w-2 h-2 rounded-full ${scaleConnected ? 'bg-primary' : 'bg-tertiary'}`}></div>
+                    <p className="text-on-surface-variant text-xs">
                       {scaleConnected ? 'Waga podłączona' : 'Tryb symulacji'}
                     </p>
                     {scaleConnected && (
-                      <span className={`text-xs ${scaleStable ? 'text-accent-success' : 'text-accent-warning'}`}>
-                        {scaleStable ? '✓ Stabilna' : '⚠ Niestabilna'}
+                      <span className={`text-xs flex items-center gap-1 ${scaleStable ? 'text-primary' : 'text-tertiary'}`}>
+                        <span className="material-symbols-outlined text-sm">
+                          {scaleStable ? 'check_circle' : 'pending'}
+                        </span>
+                        {scaleStable ? 'Stabilna' : 'Niestabilna'}
                       </span>
                     )}
                   </div>
 
-                  <p className="text-text-tertiary text-sm mb-2">Odczyt wagi:</p>
-                  <div className={`font-bold text-7xl mb-2 ${scaleStable ? 'text-accent-success' : 'text-accent-warning'}`}>
+                  <p className="text-on-surface-variant text-sm mb-2">Odczyt wagi:</p>
+                  <div className={`font-headline text-7xl mb-2 ${scaleStable ? 'text-primary' : 'text-tertiary'}`}>
                     {weightReading.toFixed(3)}
                   </div>
-                  <p className="text-text-secondary text-2xl mb-4">kg</p>
+                  <p className="text-on-surface text-2xl mb-4">kg</p>
 
                   {/* Scale controls */}
                   <div className="flex gap-2 justify-center mb-2">
@@ -1252,35 +1252,36 @@ const PackingScreen: React.FC = () => {
                       <>
                         <button
                           onClick={handleScaleZero}
-                          className="px-4 py-2 bg-bg-primary text-text-secondary rounded hover:bg-opacity-80 font-semibold"
+                          className="px-4 py-2 bg-surface-container text-on-surface rounded-xl hover:bg-surface-container-highest transition-all font-semibold flex items-center gap-2"
                         >
-                          ⚖️ Zero
+                          <span className="material-symbols-outlined text-lg">restart_alt</span>
+                          Zero
                         </button>
                         <button
                           onClick={handleScaleTare}
-                          className="px-4 py-2 bg-bg-primary text-text-secondary rounded hover:bg-opacity-80 font-semibold"
+                          className="px-4 py-2 bg-surface-container text-on-surface rounded-xl hover:bg-surface-container-highest transition-all font-semibold flex items-center gap-2"
                         >
-                          ⚖️ Tara
+                          <span className="material-symbols-outlined text-lg">scale</span>
+                          Tara
                         </button>
                       </>
                     ) : (
                       <>
-                        {/* Simulator buttons when scale not connected */}
                         <button
                           onClick={() => setWeightReading(prev => prev + 0.1)}
-                          className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
+                          className="px-3 py-1 bg-surface-container text-on-surface rounded-lg text-sm hover:bg-surface-container-highest transition-all"
                         >
                           +0.1kg
                         </button>
                         <button
                           onClick={() => setWeightReading(prev => prev + 1)}
-                          className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
+                          className="px-3 py-1 bg-surface-container text-on-surface rounded-lg text-sm hover:bg-surface-container-highest transition-all"
                         >
                           +1kg
                         </button>
                         <button
                           onClick={() => setWeightReading(0)}
-                          className="px-3 py-1 bg-bg-primary text-text-secondary rounded text-sm hover:bg-opacity-80"
+                          className="px-3 py-1 bg-surface-container text-on-surface rounded-lg text-sm hover:bg-surface-container-highest transition-all"
                         >
                           Reset
                         </button>
@@ -1288,41 +1289,42 @@ const PackingScreen: React.FC = () => {
                     )}
                   </div>
                   {!scaleConnected && (
-                    <p className="text-text-tertiary text-xs mt-2">
-                      💡 Skonfiguruj wagę w ustawieniach aby włączyć automatyczne ważenie
+                    <p className="text-on-surface-variant text-xs mt-2 flex items-center justify-center gap-1">
+                      <span className="material-symbols-outlined text-sm">info</span>
+                      Skonfiguruj wagę w ustawieniach
                     </p>
                   )}
                 </div>
 
                 {/* Quantity selector */}
                 <div className="mb-6">
-                  <p className="text-text-secondary text-sm mb-3">Ważone sztuk:</p>
+                  <p className="text-on-surface text-sm mb-3 font-semibold">Ważone sztuk:</p>
                   <div className="flex gap-3 justify-center mb-4">
                     <button
                       onClick={() => {
                         setWeightQuantity(selectedPart.quantity);
                         setCustomQuantity('');
                       }}
-                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                      className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                         weightQuantity === selectedPart.quantity && !customQuantity
-                          ? 'gradient-primary text-white'
-                          : 'bg-bg-tertiary text-text-primary hover:bg-opacity-80'
+                          ? 'primary-gradient text-on-primary shadow-glow'
+                          : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest'
                       }`}
                     >
-                      {selectedPart.quantity} {selectedPart.unit} (z listy)
+                      <span className="font-headline">{selectedPart.quantity}</span> {selectedPart.unit}
                     </button>
                     <button
                       onClick={() => {
                         setWeightQuantity(1);
                         setCustomQuantity('');
                       }}
-                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                      className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                         weightQuantity === 1 && !customQuantity
-                          ? 'gradient-primary text-white'
-                          : 'bg-bg-tertiary text-text-primary hover:bg-opacity-80'
+                          ? 'primary-gradient text-on-primary shadow-glow'
+                          : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest'
                       }`}
                     >
-                      1 szt
+                      <span className="font-headline">1</span> szt
                     </button>
                   </div>
 
@@ -1339,16 +1341,16 @@ const PackingScreen: React.FC = () => {
                         }
                       }}
                       placeholder="Inna ilość..."
-                      className="px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none w-40 text-center"
+                      className="px-4 py-3 bg-surface-container text-on-surface rounded-xl focus:ring-2 focus:ring-primary focus:outline-none w-40 text-center font-headline"
                     />
-                    <span className="text-text-secondary">{selectedPart.unit}</span>
+                    <span className="text-on-surface-variant">{selectedPart.unit}</span>
                   </div>
                 </div>
 
                 {/* Weight per unit */}
-                <div className="bg-bg-tertiary bg-opacity-50 rounded-lg p-4 mb-6">
-                  <p className="text-text-tertiary text-sm mb-1">Waga za sztukę:</p>
-                  <p className="text-text-primary text-2xl font-bold">
+                <div className="bg-surface-container rounded-2xl p-4 mb-6">
+                  <p className="text-on-surface-variant text-sm mb-1">Waga za sztukę:</p>
+                  <p className="text-on-surface text-2xl font-headline">
                     {weightQuantity > 0 ? (weightReading / weightQuantity).toFixed(4) : '0.0000'} kg
                   </p>
                 </div>
@@ -1357,15 +1359,15 @@ const PackingScreen: React.FC = () => {
                 <div className="flex gap-4">
                   <button
                     onClick={handleCloseModal}
-                    className="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
+                    className="flex-1 px-6 py-4 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-xl transition-all text-lg font-semibold"
                   >
                     Anuluj
                   </button>
                   <button
                     onClick={handleWeightConfirm}
-                    className="flex-1 px-6 py-4 gradient-primary text-white rounded-lg hover:opacity-90 transition-all text-lg font-semibold"
+                    className="flex-1 px-6 py-4 primary-gradient text-on-primary rounded-xl hover:shadow-glow transition-all text-lg font-semibold"
                   >
-                    ✓ Potwierdź wagę
+                    Potwierdź wagę
                   </button>
                 </div>
               </div>
@@ -1374,18 +1376,19 @@ const PackingScreen: React.FC = () => {
             {/* Step 3: Photo */}
             {modalStep === 3 && selectedPart && (
               <div className="text-center">
-                <h2 className="text-text-secondary text-lg mb-4">Zdjęcie:</h2>
+                <h2 className="text-on-surface-variant text-lg mb-4">Zdjęcie:</h2>
 
                 {/* Part info */}
-                <div className="text-accent-primary font-bold text-4xl mb-2">
+                <div className="text-primary font-headline text-4xl mb-2">
                   {selectedPart.sap_index}
                 </div>
 
                 {/* Photo counter */}
                 {photosSavedCount > 0 && (
-                  <div className="mb-6 px-4 py-2 bg-accent-success/10 border border-accent-success/30 rounded-lg inline-block">
-                    <p className="text-accent-success text-sm font-semibold">
-                      ✓ Zapisano zdjęć: {photosSavedCount}
+                  <div className="mb-6 px-4 py-2 bg-primary/10 rounded-xl inline-flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
+                    <p className="text-primary text-sm font-semibold">
+                      Zapisano zdjęć: <span className="font-headline">{photosSavedCount}</span>
                     </p>
                   </div>
                 )}
@@ -1396,7 +1399,7 @@ const PackingScreen: React.FC = () => {
                 <div className="relative mb-6">
                   {!capturedPhoto ? (
                     // Live camera view
-                    <div className="relative bg-black rounded-xl overflow-hidden" style={{ maxHeight: '400px' }}>
+                    <div className="relative bg-black rounded-2xl overflow-hidden" style={{ maxHeight: '400px' }}>
                       <video
                         ref={videoRef}
                         autoPlay
@@ -1404,12 +1407,13 @@ const PackingScreen: React.FC = () => {
                         className="w-full h-auto"
                         style={{ maxHeight: '400px' }}
                       />
-                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
                         <button
                           onClick={capturePhoto}
-                          className="px-8 py-4 bg-white text-black rounded-full hover:bg-gray-200 transition-all font-bold text-lg shadow-lg"
+                          className="px-8 py-4 bg-white text-black rounded-full hover:shadow-2xl transition-all font-bold text-lg shadow-xl flex items-center gap-2"
                         >
-                          📸 Zrób zdjęcie
+                          <span className="material-symbols-outlined">photo_camera</span>
+                          Zrób zdjęcie
                         </button>
                       </div>
                     </div>
@@ -1419,7 +1423,7 @@ const PackingScreen: React.FC = () => {
                       <img
                         src={capturedPhoto}
                         alt="Captured"
-                        className="w-full h-auto rounded-xl"
+                        className="w-full h-auto rounded-2xl"
                         style={{ maxHeight: '400px', objectFit: 'contain' }}
                       />
                     </div>
@@ -1438,21 +1442,29 @@ const PackingScreen: React.FC = () => {
                         <button
                           onClick={() => handlePhotoConfirm(true)}
                           disabled={savingPhoto}
-                          className={`flex-1 px-6 py-4 bg-accent-secondary/20 hover:bg-accent-secondary/30 text-accent-secondary rounded-lg transition-all text-lg font-semibold flex items-center justify-center gap-2 ${
+                          className={`flex-1 px-6 py-4 bg-secondary/20 hover:bg-secondary/30 text-secondary rounded-xl transition-all text-lg font-semibold flex items-center justify-center gap-2 ${
                             savingPhoto ? 'opacity-50 cursor-not-allowed' : ''
                           }`}
                           title="Zapisz zdjęcie i zrób kolejne"
                         >
-                          📸 Kolejne
+                          <span className="material-symbols-outlined">add_a_photo</span>
+                          Kolejne
                         </button>
                         <button
                           onClick={() => handlePhotoConfirm(false)}
                           disabled={savingPhoto}
-                          className={`flex-1 px-6 py-4 gradient-primary text-white rounded-lg transition-all text-lg font-semibold ${
-                            savingPhoto ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                          className={`flex-1 px-6 py-4 primary-gradient text-on-primary rounded-xl transition-all text-lg font-semibold ${
+                            savingPhoto ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-glow'
                           }`}
                         >
-                          {savingPhoto ? '⏳ Zapisywanie...' : '✓ Potwierdź'}
+                          {savingPhoto ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                              Zapisywanie...
+                            </span>
+                          ) : (
+                            'Potwierdź'
+                          )}
                         </button>
                       </div>
 
@@ -1461,25 +1473,26 @@ const PackingScreen: React.FC = () => {
                         <button
                           onClick={handleRetakePhoto}
                           disabled={savingPhoto}
-                          className="flex-1 px-6 py-3 bg-accent-warning/20 hover:bg-accent-warning/30 text-accent-warning rounded-lg transition-all font-semibold"
+                          className="flex-1 px-6 py-3 bg-tertiary/20 hover:bg-tertiary/30 text-tertiary rounded-xl transition-all font-semibold flex items-center justify-center gap-2"
                         >
-                          🔄 Nowe zdjęcie
+                          <span className="material-symbols-outlined">refresh</span>
+                          Nowe zdjęcie
                         </button>
                         <button
                           onClick={handleCloseModal}
                           disabled={savingPhoto}
-                          className="flex-1 px-6 py-3 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all font-semibold"
+                          className="flex-1 px-6 py-3 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-xl transition-all font-semibold"
                         >
-                          ✕ Anuluj
+                          Anuluj
                         </button>
                       </div>
                     </>
                   ) : (
                     <button
                       onClick={handleCloseModal}
-                      className="w-full px-6 py-4 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all text-lg font-semibold"
+                      className="w-full px-6 py-4 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-xl transition-all text-lg font-semibold"
                     >
-                      ✕ Anuluj
+                      Anuluj
                     </button>
                   )}
                 </div>
@@ -1489,10 +1502,10 @@ const PackingScreen: React.FC = () => {
             {/* Step 4: Country of Origin */}
             {modalStep === 4 && selectedPart && (
               <div className="text-center">
-                <h2 className="text-text-secondary text-lg mb-4">Kraj pochodzenia:</h2>
+                <h2 className="text-on-surface-variant text-lg mb-4">Kraj pochodzenia:</h2>
 
                 {/* Part info */}
-                <div className="text-accent-primary font-bold text-4xl mb-8">
+                <div className="text-primary font-headline text-4xl mb-8">
                   {selectedPart.sap_index}
                 </div>
 
@@ -1502,9 +1515,9 @@ const PackingScreen: React.FC = () => {
                     <button
                       key={country.key}
                       onClick={() => handleCountryConfirm(country.name)}
-                      className="px-6 py-4 bg-accent-secondary/20 hover:bg-accent-secondary/30 text-accent-secondary rounded-lg transition-all font-semibold text-lg flex items-center justify-between group"
+                      className="px-6 py-4 bg-secondary/10 hover:bg-secondary/20 text-secondary rounded-xl transition-all font-semibold text-lg flex items-center justify-between group"
                     >
-                      <span className="text-text-tertiary group-hover:text-accent-secondary transition-colors font-bold">
+                      <span className="text-on-surface-variant group-hover:text-secondary transition-colors font-headline text-xl">
                         {country.key}
                       </span>
                       <span>{country.name}</span>
@@ -1514,7 +1527,7 @@ const PackingScreen: React.FC = () => {
 
                 {/* Custom country input */}
                 <div className="mb-6">
-                  <label className="block text-text-primary text-sm font-medium mb-2 text-left">
+                  <label className="block text-on-surface text-sm font-medium mb-2 text-left">
                     Inny kraj (wpisz ręcznie):
                   </label>
                   <input
@@ -1528,8 +1541,8 @@ const PackingScreen: React.FC = () => {
                       }
                     }}
                     onClick={() => countryInputRef.current?.focus()}
-                    placeholder="Wpisz nazwę kraju... (lub kliknij aby wpisać)"
-                    className="w-full px-4 py-3 bg-bg-tertiary text-text-primary rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+                    placeholder="Wpisz nazwę kraju..."
+                    className="w-full px-4 py-3 bg-surface-container text-on-surface rounded-xl focus:ring-2 focus:ring-primary focus:outline-none transition-all"
                   />
                 </div>
 
@@ -1537,22 +1550,23 @@ const PackingScreen: React.FC = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={handleCloseModal}
-                    className="flex-1 px-6 py-3 bg-bg-tertiary hover:bg-opacity-80 text-text-primary rounded-lg transition-all font-semibold"
+                    className="flex-1 px-6 py-3 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-xl transition-all font-semibold"
                   >
-                    ✕ Anuluj
+                    Anuluj
                   </button>
                   <button
                     onClick={() => handleCountryConfirm('')}
-                    className="flex-1 px-6 py-3 bg-accent-warning/20 hover:bg-accent-warning/30 text-accent-warning rounded-lg transition-all font-semibold"
+                    className="flex-1 px-6 py-3 bg-tertiary/20 hover:bg-tertiary/30 text-tertiary rounded-xl transition-all font-semibold flex items-center justify-center gap-2"
                   >
-                    ⏭️ Pomiń
+                    <span className="material-symbols-outlined">skip_next</span>
+                    Pomiń
                   </button>
                   {selectedCountry && (
                     <button
                       onClick={() => handleCountryConfirm()}
-                      className="flex-1 px-6 py-3 gradient-primary text-white rounded-lg hover:opacity-90 transition-all font-semibold"
+                      className="flex-1 px-6 py-3 primary-gradient text-on-primary rounded-xl hover:shadow-glow transition-all font-semibold"
                     >
-                      ✓ Potwierdź
+                      Potwierdź
                     </button>
                   )}
                 </div>
@@ -1576,26 +1590,27 @@ const PackingScreen: React.FC = () => {
       {/* Photo Viewer Modal */}
       {photoViewerOpen && viewingPart && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 animate-fade-in"
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={handleClosePhotoViewer}
         >
           <div
-            className="bg-bg-secondary rounded-2xl p-8 max-w-5xl w-full mx-4 max-h-[90vh] overflow-auto animate-scale-in"
+            className="glass-panel rounded-3xl p-8 max-w-5xl w-full mx-4 max-h-[90vh] overflow-auto shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-text-primary text-2xl font-bold mb-2">
-                  📸 Zdjęcia: {viewingPart.sap_index}
+                <h2 className="text-on-surface text-2xl font-bold mb-2 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">photo_library</span>
+                  Zdjęcia: <span className="font-headline">{viewingPart.sap_index}</span>
                 </h2>
-                <p className="text-text-secondary text-sm">{viewingPart.description}</p>
+                <p className="text-on-surface-variant text-sm">{viewingPart.description}</p>
               </div>
               <button
                 onClick={handleClosePhotoViewer}
-                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+                className="p-2 hover:bg-surface-container-high rounded-xl transition-colors"
               >
-                <X className="w-6 h-6 text-text-primary" />
+                <span className="material-symbols-outlined text-on-surface">close</span>
               </button>
             </div>
 
@@ -1605,7 +1620,7 @@ const PackingScreen: React.FC = () => {
                 {viewerPhotos.map((photo) => (
                   <div
                     key={photo.id}
-                    className="bg-bg-tertiary rounded-xl overflow-hidden hover:ring-2 hover:ring-accent-primary transition-all"
+                    className="bg-surface-container rounded-2xl overflow-hidden hover:ring-2 hover:ring-primary transition-all"
                   >
                     <img
                       src={`file://${photo.photo_path}`}
@@ -1613,10 +1628,10 @@ const PackingScreen: React.FC = () => {
                       className="w-full h-64 object-cover"
                     />
                     <div className="p-3">
-                      <p className="text-text-tertiary text-xs">
+                      <p className="text-on-surface-variant text-xs">
                         {new Date(photo.created_at).toLocaleString('pl-PL')}
                       </p>
-                      <p className="text-text-tertiary text-xs">
+                      <p className="text-on-surface-variant text-xs font-headline">
                         {(photo.file_size / 1024).toFixed(0)} KB
                       </p>
                     </div>
@@ -1625,8 +1640,8 @@ const PackingScreen: React.FC = () => {
               </div>
             ) : (
               <div className="text-center py-12">
-                <Camera className="w-16 h-16 text-text-tertiary mx-auto mb-4" />
-                <p className="text-text-secondary text-lg">Brak zdjęć dla tego produktu</p>
+                <span className="material-symbols-outlined text-on-surface-variant mx-auto mb-4 text-6xl">photo_camera</span>
+                <p className="text-on-surface-variant text-lg">Brak zdjęć dla tego produktu</p>
               </div>
             )}
           </div>
@@ -1634,30 +1649,33 @@ const PackingScreen: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
+      <div className="flex-shrink-0 bg-surface-container px-8 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/')}
-              className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+              className="p-3 hover:bg-surface-container-high rounded-xl transition-colors"
             >
-              <ArrowLeft className="w-6 h-6 text-text-primary" />
+              <span className="material-symbols-outlined text-on-surface">arrow_back</span>
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-text-primary">
+              <h1 className="text-2xl font-bold text-on-surface font-headline">
                 {shipment.shipment_number}
               </h1>
-              <p className="text-text-secondary text-sm">📍 {shipment.destination}</p>
+              <p className="text-on-surface-variant text-sm flex items-center gap-1">
+                <span className="material-symbols-outlined text-base">location_on</span>
+                {shipment.destination}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-6">
             {/* Timer */}
             <div className="text-right">
-              <p className="text-text-secondary text-xs mb-1">Czas sesji</p>
+              <p className="text-on-surface-variant text-xs mb-1">Czas sesji</p>
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-accent-primary" />
-                <span className="text-text-primary font-bold text-lg font-mono">
+                <span className="material-symbols-outlined text-primary text-lg">schedule</span>
+                <span className="text-on-surface font-headline text-lg">
                   {formatTime(elapsedTime)}
                 </span>
               </div>
@@ -1665,15 +1683,15 @@ const PackingScreen: React.FC = () => {
 
             {/* Progress */}
             <div className="text-right">
-              <p className="text-text-secondary text-xs mb-1">Postęp</p>
+              <p className="text-on-surface-variant text-xs mb-1">Postęp</p>
               <div className="flex items-center gap-3">
-                <div className="w-32 h-2 bg-bg-tertiary rounded-full overflow-hidden">
+                <div className="w-32 h-2 bg-surface-container-highest rounded-full overflow-hidden">
                   <div
-                    className="h-full gradient-primary progress-fill"
+                    className={`h-full primary-gradient transition-all duration-300 ${progress === 100 ? 'shadow-glow' : ''}`}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-text-primary font-bold text-sm">
+                <span className="text-on-surface font-headline text-sm">
                   {packedParts.length}/{parts.length}
                 </span>
               </div>
@@ -1683,10 +1701,10 @@ const PackingScreen: React.FC = () => {
             <div className="relative">
               <CircularProgress percent={progress} size={70} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-text-primary font-bold text-lg leading-none">
+                <span className="text-on-surface font-headline text-lg leading-none">
                   {Math.round(progress)}%
                 </span>
-                <span className="text-text-tertiary text-xs mt-0.5">
+                <span className="text-on-surface-variant text-xs mt-0.5 font-headline">
                   {packedParts.length}/{parts.length}
                 </span>
               </div>
@@ -1695,39 +1713,39 @@ const PackingScreen: React.FC = () => {
             {/* Action buttons */}
             <div className="flex gap-2">
               <button
-                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+                className="p-3 hover:bg-surface-container-high rounded-xl transition-colors"
                 title="Zapisz"
               >
-                <Save className="w-5 h-5 text-text-secondary" />
+                <span className="material-symbols-outlined text-on-surface-variant">save</span>
               </button>
               <button
-                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+                className="p-3 hover:bg-surface-container-high rounded-xl transition-colors"
                 title="Wstrzymaj"
               >
-                <Pause className="w-5 h-5 text-text-secondary" />
+                <span className="material-symbols-outlined text-on-surface-variant">pause</span>
               </button>
               <div className="relative">
                 <button
                   onClick={() => setExportMenuOpen(!exportMenuOpen)}
-                  className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+                  className="p-3 hover:bg-surface-container-high rounded-xl transition-colors"
                   title="Raport"
                 >
-                  <FileText className="w-5 h-5 text-text-secondary" />
+                  <span className="material-symbols-outlined text-on-surface-variant">description</span>
                 </button>
 
                 {exportMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-bg-secondary border border-bg-tertiary rounded-lg shadow-xl z-50 overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-64 bg-surface-container-high rounded-2xl shadow-2xl z-50 overflow-hidden">
                     <button
                       onClick={() => {
                         handleExportExcel();
                         setExportMenuOpen(false);
                       }}
-                      className="w-full px-4 py-3 text-left hover:bg-bg-tertiary transition-colors flex items-center gap-3"
+                      className="w-full px-4 py-3 text-left hover:bg-surface-container-highest transition-colors flex items-center gap-3"
                     >
-                      <span className="text-xl">📊</span>
+                      <span className="material-symbols-outlined text-primary text-2xl">table_chart</span>
                       <div>
-                        <div className="text-text-primary font-semibold">Excel</div>
-                        <div className="text-text-tertiary text-xs">Z wagami jednostkowymi</div>
+                        <div className="text-on-surface font-semibold">Excel</div>
+                        <div className="text-on-surface-variant text-xs">Z wagami jednostkowymi</div>
                       </div>
                     </button>
                     <button
@@ -1735,12 +1753,12 @@ const PackingScreen: React.FC = () => {
                         handleExportHTML();
                         setExportMenuOpen(false);
                       }}
-                      className="w-full px-4 py-3 text-left hover:bg-bg-tertiary transition-colors flex items-center gap-3"
+                      className="w-full px-4 py-3 text-left hover:bg-surface-container-highest transition-colors flex items-center gap-3"
                     >
-                      <span className="text-xl">📄</span>
+                      <span className="material-symbols-outlined text-secondary text-2xl">html</span>
                       <div>
-                        <div className="text-text-primary font-semibold">HTML</div>
-                        <div className="text-text-tertiary text-xs">Interaktywny raport</div>
+                        <div className="text-on-surface font-semibold">HTML</div>
+                        <div className="text-on-surface-variant text-xs">Interaktywny raport</div>
                       </div>
                     </button>
                     <button
@@ -1748,29 +1766,29 @@ const PackingScreen: React.FC = () => {
                         handleExportAll();
                         setExportMenuOpen(false);
                       }}
-                      className="w-full px-4 py-3 text-left hover:bg-bg-tertiary transition-colors flex items-center gap-3 border-t border-bg-tertiary"
+                      className="w-full px-4 py-3 text-left hover:bg-surface-container-highest transition-colors flex items-center gap-3"
                     >
-                      <span className="text-xl">📦</span>
+                      <span className="material-symbols-outlined text-tertiary text-2xl">inventory_2</span>
                       <div>
-                        <div className="text-text-primary font-semibold">Wszystkie</div>
-                        <div className="text-text-tertiary text-xs">Excel + HTML</div>
+                        <div className="text-on-surface font-semibold">Wszystkie</div>
+                        <div className="text-on-surface-variant text-xs">Excel + HTML</div>
                       </div>
                     </button>
                   </div>
                 )}
               </div>
               <button
-                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+                className="p-3 hover:bg-surface-container-high rounded-xl transition-colors"
                 title="Statystyki"
               >
-                <BarChart3 className="w-5 h-5 text-text-secondary" />
+                <span className="material-symbols-outlined text-on-surface-variant">bar_chart</span>
               </button>
               <button
                 onClick={() => navigate('/settings')}
-                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+                className="p-3 hover:bg-surface-container-high rounded-xl transition-colors"
                 title="Ustawienia"
               >
-                <Settings className="w-5 h-5 text-text-secondary" />
+                <span className="material-symbols-outlined text-on-surface-variant">settings</span>
               </button>
             </div>
           </div>
@@ -1778,38 +1796,38 @@ const PackingScreen: React.FC = () => {
       </div>
 
       {/* Search bar */}
-      <div className="flex-shrink-0 bg-bg-secondary border-b border-bg-tertiary px-8 py-4">
+      <div className="flex-shrink-0 bg-surface-container px-8 py-4">
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <span className="material-symbols-outlined absolute left-4 top-1/2 transform -translate-y-1/2 text-on-surface-variant">search</span>
           <input
             type="text"
-            placeholder="🔍 Skanuj QR lub wyszukaj część..."
+            placeholder="Skanuj QR lub wyszukaj część..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             autoFocus
-            className="w-full pl-12 pr-4 py-4 bg-bg-tertiary text-text-primary text-lg rounded-lg border-2 border-transparent focus:border-accent-primary focus:outline-none transition-colors"
+            className="w-full pl-12 pr-4 py-4 bg-surface-container-high text-on-surface text-lg rounded-xl focus:ring-2 focus:ring-primary focus:outline-none transition-all"
           />
         </div>
 
         {/* Requirements badges */}
         {(shipment.require_weight || shipment.require_country || shipment.require_photos) && (
-          <div className="flex items-center gap-3 mt-4 p-3 bg-bg-tertiary rounded-lg">
-            <span className="text-text-primary text-sm font-semibold">Wymagane dane:</span>
+          <div className="flex items-center gap-3 mt-4 p-4 bg-surface-container-high rounded-2xl">
+            <span className="text-on-surface text-sm font-semibold">Wymagane dane:</span>
             {shipment.require_weight && (
-              <span className="px-4 py-2 bg-accent-primary text-white text-sm font-semibold rounded-lg border border-accent-primary border-opacity-50 flex items-center gap-2 shadow-sm">
-                <span className="text-lg">⚖️</span>
+              <span className="px-4 py-2 bg-primary/10 text-primary text-sm font-semibold rounded-xl flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">scale</span>
                 <span>Waga</span>
               </span>
             )}
             {shipment.require_country && (
-              <span className="px-4 py-2 bg-accent-secondary text-white text-sm font-semibold rounded-lg border border-accent-secondary border-opacity-50 flex items-center gap-2 shadow-sm">
-                <span className="text-lg">🌍</span>
+              <span className="px-4 py-2 bg-secondary/10 text-secondary text-sm font-semibold rounded-xl flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">public</span>
                 <span>Kraj pochodzenia</span>
               </span>
             )}
             {shipment.require_photos && (
-              <span className="px-4 py-2 bg-accent-warning text-white text-sm font-semibold rounded-lg border border-accent-warning border-opacity-50 flex items-center gap-2 shadow-sm">
-                <span className="text-lg">📷</span>
+              <span className="px-4 py-2 bg-tertiary/10 text-tertiary text-sm font-semibold rounded-xl flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">photo_camera</span>
                 <span>Zdjęcia</span>
               </span>
             )}
@@ -1819,38 +1837,40 @@ const PackingScreen: React.FC = () => {
 
       {/* Parts list */}
       <div className="flex-1 overflow-auto px-8 py-6">
-        <div className="max-w-5xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-8">
           {/* Pending parts */}
           {filteredPendingParts.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                DO SPAKOWANIA ({filteredPendingParts.length})
+              <h2 className="text-lg font-semibold text-on-surface mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined">schedule</span>
+                DO SPAKOWANIA (<span className="font-headline">{filteredPendingParts.length}</span>)
               </h2>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {filteredPendingParts.map((part) => (
                   <div
                     key={part.id}
                     onClick={() => handlePackPart(part)}
-                    className="bg-bg-tertiary rounded-lg p-4 hover:bg-opacity-80 hover:scale-[1.02] transition-all cursor-pointer animate-slide-in active:scale-[0.98]"
+                    className="bg-surface-container-high rounded-2xl p-6 hover:bg-surface-container-highest hover:scale-[1.01] transition-all cursor-pointer active:scale-[0.99]"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-accent-primary font-bold text-lg">
+                          <span className="text-primary font-headline text-xl">
                             {part.sap_index}
                           </span>
-                          <span className="text-text-tertiary text-sm">
+                          <span className="text-on-surface-variant text-sm">
                             #{part.excel_row_number}
                           </span>
                         </div>
-                        <p className="text-text-primary mb-2">{part.description}</p>
-                        <div className="flex items-center gap-4 text-sm text-text-secondary">
-                          <span>📦 {part.quantity} {part.unit}</span>
+                        <p className="text-on-surface mb-3">{part.description}</p>
+                        <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                          <span className="material-symbols-outlined text-base">inventory_2</span>
+                          <span className="font-headline">{part.quantity}</span>
+                          <span>{part.unit}</span>
                         </div>
                       </div>
-                      <div className="w-12 h-12 rounded-full border-2 border-text-tertiary flex items-center justify-center hover:border-accent-success hover:bg-accent-success hover:bg-opacity-10 transition-all">
-                        <span className="text-text-tertiary text-xl">☐</span>
+                      <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center hover:bg-primary/10 hover:ring-2 hover:ring-primary transition-all">
+                        <span className="material-symbols-outlined text-on-surface-variant text-2xl">radio_button_unchecked</span>
                       </div>
                     </div>
                   </div>
@@ -1862,45 +1882,50 @@ const PackingScreen: React.FC = () => {
           {/* Packed parts */}
           {filteredPackedParts.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-text-secondary mb-3 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5" />
-                SPAKOWANE ({filteredPackedParts.length})
+              <h2 className="text-lg font-semibold text-on-surface-variant mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                SPAKOWANE (<span className="font-headline">{filteredPackedParts.length}</span>)
               </h2>
-              <p className="text-text-tertiary text-sm mb-3 italic">💡 Kliknij produkt aby cofnąć pakowanie</p>
-              <div className="space-y-2">
+              <p className="text-on-surface-variant text-sm mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">info</span>
+                Kliknij produkt aby cofnąć pakowanie
+              </p>
+              <div className="space-y-4">
                 {filteredPackedParts.map((part) => (
                   <div
                     key={part.id}
                     onClick={() => handleUnpackPart(part)}
-                    className="bg-bg-tertiary bg-opacity-60 rounded-lg p-4 hover:bg-opacity-80 hover:scale-[1.02] hover:border-2 hover:border-accent-warning transition-all cursor-pointer active:scale-[0.98] border-2 border-transparent"
+                    className="bg-surface-container rounded-2xl p-6 hover:bg-surface-container-high hover:scale-[1.01] hover:ring-2 hover:ring-tertiary transition-all cursor-pointer active:scale-[0.99]"
                     title="Kliknij aby cofnąć pakowanie"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-accent-success font-bold text-lg">
+                          <span className="text-primary font-headline text-xl">
                             {part.sap_index}
                           </span>
-                          <span className="text-text-tertiary text-sm">
+                          <span className="text-on-surface-variant text-sm">
                             #{part.excel_row_number}
                           </span>
                         </div>
-                        <p className="text-text-secondary text-sm">{part.description}</p>
-                        <div className="flex items-center gap-4 text-sm text-text-secondary mt-2">
-                          <span>📦 {part.quantity} {part.unit}</span>
+                        <p className="text-on-surface-variant text-sm">{part.description}</p>
+                        <div className="flex items-center gap-2 text-sm text-on-surface-variant mt-3">
+                          <span className="material-symbols-outlined text-base">inventory_2</span>
+                          <span className="font-headline">{part.quantity}</span>
+                          <span>{part.unit}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {shipment?.require_photos && (
                           <button
                             onClick={(e) => handleViewPhotos(part, e)}
-                            className="p-2 hover:bg-accent-primary hover:bg-opacity-20 rounded-lg transition-all"
+                            className="p-3 hover:bg-primary/10 rounded-xl transition-all"
                             title="Pokaż zdjęcia"
                           >
-                            <Camera className="w-6 h-6 text-accent-primary" />
+                            <span className="material-symbols-outlined text-primary">photo_library</span>
                           </button>
                         )}
-                        <CheckCircle2 className="w-8 h-8 text-accent-success group-hover:text-accent-warning transition-colors" />
+                        <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                       </div>
                     </div>
                   </div>
@@ -1911,8 +1936,9 @@ const PackingScreen: React.FC = () => {
 
           {/* Empty state */}
           {pendingParts.length === 0 && packedParts.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-text-secondary text-lg">
+            <div className="text-center py-16">
+              <span className="material-symbols-outlined text-on-surface-variant text-6xl mb-4">inventory_2</span>
+              <p className="text-on-surface-variant text-lg">
                 Brak części do spakowania
               </p>
             </div>
