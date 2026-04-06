@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { UserProvider, useUser } from './contexts/UserContext';
@@ -16,10 +16,10 @@ const AppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center w-screen h-screen bg-bg-primary">
+      <div className="flex items-center justify-center w-screen h-screen bg-surface">
         <div className="text-center">
-          <div className="spinner mx-auto mb-4"></div>
-          <p className="text-text-secondary text-lg">Ładowanie aplikacji...</p>
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-on-surface-variant text-lg">Ładowanie aplikacji...</p>
         </div>
       </div>
     );
@@ -32,8 +32,8 @@ const AppContent: React.FC = () => {
 
   // User is logged in - show main app
   return (
-    <BrowserRouter>
-      <div className="w-screen h-screen bg-bg-primary overflow-hidden">
+    <HashRouter>
+      <div className="w-screen h-screen bg-surface overflow-hidden">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/create" element={<ShipmentCreator />} />
@@ -44,7 +44,7 @@ const AppContent: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 
@@ -57,20 +57,21 @@ const App: React.FC = () => {
           toastOptions={{
             duration: 4000,
             style: {
-              background: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-primary)',
-              border: '1px solid var(--color-bg-tertiary)',
+              background: 'var(--md-surface-container-high)',
+              color: 'var(--md-on-surface)',
+              borderRadius: '12px',
+              padding: '16px',
             },
             success: {
               iconTheme: {
-                primary: 'var(--color-accent-success)',
-                secondary: 'white',
+                primary: 'var(--md-primary)',
+                secondary: 'var(--md-on-primary)',
               },
             },
             error: {
               iconTheme: {
-                primary: 'var(--color-accent-error)',
-                secondary: 'white',
+                primary: 'var(--md-error)',
+                secondary: 'var(--md-on-error)',
               },
             },
           }}
