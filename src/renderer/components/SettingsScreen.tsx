@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useTheme } from '../contexts/ThemeContext';
 import { useUser } from '../contexts/UserContext';
-import type { ColorScheme, ThemeMode } from '../contexts/ThemeContext';
+import type { ColorScheme } from '../contexts/ThemeContext';
 
 const SettingsScreen: React.FC = () => {
   const { mode, colorScheme, setMode, setColorScheme } = useTheme();
